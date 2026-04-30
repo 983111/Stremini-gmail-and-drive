@@ -105,6 +105,18 @@ export function Mail() {
     setIsComposing(false);
   };
 
+  const handleDiscard = () => {
+    if (confirm('Are you sure you want to discard this draft?')) {
+      setComposeTo('');
+      setComposeSubject('');
+      setComposeBody('');
+      setDraftPrompt('');
+      localStorage.removeItem('stremini_mail_draft');
+      setIsComposing(false);
+      setPreviewMode(false);
+    }
+  };
+
   const handleDraftWithAI = async () => {
     if (!draftPrompt) return;
     setIsDrafting(true);
@@ -217,7 +229,7 @@ export function Mail() {
                   <button onClick={handleSaveDraft} className="text-xs font-semibold text-muted hover:text-foreground uppercase tracking-wider flex items-center space-x-1 transition-colors">
                     <Save size={14} /> <span>Save Draft</span>
                   </button>
-                  <button onClick={() => setIsComposing(false)} className="text-xs font-semibold text-muted hover:text-red-500 uppercase tracking-wider flex items-center space-x-1 transition-colors">
+                  <button onClick={handleDiscard} className="text-xs font-semibold text-muted hover:text-red-500 uppercase tracking-wider flex items-center space-x-1 transition-colors">
                     <X size={14} /> <span>Discard</span>
                   </button>
                 </div>

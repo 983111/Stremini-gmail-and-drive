@@ -11,7 +11,7 @@ export async function generateBriefing(emails: any[], driveFiles: any[]) {
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
   });
 
@@ -29,7 +29,7 @@ export async function summarizeThread(threadMessages: any[]) {
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
   });
   return response.text;
@@ -37,7 +37,7 @@ export async function summarizeThread(threadMessages: any[]) {
 
 export async function summarizeDocumentContent(content: string) {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: 'Summarize the following document and list action items / key takeaways:\n\n' + content,
   });
   return response.text;
@@ -45,7 +45,7 @@ export async function summarizeDocumentContent(content: string) {
 
 export async function rewriteDocument(content: string, tone: 'formal' | 'casual' | 'persuasive' = 'formal') {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: `Rewrite the following text to have a ${tone} tone:\n\n${content}`,
   });
   return response.text;
@@ -89,7 +89,7 @@ export async function draftEmailWithAI(prompt: string, context: string = '') {
 
 export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: `
       You are a database designer. Create a JSON schema array for a Notion-like database based on this description: "${description}".
       The output must be pure JSON array, like: [{"name": "Task", "type": "text"}, {"name": "Status", "type": "select"}]
@@ -117,7 +117,7 @@ export async function generateMeetingIntelligence(notes: any[], emails: any[]) {
   Output the result using markdown, with clear sections (e.g. ## Summary, ## Key Decisions, ## Action Items, ## Draft Follow-up).`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
   });
   return response.text;
