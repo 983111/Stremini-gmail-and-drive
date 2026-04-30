@@ -105,18 +105,6 @@ export function Mail() {
     setIsComposing(false);
   };
 
-  const handleDiscard = () => {
-    if (confirm('Are you sure you want to discard this draft?')) {
-      setComposeTo('');
-      setComposeSubject('');
-      setComposeBody('');
-      setDraftPrompt('');
-      localStorage.removeItem('stremini_mail_draft');
-      setIsComposing(false);
-      setPreviewMode(false);
-    }
-  };
-
   const handleDraftWithAI = async () => {
     if (!draftPrompt) return;
     setIsDrafting(true);
@@ -144,24 +132,22 @@ export function Mail() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden font-sans">
-      <div className="h-[64px] border-b border-border flex items-center justify-between px-4 sm:px-8 bg-background flex-shrink-0">
-        <h1 className="hidden md:block text-xl font-semibold text-foreground">Mail Intelligence</h1>
-        <h1 className="md:hidden text-lg font-bold text-foreground">Mail</h1>
-        
-        <div className="flex items-center space-x-2 sm:space-x-6">
-          <form onSubmit={handleSearch} className="relative flex items-center bg-surface rounded-sm border border-border focus-within:border-border-strong transition-colors min-w-0">
-            <span className="pl-2 sm:pl-3 text-muted shrink-0">
+    <div className="flex flex-col h-full bg-background">
+      <div className="h-[64px] border-b border-border flex items-center justify-between px-8 bg-background">
+        <h1 className="text-xl font-semibold text-foreground">Mail Intelligence</h1>
+        <div className="flex items-center space-x-6">
+          <form onSubmit={handleSearch} className="relative flex items-center bg-surface rounded-sm border border-border focus-within:border-border-strong transition-colors">
+            <span className="pl-3 text-muted">
               <Search size={14} />
             </span>
             <input 
               type="text" 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..." 
-              className="w-24 sm:w-48 bg-transparent text-sm px-2 sm:px-3 py-2 outline-none"
+              placeholder="Search emails..." 
+              className="w-48 bg-transparent text-sm px-3 py-2 outline-none"
             />
-            <div className="hidden sm:flex border-l border-border-strong items-center">
+            <div className="border-l border-border-strong flex items-center">
               <select 
                  value={searchFilter} 
                  onChange={(e) => setSearchFilter(e.target.value)}
@@ -171,7 +157,7 @@ export function Mail() {
                 <option value="from">From</option>
                 <option value="to">To</option>
                 <option value="subject">Subject</option>
-                <option value="after">Date</option>
+                <option value="after">After (Date)</option>
               </select>
             </div>
           </form>
@@ -181,17 +167,17 @@ export function Mail() {
               setPreviewMode(false);
               setSelectedEmail(null);
             }} 
-            className="p-2 sm:px-4 sm:py-2 bg-foreground text-background text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 hover:bg-foreground-hover transition-colors shadow-sm"
+            className="px-4 py-2 bg-foreground text-background text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 hover:bg-foreground-hover transition-colors"
           >
             <PenSquare size={14} />
-            <span className="hidden sm:inline">Compose</span>
+            <span>Compose</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex relative">
-        {/* Email List - Mobile: Hide if email selected or composing */}
-        <div className={`w-full sm:w-[340px] border-r border-border bg-background overflow-auto flex flex-col shrink-0 ${selectedEmail || isComposing ? 'hidden sm:flex' : 'flex'}`}>
+      <div className="flex-1 overflow-hidden flex">
+        {/* Email List */}
+        <div className="w-[340px] border-r border-border bg-background overflow-auto flex flex-col shrink-0">
           {error && (
             <div className="mx-4 mt-4 p-4 bg-red-50 text-red-800 text-sm border border-red-100 rounded-sm">
               {error}
@@ -202,7 +188,7 @@ export function Mail() {
           ) : emails.length === 0 ? (
              <div className="p-8 text-center text-muted text-sm font-medium">No emails found.</div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-[#EEEEEE]">
               {emails.map(email => (
                 <div 
                   key={email.id} 
@@ -210,7 +196,7 @@ export function Mail() {
                     setSelectedEmail(email);
                     setIsComposing(false);
                   }}
-                  className={`p-4 cursor-pointer hover:bg-surface transition-colors ${selectedEmail?.id === email.id && !isComposing ? 'bg-surface border-l-2 border-foreground' : 'border-l-2 border-transparent'}`}
+                  className={`p-4 cursor-pointer hover:bg-surface transition-colors ${selectedEmail?.id === email.id && !isComposing ? 'bg-surface border-l-2 border-[#111]' : 'border-l-2 border-transparent'}`}
                 >
                   <div className="font-semibold text-foreground text-sm truncate mb-0.5">{email.from}</div>
                   <div className="text-sm font-medium text-foreground-muted truncate mb-1.5">{email.subject}</div>
@@ -222,22 +208,17 @@ export function Mail() {
         </div>
 
         {/* Email Detail & Compose & AI */}
-        <div className={`flex-1 bg-background flex flex-col items-center overflow-auto ${!selectedEmail && !isComposing ? 'hidden sm:flex' : 'flex'}`}>
+        <div className="flex-1 bg-background flex flex-col items-center">
           {isComposing ? (
-            <div className="w-full max-w-3xl p-4 sm:p-12 h-full flex flex-col">
+            <div className="max-w-3xl w-full p-12 overflow-auto h-full flex flex-col">
               <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
-                <div className="flex items-center space-x-3">
-                  <button onClick={() => setIsComposing(false)} className="sm:hidden p-1 hover:bg-surface rounded-sm">
-                    <X size={18} />
+                <h2 className="text-2xl font-semibold text-foreground">Compose Draft</h2>
+                <div className="flex space-x-4">
+                  <button onClick={handleSaveDraft} className="text-xs font-semibold text-muted hover:text-foreground uppercase tracking-wider flex items-center space-x-1 transition-colors">
+                    <Save size={14} /> <span>Save Draft</span>
                   </button>
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Compose Draft</h2>
-                </div>
-                <div className="flex space-x-2 sm:space-x-4">
-                  <button onClick={handleSaveDraft} className="text-[10px] sm:text-xs font-bold text-muted hover:text-foreground uppercase tracking-widest flex items-center space-x-1 transition-colors">
-                    <Save size={14} /> <span className="hidden sm:inline">Save</span>
-                  </button>
-                  <button onClick={handleDiscard} className="text-[10px] sm:text-xs font-bold text-muted hover:text-red-500 uppercase tracking-widest flex items-center space-x-1 transition-colors">
-                    <X size={14} /> <span className="hidden sm:inline">Discard</span>
+                  <button onClick={() => setIsComposing(false)} className="text-xs font-semibold text-muted hover:text-red-500 uppercase tracking-wider flex items-center space-x-1 transition-colors">
+                    <X size={14} /> <span>Discard</span>
                   </button>
                 </div>
               </div>
@@ -245,33 +226,33 @@ export function Mail() {
               {!previewMode ? (
                 <div className="flex-1 flex flex-col space-y-6">
                   <div className="flex flex-col">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">To</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">To</label>
                     <input 
                       type="email" 
                       value={composeTo}
                       onChange={e => setComposeTo(e.target.value)}
                       placeholder="recipient@example.com" 
-                      className="w-full bg-surface border border-border p-3 rounded-sm text-sm focus:border-border-strong outline-none transition-colors shadow-sm"
+                      className="w-full bg-surface border border-border p-3 rounded-sm text-sm focus:border-border-strong outline-none transition-colors"
                     />
                   </div>
                   <div className="flex flex-col">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Subject</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">Subject</label>
                     <input 
                       type="text" 
                       value={composeSubject}
                       onChange={e => setComposeSubject(e.target.value)}
-                      placeholder="Subject line" 
-                      className="w-full bg-surface border border-border p-3 rounded-sm text-sm focus:border-border-strong outline-none transition-colors shadow-sm"
+                      placeholder="Meeting Notes" 
+                      className="w-full bg-surface border border-border p-3 rounded-sm text-sm focus:border-border-strong outline-none transition-colors"
                     />
                   </div>
-                  <div className="flex flex-col flex-1 min-h-[300px]">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                       <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Message Content</label>
-                       <div className="flex border border-border rounded-sm overflow-hidden bg-surface focus-within:border-border-strong w-full sm:w-64 transition-colors shadow-sm">
+                  <div className="flex flex-col flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                       <label className="text-xs font-semibold uppercase tracking-wider text-muted">Message</label>
+                       <div className="flex border border-border rounded-sm overflow-hidden bg-surface focus-within:border-border-strong w-64 transition-colors">
                           <input 
                             type="text" 
-                            className="bg-transparent text-[11px] px-2 py-1.5 outline-none flex-1 text-foreground" 
-                            placeholder="Draft with AI prompt..." 
+                            className="bg-transparent text-xs px-2 py-1 outline-none flex-1 text-foreground" 
+                            placeholder="Draft with AI..." 
                             value={draftPrompt}
                             onChange={e => setDraftPrompt(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleDraftWithAI()}
@@ -288,81 +269,71 @@ export function Mail() {
                     <textarea 
                       value={composeBody}
                       onChange={e => setComposeBody(e.target.value)}
-                      placeholder="Brainstorm or draft your email here..." 
-                      className="w-full h-full bg-surface border border-border p-4 rounded-sm text-sm focus:border-border-strong outline-none transition-colors resize-none text-foreground shadow-sm"
+                      placeholder="Write your email here..." 
+                      className="w-full flex-1 bg-surface border border-border p-4 rounded-sm text-sm focus:border-border-strong outline-none transition-colors resize-none mb-6 text-foreground"
                     />
                   </div>
-                  <div className="flex justify-end pt-8 pb-12 border-t border-border mt-auto">
+                  <div className="flex justify-end pt-4 border-t border-border">
                     <button 
                       onClick={() => setPreviewMode(true)}
                       disabled={!composeTo || !composeSubject || !composeBody}
-                      className="w-full sm:w-auto bg-foreground text-background px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-all hover:shadow-md disabled:opacity-50"
+                      className="bg-foreground text-background px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors hover:bg-foreground-hover disabled:opacity-50"
                     >
-                      Process Preview
+                      Preview before Sending
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col space-y-6 pb-12">
-                  <div className="bg-surface p-6 border border-border rounded-lg shadow-sm">
+                <div className="flex-1 flex flex-col space-y-6">
+                  <div className="bg-surface p-6 border border-border rounded-sm">
                     <div className="mb-6 pb-4 border-b border-border">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">Transmission Preview</p>
-                      <p className="text-sm font-bold text-foreground mb-1 truncate">To: {composeTo}</p>
-                      <p className="text-xs text-foreground-muted truncate">Subject: {composeSubject}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Message Preview</p>
+                      <p className="text-sm font-semibold text-foreground mb-1">To: {composeTo}</p>
+                      <p className="text-sm text-foreground-muted">Subject: {composeSubject}</p>
                     </div>
-                    <div className="text-sm whitespace-pre-wrap text-foreground leading-relaxed">
+                    <div className="text-sm whitespace-pre-wrap text-foreground-muted leading-relaxed">
                       {composeBody}
                     </div>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4 justify-end pt-4 border-t border-border">
+                  <div className="flex space-x-4 justify-end pt-4 border-t border-border">
                     <button 
                       onClick={() => setPreviewMode(false)}
-                      className="border border-border bg-background hover:bg-surface text-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest rounded-sm"
+                      className="border border-border hover:bg-surface text-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors"
                     >
-                      Return to Edit 
+                      Edit 
                     </button>
                     <button 
                       onClick={handleSendEmail}
                       disabled={isSending}
-                      className="bg-foreground text-background px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50"
+                      className="bg-foreground text-background px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 hover:bg-foreground-hover disabled:opacity-50"
                     >
                       {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                      <span>{isSending ? 'Sending...' : 'Confirm Dispatch'}</span>
+                      <span>{isSending ? 'Sending...' : 'Confirm & Send'}</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
           ) : selectedEmail ? (
-             <div className="w-full max-w-3xl p-4 sm:p-8 lg:p-12 overflow-auto h-full">
-               <div className="sm:hidden mb-6">
-                 <button 
-                  onClick={() => setSelectedEmail(null)}
-                  className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted"
-                 >
-                   <X size={14} className="rotate-90" />
-                   <span>Back to Inbox</span>
-                 </button>
+             <div className="max-w-3xl w-full p-12 overflow-auto">
+               <h2 className="text-3xl font-semibold text-foreground mb-6 tracking-tight">{selectedEmail.subject}</h2>
+               <div className="flex items-center justify-between text-xs text-muted font-semibold uppercase tracking-wider mb-8 pb-4 border-b border-border">
+                 <span className="text-foreground">From: {selectedEmail.from}</span>
+                 <span>{selectedEmail.date}</span>
                </div>
-               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 tracking-tight leading-tight">{selectedEmail.subject}</h2>
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-muted font-bold uppercase tracking-widest mb-8 pb-4 border-b border-border gap-2">
-                 <span className="text-foreground truncate max-w-[250px]">From: {selectedEmail.from}</span>
-                 <span className="shrink-0">{selectedEmail.date}</span>
-               </div>
-               <div className="text-foreground text-base leading-relaxed mb-8 bg-surface/30 p-4 sm:p-6 rounded-lg border border-border">
+               <p className="text-foreground-muted text-base leading-relaxed mb-8">
                  {selectedEmail.snippet.replace(/&quot;/g, '"')}...
-                 <div className="mt-6 p-3 bg-background border border-border rounded-sm text-xs italic text-muted text-center">
-                   End of snippet. Open in Gmail for full thread.
-                 </div>
-               </div>
+                 <br/><br/>
+                 <span className="text-muted italic text-sm">(Full content hidden in preview)</span>
+               </p>
 
-               <div className="mt-12 pt-8 border-t border-border flex flex-col gap-4">
-                 <div className="flex flex-col sm:flex-row items-center gap-3">
+               <div className="mt-12 pt-8 border-t border-border">
+                 <div className="flex items-center space-x-4">
                    <button 
                     onClick={() => handleSummarize(selectedEmail)}
                     disabled={isAiLoading}
-                    className="w-full sm:w-auto bg-foreground text-background px-6 py-2.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-sm flex items-center justify-center space-x-2 shadow-sm"
+                    className="bg-surface hover:bg-surface-hover text-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-border"
                    >
                      {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                      <span>Synthesize Thread</span>
@@ -374,19 +345,19 @@ export function Mail() {
                        setComposeBody(`\n\n\nOn ${selectedEmail.date}, ${selectedEmail.from} wrote:\n> ${selectedEmail.snippet.replace(/&quot;/g, '"')}...`);
                        setIsComposing(true);
                      }}
-                     className="w-full sm:w-auto bg-surface hover:bg-surface-hover text-foreground px-6 py-2.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-sm flex items-center justify-center space-x-2 border border-border shadow-sm"
+                     className="bg-surface hover:bg-surface-hover text-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-border"
                    >
                      <MailIcon size={14} />
-                     <span>Compose Reply</span>
+                     <span>Reply</span>
                    </button>
                  </div>
 
                  {aiSummary && (
-                   <div className="mt-4 bg-surface p-6 border border-border rounded-sm">
-                     <h3 className="text-[10px] font-bold text-muted mb-4 uppercase tracking-widest flex items-center space-x-2">
-                        <Sparkles size={14} className="text-amber-500" /> <span>AI Synthesis</span>
+                   <div className="mt-8 bg-surface p-6 border border-border rounded-sm">
+                     <h3 className="text-xs font-semibold text-muted mb-4 uppercase tracking-wider flex items-center space-x-2">
+                        <Sparkles size={12}/> <span>AI Synthesis</span>
                      </h3>
-                     <div className="prose dark:prose-invert prose-sm text-foreground max-w-none prose-p:leading-relaxed">
+                     <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
                        <Markdown>{aiSummary}</Markdown>
                      </div>
                    </div>
@@ -394,13 +365,12 @@ export function Mail() {
                </div>
              </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-muted text-center p-8 bg-background w-full">
-               <div className="animate-in fade-in zoom-in duration-300">
-                 <div className="w-16 h-16 bg-surface rounded-3xl flex items-center justify-center mx-auto mb-6 text-muted border border-border">
-                    <MailIcon size={24} />
+            <div className="flex h-full items-center justify-center text-muted font-medium text-sm bg-background w-full">
+               <div className="text-center">
+                 <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 text-[#CCC]">
+                    <MailIcon size={20} />
                  </div>
-                 <p className="text-sm font-bold uppercase tracking-widest mb-2">Inbox Empty</p>
-                 <p className="text-xs text-muted max-w-xs leading-relaxed">Select a thread to synthesize with AI or compose a fresh message from workspace context.</p>
+                 Select an email to view or tap Compose to draft a new message.
                </div>
             </div>
           )}

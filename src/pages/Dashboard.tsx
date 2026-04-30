@@ -76,161 +76,135 @@ export function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background p-4 sm:p-8 lg:p-12 overflow-y-auto font-sans">
-      <div className="max-w-6xl w-full mx-auto space-y-8 sm:space-y-12">
+    <div className="flex flex-col h-full bg-background p-12 overflow-y-auto">
+      <div className="max-w-6xl w-full mx-auto space-y-12">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+        <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-2">Nexus Hub</h1>
-            <p className="text-muted text-sm sm:text-base">Unified active command center.</p>
+            <h1 className="text-4xl font-semibold text-foreground tracking-tight mb-2">Nexus Hub</h1>
+            <p className="text-muted">Your unified command center for today.</p>
           </div>
-          <div className="text-[10px] sm:text-[11px] font-bold text-muted uppercase tracking-widest bg-surface px-2 py-1 rounded-sm w-fit">
-            System sync: active
+          <div className="text-[11px] font-medium text-muted uppercase tracking-widest">
+            Updated just now
           </div>
         </div>
 
         {/* Top Blocks */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="col-span-1 lg:col-span-2 border border-border rounded-lg p-6 bg-background relative shadow-sm overflow-hidden min-h-[220px]">
-            <div className="flex items-center space-x-2 mb-6 text-foreground relative z-10">
-              <Sparkles size={20} className="text-amber-500" />
-              <h3 className="font-bold text-lg uppercase tracking-tight">Daily Synthesis</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="col-span-1 md:col-span-2 border border-border rounded-sm p-6 bg-background relative">
+            <div className="flex items-center space-x-2 mb-4 text-foreground">
+              <Sparkles size={18} />
+              <h3 className="font-semibold text-lg">Daily Synthesis</h3>
             </div>
             
-            <div className="text-foreground leading-relaxed mb-8 relative z-10">
+            <div className="text-foreground-muted leading-relaxed mb-6 min-h-[60px]">
               {loadingBriefing ? (
-                 <div className="flex items-center space-x-3 text-muted bg-surface/50 p-4 rounded-lg border border-border animate-pulse">
+                 <div className="flex items-center space-x-2 text-muted">
                    <Loader2 size={16} className="animate-spin" />
-                   <span className="text-xs font-bold uppercase tracking-widest">Aggregating Cloud Context...</span>
+                   <span>Analyzing recent context...</span>
                  </div>
               ) : briefing ? (
-                <div className="prose dark:prose-invert prose-sm prose-p:leading-relaxed text-foreground bg-surface/30 p-4 rounded-lg border border-border">
+                <div className="prose dark:prose-invert prose-sm prose-p:my-1 text-foreground-muted">
                   <Markdown>{briefing}</Markdown>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <p className="text-sm font-medium opacity-80">Orchestrate your morning. Generate a personalized briefing from unread emails and recent cloud updates.</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] font-bold px-2 py-1 bg-surface border border-border rounded-sm text-muted">Awaiting Mail</span>
-                    <span className="text-[10px] font-bold px-2 py-1 bg-surface border border-border rounded-sm text-muted">Awaiting Drive</span>
-                  </div>
-                </div>
+                <p>Welcome. Run the synthesis workflow to analyze your recent emails and files to generate your daily briefing.</p>
               )}
             </div>
 
-            <div className="relative z-10 flex items-center">
+            <div className="flex items-center space-x-3">
               <button 
                 onClick={runAnalysis}
                 disabled={loadingBriefing}
-                className="w-full sm:w-auto bg-foreground text-background text-[10px] font-bold uppercase tracking-widest px-6 py-2.5 rounded-sm transition-all hover:shadow-lg shadow-md disabled:opacity-50"
+                className="bg-surface hover:bg-surface-hover text-foreground-muted text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm transition-colors"
               >
-                {briefing ? 'Refresh Intelligence' : 'Initiate Synthesis'}
+                {briefing ? 'Refresh Synthesis' : 'Run Synthesis'}
               </button>
             </div>
             
             {/* Background design elements */}
-            <div className="absolute -top-4 -right-4 grayscale opacity-10 pointer-events-none">
-               <Sparkles size={160} />
+            <div className="absolute top-4 right-4 text-[#F5F5F5]">
+               <Sparkles size={64} className="opacity-50" />
             </div>
           </div>
 
-          <div className="col-span-1 border border-border rounded-lg p-6 bg-surface shadow-sm flex flex-col h-full">
+          <div className="col-span-1 border border-border rounded-sm p-6 bg-background flex flex-col">
             <div className="flex justify-between items-center mb-6 text-foreground">
-              <h3 className="font-bold text-lg uppercase tracking-tight">Active Core</h3>
-              <Activity size={20} className="text-muted" />
+              <h3 className="font-semibold text-lg">System Core</h3>
+              <Activity size={18} />
             </div>
-            <div className="space-y-3 flex-1">
-              <div className="flex justify-between text-xs py-3 border-b border-border">
-                <span className="text-muted font-bold uppercase tracking-widest">Mail Protocol</span>
-                <span className={`font-bold ${accessToken ? 'text-green-500' : 'text-red-500'}`}>{accessToken ? 'LINKED' : 'OFFLINE'}</span>
+            <div className="space-y-4 flex-1">
+              <div className="flex justify-between text-sm py-2 border-b border-[#F5F5F5]">
+                <span className="text-muted">Google Mail</span>
+                <span className="font-medium">{accessToken ? 'Connected' : 'Offline'}</span>
               </div>
-              <div className="flex justify-between text-xs py-3 border-b border-border">
-                <span className="text-muted font-bold uppercase tracking-widest">Drive Assets</span>
-                <span className={`font-bold ${accessToken ? 'text-green-500' : 'text-red-500'}`}>{accessToken ? 'LINKED' : 'OFFLINE'}</span>
+              <div className="flex justify-between text-sm py-2 border-b border-[#F5F5F5]">
+                <span className="text-muted">Google Drive</span>
+                <span className="font-medium">{accessToken ? 'Connected' : 'Offline'}</span>
               </div>
-              <div className="flex justify-between text-xs py-3">
-                <span className="text-muted font-bold uppercase tracking-widest">Workspace ID</span>
-                <span className="font-bold text-foreground">VERIFIED</span>
+              <div className="flex justify-between text-sm py-2">
+                <span className="text-muted">Workspace Auth</span>
+                <span className="font-medium">Verified</span>
               </div>
-            </div>
-            <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
-              <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-green-200" />
-              </div>
-              <span className="text-[9px] font-bold text-muted uppercase tracking-widest">Nodes Operational</span>
             </div>
           </div>
         </div>
 
         {/* Intelligence / Quick Actions Section */}
-        <div className="pb-20">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6 uppercase tracking-tight">Deployment Contexts</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground mb-6">Active Contexts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Workflows */}
             <div 
               onClick={() => setIsMeetingModalOpen(true)}
-              className="group border border-border rounded-lg p-6 bg-background hover:bg-surface hover:shadow-md transition-all cursor-pointer flex flex-col border-l-4 border-l-amber-500 shadow-sm"
+              className="border border-border rounded-sm p-6 bg-background hover:shadow-sm transition-all cursor-pointer flex flex-col"
             >
               <div className="flex justify-between items-start mb-4">
-                <FileText size={20} className="text-foreground group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Workflow</span>
+                <FileText size={20} className="text-foreground" />
+                <span className="text-[10px] text-muted">Workflow</span>
               </div>
-              <h4 className="font-bold text-lg mb-2 text-foreground">Meeting Intel</h4>
-              <p className="text-muted text-xs leading-relaxed mb-6 flex-1">
-                Deep-search Workspace assets for meeting context and actionable notes.
+              <h4 className="font-semibold text-lg mb-2 text-foreground">Meeting Intelligence</h4>
+              <p className="text-muted text-sm leading-relaxed mb-6 flex-1">
+                Synthesize unread emails and recent Drive documents into a clean briefing.
               </p>
-              <div className="flex items-center text-[10px] font-bold text-foreground uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                <span>Open Interface</span>
-                <Clock size={12} className="ml-2" />
-              </div>
             </div>
 
             <div 
               onClick={() => navigate('/docs')}
-              className="group border border-border rounded-lg p-6 bg-background hover:bg-surface hover:shadow-md transition-all cursor-pointer flex flex-col border-l-4 border-l-blue-500 shadow-sm"
+              className="border border-border rounded-sm p-6 bg-background hover:shadow-sm transition-all cursor-pointer flex flex-col"
             >
               <div className="flex justify-between items-start mb-4">
-                <Activity size={20} className="text-foreground group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Editor</span>
+                <Activity size={20} className="text-foreground" />
+                <span className="text-[10px] text-muted">Editor</span>
               </div>
-              <h4 className="font-bold text-lg mb-2 text-foreground">Content Draft</h4>
-              <p className="text-muted text-xs leading-relaxed mb-6 flex-1">
-                Access the AI-enhanced minimalist editor for focus-driven composition.
+              <h4 className="font-semibold text-lg mb-2 text-foreground">Draft Document</h4>
+              <p className="text-muted text-sm leading-relaxed mb-6 flex-1">
+                Open the minimalist Workspace editor to write without distractions.
               </p>
-              <div className="flex items-center text-[10px] font-bold text-foreground uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                <span>Start Drafting</span>
-                <Clock size={12} className="ml-2" />
-              </div>
             </div>
 
-            <div className="border border-border rounded-lg p-6 bg-surface flex flex-col shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-lg text-foreground uppercase tracking-tight">Recent Drive</h4>
-                <HardDrive size={16} className="text-muted" />
-              </div>
-              <div className="space-y-4 flex-1">
+            <div className="border border-border rounded-sm p-6 bg-background flex flex-col">
+              <h4 className="font-semibold text-lg mb-4 text-foreground">Recent Drive</h4>
+              <div className="space-y-3 flex-1">
                 {files.length > 0 ? files.map(file => (
                    <div key={file.id} className="flex items-center justify-between group cursor-pointer" onClick={() => window.open(file.webViewLink, '_blank')}>
                      <div className="flex items-center space-x-3 overflow-hidden">
-                        <div className="p-1 bg-background border border-border rounded-sm flex-shrink-0">
-                          <FileText size={10} className="text-muted" />
-                        </div>
-                        <span className="text-xs font-medium text-foreground-muted truncate group-hover:text-foreground group-hover:font-bold transition-all">{file.name}</span>
+                        <HardDrive size={14} className="text-muted flex-shrink-0" />
+                        <span className="text-sm text-foreground-muted truncate group-hover:text-black">{file.name}</span>
                      </div>
-                     <span className="text-[10px] text-muted opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                     <span className="text-[10px] text-muted flex-shrink-0">↗</span>
                    </div>
                 )) : (
-                  <div className="text-xs text-muted font-bold py-8 text-center bg-background rounded-sm border border-dashed border-border uppercase tracking-widest">Registry Empty</div>
+                  <div className="text-sm text-muted">No recent files found.</div>
                 )}
               </div>
               <button 
                 onClick={() => navigate('/drive')}
-                className="mt-6 w-full py-2 bg-background border border-border text-[10px] font-bold uppercase tracking-widest text-muted hover:text-foreground hover:bg-surface rounded-sm transition-all shadow-sm"
+                className="mt-4 w-full py-2 border border-border text-xs font-semibold uppercase tracking-widest text-muted hover:bg-surface rounded-sm transition-colors"
               >
-                Access Filesystem
+                View Directory
               </button>
             </div>
 
@@ -241,73 +215,57 @@ export function Dashboard() {
 
       {/* Meeting Intelligence Modal */}
       {isMeetingModalOpen && (
-        <div className="fixed inset-0 bg-[#00000040] backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-8">
-          <div className="bg-background border border-border shadow-2xl w-full max-w-4xl h-full sm:h-[80vh] flex flex-col relative rounded-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-[#00000010] backdrop-blur-sm z-50 flex items-center justify-center p-8">
+          <div className="bg-background border border-border shadow-xl w-full max-w-4xl min-h-[50vh] flex flex-col relative rounded-md">
             <button 
               onClick={() => setIsMeetingModalOpen(false)}
-              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2 z-10 bg-surface/50 rounded-full"
+              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2"
             >
               <X size={18} />
             </button>
-            <div className="p-6 sm:p-8 border-b border-border bg-surface/30">
-              <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">Meeting Synthesis</h2>
-              <p className="text-xs font-bold text-muted uppercase tracking-widest">
-                AI Orchestration: {isMeetingLoading ? 'Processing Core...' : 'Standby'}
+            <div className="p-8 border-b border-border">
+              <h2 className="text-2xl font-semibold text-foreground">Meeting Intelligence Synthesis</h2>
+              <p className="text-muted mt-2">
+                Scanning Workspace Drive and Mail for meeting context...
               </p>
             </div>
             
-            <div className="flex-1 flex flex-col bg-background overflow-hidden relative">
+            <div className="p-8 flex-1 flex flex-col bg-surface">
               {!meetingIntelligenceOutput && !isMeetingLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-16 h-16 bg-surface border border-border rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                    <Sparkles size={24} className="text-amber-500" />
-                  </div>
-                  <h3 className="text-sm font-bold uppercase tracking-widest mb-4">Initialize Intelligence</h3>
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
                   <button 
                     onClick={runMeetingIntelligence}
-                    className="bg-foreground text-background px-10 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:shadow-lg transition-all"
+                    className="bg-foreground text-background px-6 py-3 text-sm font-medium rounded-sm hover:bg-foreground-hover transition-colors"
                   >
-                    Generate Report
+                    Execute Synthesis
                   </button>
                 </div>
               ) : isMeetingLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center space-y-6">
-                  <div className="relative">
-                    <div className="w-12 h-12 border-2 border-surface border-t-foreground rounded-full animate-spin" />
-                    <Sparkles size={16} className="absolute inset-0 m-auto text-amber-500" />
-                  </div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted animate-pulse">Scanning Neural Assets</p>
+                <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="animate-spin text-foreground" size={24} />
+                  <p className="text-xs uppercase tracking-widest font-semibold text-muted">Processing...</p>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-auto p-6 sm:p-8">
-                    <div className="prose dark:prose-invert prose-sm text-foreground max-w-none prose-headings:text-foreground prose-p:leading-relaxed">
-                      <Markdown>{meetingIntelligenceOutput}</Markdown>
-                    </div>
+                <div className="flex-1 overflow-auto bg-background p-6 border border-border rounded-sm">
+                  <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                    <Markdown>{meetingIntelligenceOutput}</Markdown>
                   </div>
-                  <div className="p-6 sm:p-8 border-t border-border flex items-center justify-between bg-surface/20 shrink-0">
-                    <div className="flex items-center space-x-2">
-                       <div className="w-2 h-2 rounded-full bg-amber-500" />
-                       <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Draft Ready</span>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <button 
-                        onClick={() => setMeetingIntelligenceOutput('')}
-                        className="text-[10px] font-bold text-muted hover:text-foreground uppercase tracking-widest transition-colors"
-                      >
-                        Purge
-                      </button>
-                      <button 
-                        className="bg-foreground text-background px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:shadow-md transition-all flex items-center space-x-2"
-                        onClick={() => {
-                           alert("Report dispatched to internal registry.");
-                           setIsMeetingModalOpen(false);
-                        }}
-                      >
-                        <Lock size={12} />
-                        <span>Save Workspace</span>
-                      </button>
-                    </div>
+                  <div className="mt-8 pt-6 border-t border-border flex justify-end">
+                    <button 
+                      onClick={() => setMeetingIntelligenceOutput('')}
+                      className="text-muted hover:text-foreground text-sm font-medium transition-colors mr-6"
+                    >
+                      Clear
+                    </button>
+                    <button 
+                      className="bg-foreground text-background px-4 py-2 text-sm font-medium rounded-sm hover:bg-foreground-hover transition-colors flex items-center space-x-2"
+                      onClick={() => {
+                         alert("Output copied/saved.");
+                         setIsMeetingModalOpen(false);
+                      }}
+                    >
+                      <span>Save Context</span>
+                    </button>
                   </div>
                 </div>
               )}

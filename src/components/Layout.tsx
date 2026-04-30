@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Database, Menu } from 'lucide-react';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -14,7 +14,6 @@ export function Layout() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
   const [emailAlerts, setEmailAlerts] = useState(localStorage.getItem('emailAlerts') || 'All events');
@@ -46,49 +45,22 @@ export function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans antialiased overflow-hidden">
-      {/* Sidebar - Mobile Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden" 
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
+    <div className="flex h-screen bg-background text-foreground font-sans antialiased">
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-[260px] border-r border-border flex flex-col bg-background h-full z-50 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:flex-shrink-0",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="p-6 pb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Executive</h1>
-            <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Productivity</p>
-          </div>
-          <button 
-            onClick={() => setIsSidebarOpen(false)}
-            className="p-1 hover:bg-surface rounded-sm lg:hidden text-muted"
-          >
-            <X size={20} />
-          </button>
+      <aside className="w-[260px] border-r border-border flex flex-col bg-background h-full flex-shrink-0 z-10">
+        <div className="p-6 pb-8">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Executive</h1>
+          <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Productivity</p>
         </div>
 
-        <div className="px-6 mb-8 group">
-          <NavLink 
-            to="/docs" 
-            onClick={() => setIsSidebarOpen(false)}
-            className="w-full bg-foreground text-background text-sm font-medium py-2.5 rounded-sm flex items-center justify-center space-x-2 hover:bg-foreground-hover transition-colors"
-          >
+        <div className="px-6 mb-8">
+          <NavLink to="/docs" className="w-full bg-foreground text-background text-sm font-medium py-2.5 rounded-sm flex items-center justify-center space-x-2 hover:bg-foreground-hover transition-colors">
             <span>+</span> <span>New Entry</span>
           </NavLink>
         </div>
         
         <nav className="flex-1 overflow-y-auto px-4 space-y-1">
-          <NavLink 
-            to="/" 
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}
-          >
+          <NavLink to="/" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
             {({ isActive }) => (
               <>
                 <LayoutGrid size={16} className={isActive ? "text-foreground" : "text-muted"} />
@@ -96,11 +68,7 @@ export function Layout() {
               </>
             )}
           </NavLink>
-          <NavLink 
-            to="/drive" 
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}
-          >
+          <NavLink to="/drive" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
             {({ isActive }) => (
               <>
                 <Folders size={16} className={isActive ? "text-foreground" : "text-muted"} />
@@ -108,11 +76,7 @@ export function Layout() {
               </>
             )}
           </NavLink>
-          <NavLink 
-            to="/mail" 
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}
-          >
+          <NavLink to="/mail" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
             {({ isActive }) => (
               <>
                 <Archive size={16} className={isActive ? "text-foreground" : "text-muted"} />
@@ -120,27 +84,11 @@ export function Layout() {
               </>
             )}
           </NavLink>
-          <NavLink 
-            to="/docs" 
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}
-          >
+          <NavLink to="/docs" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
             {({ isActive }) => (
               <>
                 <FileText size={16} className={isActive ? "text-foreground" : "text-muted"} />
                 <span>Documents</span>
-              </>
-            )}
-          </NavLink>
-          <NavLink 
-            to="/databases" 
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}
-          >
-            {({ isActive }) => (
-              <>
-                <Database size={16} className={isActive ? "text-foreground" : "text-muted"} />
-                <span>Databases</span>
               </>
             )}
           </NavLink>
@@ -167,31 +115,23 @@ export function Layout() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
         {/* Top Header */}
-        <header className="h-[64px] border-b border-border flex items-center justify-between px-4 lg:px-8 bg-background flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-1.5 hover:bg-surface rounded-sm text-foreground transition-colors"
-            >
-              <Menu size={20} />
-            </button>
-            <div className="hidden sm:block font-semibold text-foreground whitespace-nowrap">
-              Workspace
-            </div>
+        <header className="h-[64px] border-b border-border flex items-center justify-between px-8 bg-background flex-shrink-0">
+          <div className="flex items-center font-semibold text-foreground">
+            Workspace
           </div>
           
-          <div className="flex-1 max-w-xl mx-4 sm:mx-8 relative">
+          <div className="flex-1 max-w-xl mx-8 relative">
              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                <SearchIcon size={14} className="text-muted" />
              </div>
              <input 
                type="text" 
-               placeholder="Search..." 
-               className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-border-strong placeholder-muted transition-all"
+               placeholder="Search across Workspace..." 
+               className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-[#DDDDDD] placeholder-[#888] transition-all"
              />
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-4">
              <button 
                onClick={() => setIsNotificationsOpen(true)}
                className="text-muted hover:text-foreground transition-colors"
@@ -258,7 +198,6 @@ export function Layout() {
                 <li>Use <strong>Drive Connect</strong> to preview your files and analyze them with Gemini.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
                 <li>Visit <strong>Documents</strong> to write rich notes, use the AI assistant, or link Drive files.</li>
-                <li>Explore <strong>Databases</strong> to build custom Notion-styled tools with AI.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">

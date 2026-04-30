@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile } from '../lib/googleApi';
-import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X, Upload, FileText } from 'lucide-react';
+import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
 
@@ -21,55 +21,6 @@ export function Drive() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [fileSnippets, setFileSnippets] = useState<Record<string, string>>({});
-  const [fileAISummary, setFileAISummary] = useState<string | null>(null);
-  const [isSummarizing, setIsSummarizing] = useState(false);
-
-  const handleSummarizeFile = async () => {
-    if (!selectedFile || !accessToken) return;
-    setIsSummarizing(true);
-    setFileAISummary(null);
-    try {
-      const content = await fetchDriveFileContent(accessToken, selectedFile.id, selectedFile.mimeType);
-      if (typeof content === 'string') {
-        const summary = await summarizeDocumentContent(content);
-        setFileAISummary(summary);
-      } else {
-        setFileAISummary("This file type cannot be summarized (binary content).");
-      }
-    } catch (e) {
-      console.error(e);
-      setFileAISummary("Failed to generate summary.");
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
-
-  const fetchSnippet = async (file: any) => {
-    if (!accessToken) return;
-    const previewableTypes = [
-      'application/vnd.google-apps.document',
-      'text/plain',
-      'application/json',
-      'text/markdown',
-      'text/javascript',
-      'text/html'
-    ];
-    
-    if (!previewableTypes.includes(file.mimeType) && !file.mimeType.startsWith('text/')) {
-      return;
-    }
-
-    try {
-      const content = await fetchDriveFileContent(accessToken, file.id, file.mimeType);
-      if (typeof content === 'string') {
-        const snippet = content.substring(0, 150).trim() + (content.length > 150 ? '...' : '');
-        setFileSnippets(prev => ({ ...prev, [file.id]: snippet }));
-      }
-    } catch (e) {
-      console.error(`Failed to fetch snippet for ${file.name}`, e);
-    }
-  };
 
   useEffect(() => {
     if (selectedFile && accessToken) {
@@ -213,11 +164,10 @@ export function Drive() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden font-sans">
-      <div className="h-[64px] border-b border-border flex items-center justify-between px-4 sm:px-8 bg-background flex-shrink-0">
-        <h1 className="hidden sm:block text-xl font-semibold text-foreground">Drive Sync</h1>
-        <h1 className="sm:hidden text-lg font-bold text-foreground">Drive</h1>
-        <form onSubmit={handleSearch} className="relative w-40 sm:w-80">
+    <div className="flex flex-col h-full bg-background">
+      <div className="h-[64px] border-b border-border flex items-center justify-between px-8 bg-background">
+        <h1 className="text-xl font-semibold text-foreground">Drive Sync</h1>
+        <form onSubmit={handleSearch} className="relative w-80">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
             <Search size={14} />
           </span>
@@ -225,18 +175,18 @@ export function Drive() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search..." 
+            placeholder="Search drive files..." 
             className="w-full bg-surface text-sm pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
           />
         </form>
       </div>
 
-      <div className="flex-1 overflow-hidden flex relative">
-        {/* Drive List - Mobile: Hide if file selected */}
-        <div className={`w-full sm:w-[340px] border-r border-border bg-background flex flex-col shrink-0 ${selectedFile ? 'hidden sm:flex' : 'flex'}`}>
+      <div className="flex-1 overflow-hidden flex">
+        {/* Drive List */}
+        <div className="w-[340px] border-r border-border bg-background flex flex-col shrink-0">
           {/* Breadcrumbs */}
-          <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-surface/30">
-            <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1 no-scrollbar pr-2">
+          <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+            <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1">
               {folderPath.map((folder, index) => (
                 <div key={folder.id} className="flex items-center space-x-1">
                   <button 
@@ -303,7 +253,7 @@ export function Drive() {
             files.map(file => (
               <div 
                 key={file.id} 
-                className={`p-3 cursor-pointer hover:bg-surface transition-colors rounded-sm flex flex-col space-y-2 group ${selectedFile?.id === file.id ? 'bg-surface-hover border border-border-strong shadow-sm text-foreground' : 'border border-transparent text-muted'}`}
+                className={`p-3 cursor-pointer hover:bg-surface transition-colors rounded-sm flex items-center space-x-3 group ${selectedFile?.id === file.id ? 'bg-surface-hover border border-border-strong shadow-sm text-foreground' : 'border border-transparent text-muted'}`}
                 onClick={() => {
                   if (file.mimeType === 'application/vnd.google-apps.folder') {
                     navigateToFolder(file);
@@ -312,133 +262,91 @@ export function Drive() {
                   }
                 }}
               >
-                <div className="flex items-center space-x-3">
-                  <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-foreground" : "text-muted"}`}>
-                    {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
-                    <div className="text-[10px] text-muted font-semibold uppercase tracking-widest truncate mt-0.5">
-                      {new Date(file.modifiedTime).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <button 
-                    onClick={(e) => handleDeleteFile(file.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-foreground" : "text-muted"}`}>
+                  {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
                 </div>
-                
-                {file.mimeType !== 'application/vnd.google-apps.folder' && (
-                  <div className="pl-7">
-                    {fileSnippets[file.id] ? (
-                      <div className="text-[11px] text-muted line-clamp-2 leading-relaxed bg-surface/50 p-2 rounded-sm italic border-l-2 border-border">
-                        "{fileSnippets[file.id]}"
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-muted font-italic opacity-50 flex items-center space-x-1">
-                        <FileText size={10} />
-                        <span>{file.mimeType.includes('pdf') || file.mimeType.includes('image') ? 'Binary file' : 'Click to preview content'}</span>
-                      </div>
-                    )}
+                <div className="flex-1 min-w-0">
+                  <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
+                  <div className="text-[10px] text-muted font-semibold uppercase tracking-widest truncate mt-0.5">
+                    {new Date(file.modifiedTime).toLocaleDateString()}
                   </div>
-                )}
+                </div>
+                <button 
+                  onClick={(e) => handleDeleteFile(file.id, e)}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))
           )}
           </div>
         </div>
 
-        {/* Action Panel - Mobile: Hide if no file selected */}
-        <div className={`flex-1 bg-background flex flex-col items-center overflow-auto ${!selectedFile ? 'hidden sm:flex' : 'flex'}`}>
+        {/* Action Panel */}
+        <div className="flex-1 bg-background flex flex-col items-center">
           {selectedFile ? (
-             <div className="w-full max-w-2xl p-4 sm:p-8 lg:p-12 h-fit mb-20 animate-in fade-in slide-in-from-bottom-4 duration-300">
-               <div className="sm:hidden mb-6">
-                  <button 
-                    onClick={() => setSelectedFile(null)}
-                    className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted"
-                  >
-                    <X size={14} className="rotate-90" />
-                    <span>Back to Files</span>
-                  </button>
-               </div>
-               <div className="w-16 h-16 bg-surface border border-border rounded-lg flex items-center justify-center mb-6 text-foreground shadow-sm">
+             <div className="max-w-2xl w-full p-12 overflow-y-auto">
+               <div className="w-16 h-16 bg-surface rounded-sm flex items-center justify-center mb-6 text-foreground">
                  <File size={24} />
                </div>
-               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight leading-tight">{selectedFile.name}</h2>
-               <div className="text-[10px] font-bold uppercase tracking-widest text-muted mb-8">
-                 Identity: {selectedFile.id.substring(0, 8)}... • Modified: {new Date(selectedFile.modifiedTime).toLocaleDateString()}
+               <h2 className="text-3xl font-semibold text-foreground mb-2 tracking-tight">{selectedFile.name}</h2>
+               <div className="text-xs font-semibold uppercase tracking-wider text-muted mb-8">
+                 Last modified: {new Date(selectedFile.modifiedTime).toLocaleString()}
                </div>
 
-               <div className="flex flex-col sm:flex-row gap-3 mb-12">
+               <div className="flex space-x-3 mb-12">
                  <a 
                    href={selectedFile.webViewLink} 
                    target="_blank" 
                    rel="noopener noreferrer"
-                   className="flex items-center justify-center space-x-2 bg-background border border-border px-6 py-3 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-surface transition-all text-foreground shadow-sm"
+                   className="flex items-center space-x-2 bg-background border border-border px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-surface transition-colors text-foreground"
                  >
                    <ExternalLink size={14} />
-                   <span>View in Cloud</span>
+                   <span>Open in Drive</span>
                  </a>
                  <button 
                   onClick={() => handleAnalze(selectedFile)}
                   disabled={isAiLoading}
-                  className="bg-foreground text-background px-6 py-3 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-foreground-hover transition-all flex items-center justify-center space-x-2 disabled:opacity-50 shadow-lg"
+                  className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center space-x-2 disabled:opacity-50"
                  >
                    {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                   <span>Sync & Analyze</span>
+                   <span>Analyze with AI</span>
                  </button>
                </div>
 
                {isPreviewLoading ? (
-                 <div className="flex items-center space-x-3 text-muted mb-8 text-sm bg-surface p-4 rounded-sm border border-border">
+                 <div className="flex items-center space-x-2 text-muted mb-8 text-sm">
                    <Loader2 size={14} className="animate-spin" />
-                   <span className="font-medium">Synthesizing content view...</span>
+                   <span>Loading preview...</span>
                  </div>
                ) : filePreview ? (
                  <div className="mb-12">
-                   <h3 className="text-[10px] font-bold text-muted mb-4 uppercase tracking-widest flex items-center space-x-2">
-                     <FileText size={12} /> <span>Extract Snippet</span>
-                    </h3>
-                   <div className="bg-surface border border-border rounded-lg p-4 sm:p-6 max-h-64 overflow-y-auto w-full shadow-inner">
-                     <pre className="text-xs sm:text-sm font-mono text-foreground leading-relaxed whitespace-pre-wrap">{filePreview}</pre>
+                   <h3 className="text-xs font-semibold text-muted mb-4 uppercase tracking-wider">File Content Preview</h3>
+                   <div className="bg-surface border border-border rounded-sm p-6 max-h-64 overflow-y-auto w-full">
+                     <pre className="text-sm font-mono text-foreground-muted whitespace-pre-wrap">{filePreview}</pre>
                    </div>
                  </div>
                ) : null}
 
-               <div className="space-y-6">
-                 {fileAISummary && (
-                   <div className="p-6 bg-surface border border-border rounded-lg shadow-sm">
-                     <h3 className="text-[10px] font-bold text-amber-500 mb-4 uppercase tracking-widest flex items-center space-x-2">
-                         <Sparkles size={14}/> <span>Intelligence Summary</span>
-                     </h3>
-                     <div className="prose dark:prose-invert prose-sm text-foreground max-w-none prose-p:leading-relaxed">
-                       <Markdown>{fileAISummary}</Markdown>
-                     </div>
+               {aiSummary && (
+                 <div className="bg-surface p-8 border border-border rounded-sm">
+                   <h3 className="text-xs font-semibold text-muted mb-6 uppercase tracking-wider flex items-center space-x-2">
+                       <Sparkles size={12}/> <span>AI Analysis Result</span>
+                   </h3>
+                   <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                     <Markdown>{aiSummary}</Markdown>
                    </div>
-                 )}
-
-                 {aiSummary && (
-                   <div className="bg-surface p-6 border border-border rounded-lg shadow-sm">
-                     <h3 className="text-[10px] font-bold text-muted mb-4 uppercase tracking-widest flex items-center space-x-2">
-                         <Sparkles size={14} className="text-foreground" /> <span>Sync Report</span>
-                     </h3>
-                     <div className="prose dark:prose-invert prose-sm text-foreground max-w-none">
-                       <Markdown>{aiSummary}</Markdown>
-                     </div>
-                   </div>
-                 )}
-               </div>
+                 </div>
+               )}
              </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-muted text-center p-8 bg-background w-full">
-               <div className="max-w-xs animate-in fade-in zoom-in duration-500">
-                  <div className="w-16 h-16 bg-surface border border-border rounded-3xl flex items-center justify-center mx-auto mb-6 text-muted shadow-sm">
-                    <HardDrive size={24} />
+            <div className="flex h-full items-center justify-center text-muted font-medium text-sm w-full bg-background">
+               <div className="text-center flex flex-col items-center">
+                  <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-4 text-[#CCC]">
+                    <HardDrive size={20} />
                   </div>
-                  <p className="text-sm font-bold uppercase tracking-widest mb-2">Cloud Neutral</p>
-                  <p className="text-xs text-muted leading-relaxed">Select specialized cloud inventory to initiate AI analysis and local synchronization.</p>
+                  Select a Google Drive file to sync and analyze
                </div>
             </div>
           )}

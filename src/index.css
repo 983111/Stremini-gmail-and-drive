@@ -47,13 +47,3 @@
   --border-color: #2A2A2A;
   --border-strong: #444444;
 }
-
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}

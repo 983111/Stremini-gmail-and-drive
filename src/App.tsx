@@ -11,7 +11,6 @@ import { Dashboard } from './pages/Dashboard';
 import { Documents } from './pages/Documents';
 import { Mail } from './pages/Mail';
 import { Drive } from './pages/Drive';
-import { Databases } from './pages/Databases';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -48,7 +47,6 @@ export default function App() {
             <Route path="docs/*" element={<Documents />} />
             <Route path="mail/*" element={<Mail />} />
             <Route path="drive/*" element={<Drive />} />
-            <Route path="databases/*" element={<Databases />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
