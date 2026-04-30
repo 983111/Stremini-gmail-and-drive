@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
-import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Bold, Italic, Strikethrough, Code } from 'lucide-react';
+import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Bold, Italic, Strikethrough, Code, Share2, Globe, Lock, Copy, Check } from 'lucide-react';
 import { rewriteDocument, summarizeDocumentContent, askDocumentQuestion } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -62,6 +62,16 @@ export function Documents() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState<any[]>([]);
   const [isDriveLoading, setIsDriveLoading] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    if (!selectedDoc) return;
+    const link = `${window.location.origin}/docs/${selectedDoc.id}`;
+    navigator.clipboard.writeText(link);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const handleDownloadPDF = async () => {
     if (!selectedDoc) return;
@@ -330,6 +340,13 @@ export function Documents() {
                   >
                     <Download size={14} />
                   </button>
+                  <button 
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
+                    title="Share Document"
+                  >
+                    <Share2 size={14} />
+                  </button>
                   {!isAssistantOpen && (
                     <>
                       <div className="w-[1px] h-4 bg-surface-hover mx-1"></div>
@@ -565,6 +582,66 @@ export function Documents() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isShareModalOpen && selectedDoc && (
+        <div className="fixed inset-0 bg-[#00000040] backdrop-blur-sm z-50 flex items-center justify-center p-8">
+          <div className="bg-background border border-border shadow-2xl w-full max-w-md overflow-hidden rounded-md animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-border flex justify-between items-center bg-surface/50">
+              <div className="flex items-center space-x-2">
+                <Share2 size={18} className="text-foreground" />
+                <h2 className="text-lg font-bold text-foreground">Share Document</h2>
+              </div>
+              <button 
+                onClick={() => setIsShareModalOpen(false)}
+                className="text-muted hover:text-foreground transition-all p-1 hover:bg-surface rounded-sm"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="flex items-center p-4 bg-surface border border-border rounded-sm">
+                <div className="w-10 h-10 bg-background rounded-full flex items-center justify-center border border-border shrink-0 mr-4">
+                  <Globe size={20} className="text-muted" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground">Private Link</h3>
+                  <p className="text-[11px] text-muted">Only users with access to this workspace can view this link.</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted uppercase tracking-widest">Shareable Link</label>
+                <div className="flex space-x-2">
+                  <div className="flex-1 bg-surface border border-border rounded-sm px-3 py-2 text-xs text-muted truncate flex items-center">
+                    <span className="truncate">{`${window.location.origin}/docs/${selectedDoc.id}`}</span>
+                  </div>
+                  <button 
+                    onClick={handleCopyLink}
+                    className={`px-4 py-2 rounded-sm font-bold text-xs flex items-center space-x-2 transition-all ${isCopied ? 'bg-green-500 text-white' : 'bg-foreground text-background hover:bg-foreground-hover'}`}
+                  >
+                    {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div className="flex items-center space-x-2 text-muted">
+                  <Lock size={12} />
+                  <span className="text-[10px] font-semibold uppercase tracking-widest">Workspace Encrypted</span>
+                </div>
+                <button 
+                  onClick={() => setIsShareModalOpen(false)}
+                  className="text-xs font-bold text-foreground hover:underline"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>

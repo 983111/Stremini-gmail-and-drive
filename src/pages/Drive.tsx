@@ -22,6 +22,28 @@ export function Drive() {
   const [newFolderName, setNewFolderName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [fileSnippets, setFileSnippets] = useState<Record<string, string>>({});
+  const [fileAISummary, setFileAISummary] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
+  const handleSummarizeFile = async () => {
+    if (!selectedFile || !accessToken) return;
+    setIsSummarizing(true);
+    setFileAISummary(null);
+    try {
+      const content = await fetchDriveFileContent(accessToken, selectedFile.id, selectedFile.mimeType);
+      if (typeof content === 'string') {
+        const summary = await summarizeDocumentContent(content);
+        setFileAISummary(summary);
+      } else {
+        setFileAISummary("This file type cannot be summarized (binary content).");
+      }
+    } catch (e) {
+      console.error(e);
+      setFileAISummary("Failed to generate summary.");
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
 
   const fetchSnippet = async (file: any) => {
     if (!accessToken) return;
@@ -362,7 +384,7 @@ export function Drive() {
                   className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center space-x-2 disabled:opacity-50"
                  >
                    {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                   <span>Analyze with AI</span>
+                   <span>Sync to Workspace</span>
                  </button>
                </div>
 
@@ -380,12 +402,23 @@ export function Drive() {
                  </div>
                ) : null}
 
-               {aiSummary && (
-                 <div className="bg-surface p-8 border border-border rounded-sm">
-                   <h3 className="text-xs font-semibold text-muted mb-6 uppercase tracking-wider flex items-center space-x-2">
-                       <Sparkles size={12}/> <span>AI Analysis Result</span>
+               {fileAISummary && (
+                 <div className="mb-8 p-6 bg-surface border border-amber-500/20 rounded-sm">
+                   <h3 className="text-xs font-bold text-amber-500 mb-4 uppercase tracking-wider flex items-center space-x-2">
+                       <Sparkles size={12}/> <span>AI Content Summary</span>
                    </h3>
-                   <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                   <div className="prose dark:prose-invert prose-sm text-amber-500 max-w-none prose-p:leading-relaxed">
+                     <Markdown>{fileAISummary}</Markdown>
+                   </div>
+                 </div>
+               )}
+
+               {aiSummary && (
+                 <div className="bg-surface p-6 border border-border rounded-sm">
+                   <h3 className="text-xs font-semibold text-muted mb-4 uppercase tracking-wider flex items-center space-x-2">
+                       <Sparkles size={12}/> <span>AI Sync Report</span>
+                   </h3>
+                   <div className="prose dark:prose-invert prose-sm text-amber-500 max-w-none">
                      <Markdown>{aiSummary}</Markdown>
                    </div>
                  </div>

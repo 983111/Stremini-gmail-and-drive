@@ -942,7 +942,7 @@ export function Databases() {
                   <p className="text-xs text-muted mb-6 text-left max-w-2xl">
                     Describe what you want to track, and let the AI design the columns and <strong>populate 5 sample rows</strong> for you. 
                   </p>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 mb-4">
                     <input 
                       type="text" 
                       value={generationPrompt}
@@ -959,6 +959,17 @@ export function Databases() {
                       {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                       <span>{isGenerating ? 'Building...' : 'Generate'}</span>
                     </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-start">
+                    {['Product Launch Planner', 'Daily Habit Tracker', 'Project Task List', 'Expense Tracker'].map(p => (
+                      <button 
+                        key={p} 
+                        onClick={() => setGenerationPrompt(p)}
+                        className="text-[10px] font-bold text-muted border border-border px-3 py-1 rounded-full hover:border-foreground hover:text-foreground transition-all uppercase tracking-tighter"
+                      >
+                        {p}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
