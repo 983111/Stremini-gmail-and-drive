@@ -364,13 +364,15 @@ export function Documents() {
 
               {!isPreview ? (
                 <div className="flex-1 flex flex-col">
-                  <div className="flex items-center space-x-2 mb-4 bg-surface p-1.5 rounded-sm border border-border w-fit">
-                    <button onClick={() => applyFormatting('**')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Bold"><Bold size={16} /></button>
-                    <button onClick={() => applyFormatting('*')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Italic"><Italic size={16} /></button>
-                    <button onClick={() => applyFormatting('~~')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Strikethrough"><Strikethrough size={16} /></button>
-                    <div className="w-[1px] h-4 bg-border mx-1"></div>
-                    <button onClick={() => applyFormatting('```\n', '\n```')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Code Block"><Code size={16} /></button>
-                  </div>
+                  {!isAssistantOpen && (
+                    <div className="flex items-center space-x-2 mb-4 bg-surface p-1.5 rounded-sm border border-border w-fit animate-in fade-in slide-in-from-top-2 duration-200">
+                      <button onClick={() => applyFormatting('**')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Bold"><Bold size={16} /></button>
+                      <button onClick={() => applyFormatting('*')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Italic"><Italic size={16} /></button>
+                      <button onClick={() => applyFormatting('~~')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Strikethrough"><Strikethrough size={16} /></button>
+                      <div className="w-[1px] h-4 bg-border mx-1"></div>
+                      <button onClick={() => applyFormatting('```\n', '\n```')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Code Block"><Code size={16} /></button>
+                    </div>
+                  )}
                   <textarea
                     ref={textareaRef}
                     value={selectedDoc.content}
