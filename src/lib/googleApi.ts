@@ -42,6 +42,28 @@ export async function fetchEmailThread(accessToken: string, threadId: string) {
   return data;
 }
 
+export async function uploadDriveFile(accessToken: string, file: File, parentId: string = 'root') {
+  const metadata = {
+    name: file.name,
+    parents: [parentId]
+  };
+
+  const formData = new FormData();
+  formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  formData.append('file', file);
+
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: formData
+  });
+
+  if (!res.ok) throw new Error('Failed to upload file');
+  return res.json();
+}
+
 export async function createDriveFolder(accessToken: string, name: string, parentId: string = 'root') {
   const metadata = {
     name: name,

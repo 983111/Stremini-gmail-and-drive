@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile } from '../lib/googleApi';
-import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X } from 'lucide-react';
+import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile } from '../lib/googleApi';
+import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
 
@@ -20,6 +20,7 @@ export function Drive() {
   const [folderPath, setFolderPath] = useState<{id: string, name: string}[]>([{id: 'root', name: 'Drive'}]);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (selectedFile && accessToken) {
@@ -102,6 +103,23 @@ export function Drive() {
     }
   };
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !accessToken) return;
+    
+    setIsUploading(true);
+    try {
+      await uploadDriveFile(accessToken, file, currentFolderId);
+      loadFiles(query, currentFolderId);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const handleDeleteFile = async (fileId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     if (!accessToken || !window.confirm("Are you sure you want to delete this item? This action is irreversible.")) return;
@@ -181,15 +199,27 @@ export function Drive() {
                 </div>
               ))}
             </div>
-            <button 
-              onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-              className="text-muted hover:text-foreground transition-colors p-1"
-            >
-              <Plus size={16} />
-            </button>
+            <div className="flex items-center space-x-2">
+              <label className="text-muted hover:text-foreground transition-colors p-1 cursor-pointer">
+                <Upload size={16} />
+                <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading} />
+              </label>
+              <button 
+                onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+                className="text-muted hover:text-foreground transition-colors p-1"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto p-4 space-y-1.5 flex flex-col pt-2">
+          {isUploading && (
+            <div className="mb-2 p-2 bg-surface border border-border rounded-sm flex items-center space-x-2">
+              <Loader2 size={14} className="animate-spin text-muted" />
+              <span className="text-xs text-muted">Uploading file...</span>
+            </div>
+          )}
           {isCreatingFolder && (
             <form onSubmit={handleCreateFolder} className="mb-2 flex items-center space-x-2">
               <input 
