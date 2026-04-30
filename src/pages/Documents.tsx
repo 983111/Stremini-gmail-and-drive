@@ -324,11 +324,11 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, content: newContent });
                     updateDocument(selectedDoc.id, selectedDoc.title, newContent);
                   }}
-                  className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground-muted text-base resize-none leading-relaxed placeholder-[#DDD]"
+                  className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground text-base resize-none leading-relaxed placeholder-muted"
                   placeholder="Start typing..."
                 />
               ) : (
-                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none">
+                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none text-foreground">
                   <Markdown>{selectedDoc.content}</Markdown>
                 </div>
               )}

@@ -129,6 +129,342 @@ const TEMPLATES = [
       { name: 'Budget', type: 'number' },
       { name: 'Completed', type: 'checkbox' }
     ]
+  },
+  {
+    name: 'Workout Log',
+    description: 'Track your exercises, sets, and reps.',
+    schema: [
+      { name: 'Exercise', type: 'text' },
+      { name: 'Date', type: 'date' },
+      { name: 'Weight (kg)', type: 'number' },
+      { name: 'Sets', type: 'number' },
+      { name: 'Reps', type: 'number' }
+    ]
+  },
+  {
+    name: 'Habit Tracker',
+    description: 'Monitor your daily habits and progress.',
+    schema: [
+      { name: 'Habit', type: 'text' },
+      { name: 'Goal (Days/Week)', type: 'number' },
+      { name: 'Category', type: 'select', options: ['Health', 'Work', 'Personal', 'Finance'] },
+      { name: 'Active', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Employee Directory',
+    description: 'Centralized list of team members and roles.',
+    schema: [
+      { name: 'Name', type: 'text' },
+      { name: 'Role', type: 'text' },
+      { name: 'Department', type: 'select', options: ['Engineering', 'Marketing', 'Sales', 'HR', 'Design'] },
+      { name: 'Email', type: 'text' },
+      { name: 'Start Date', type: 'date' }
+    ]
+  },
+  {
+    name: 'Meeting Notes DB',
+    description: 'Store and categorize all your meeting records.',
+    schema: [
+      { name: 'Meeting Title', type: 'text' },
+      { name: 'Date', type: 'date' },
+      { name: 'Type', type: 'select', options: ['Sync', 'One-on-One', 'Brainstorm', 'Board'] },
+      { name: 'Attendees', type: 'text' }
+    ]
+  },
+  {
+    name: 'Bug Tracker',
+    description: 'Log and manage technical issues.',
+    schema: [
+      { name: 'Issue', type: 'text' },
+      { name: 'Severity', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
+      { name: 'Status', type: 'select', options: ['Backlog', 'In Dev', 'Testing', 'Resolved'] },
+      { name: 'Reported By', type: 'text' }
+    ]
+  },
+  {
+    name: 'Course Syllabus',
+    description: 'Organize your learning modules and progress.',
+    schema: [
+      { name: 'Module Name', type: 'text' },
+      { name: 'Order', type: 'number' },
+      { name: 'Status', type: 'select', options: ['Not Started', 'In Progress', 'Completed'] },
+      { name: 'Resources', type: 'text' }
+    ]
+  },
+  {
+    name: 'Expense Reports',
+    description: 'Track business expenses for reimbursement.',
+    schema: [
+      { name: 'Merchant', type: 'text' },
+      { name: 'Amount', type: 'number' },
+      { name: 'Category', type: 'select', options: ['Travel', 'Meals', 'Software', 'Hardware'] },
+      { name: 'Date', type: 'date' },
+      { name: 'Approved', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Product Roadmap',
+    description: 'Vision and timeline for product features.',
+    schema: [
+      { name: 'Feature', type: 'text' },
+      { name: 'Quarter', type: 'select', options: ['Q1', 'Q2', 'Q3', 'Q4'] },
+      { name: 'Priority', type: 'number' },
+      { name: 'Impact', type: 'select', options: ['Small', 'Medium', 'Large'] }
+    ]
+  },
+  {
+    name: 'OKR Tracker',
+    description: 'Measure objectives and key results.',
+    schema: [
+      { name: 'Objective', type: 'text' },
+      { name: 'Key Result', type: 'text' },
+      { name: 'Initial Value', type: 'number' },
+      { name: 'Target Value', type: 'number' },
+      { name: 'Current Progress (%)', type: 'number' }
+    ]
+  },
+  {
+    name: 'Marketing Campaigns',
+    description: 'Plan and analyze marketing initiatives.',
+    schema: [
+      { name: 'Campaign Name', type: 'text' },
+      { name: 'Channel', type: 'select', options: ['Email', 'Social', 'Search', 'Display'] },
+      { name: 'Budget', type: 'number' },
+      { name: 'Live Date', type: 'date' }
+    ]
+  },
+  {
+    name: 'User Feedback',
+    description: 'Repository for customer insights and requests.',
+    schema: [
+      { name: 'Feedback', type: 'text' },
+      { name: 'Customer Segment', type: 'select', options: ['Free', 'Pro', 'Enterprise'] },
+      { name: 'Sentiment', type: 'select', options: ['Positive', 'Neutral', 'Negative'] },
+      { name: 'Feature Request?', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Travel Itinerary',
+    description: 'Plan your trips day by day.',
+    schema: [
+      { name: 'Location', type: 'text' },
+      { name: 'Day', type: 'number' },
+      { name: 'Activity', type: 'text' },
+      { name: 'Confirmed?', type: 'checkbox' },
+      { name: 'Budget Est.', type: 'number' }
+    ]
+  },
+  {
+    name: 'Subscription Tracker',
+    description: 'Manage recurring costs and renewal dates.',
+    schema: [
+      { name: 'Service', type: 'text' },
+      { name: 'Cost/Month', type: 'number' },
+      { name: 'Renewal Date', type: 'date' },
+      { name: 'Category', type: 'select', options: ['Entertainment', 'Work', 'Health', 'Other'] }
+    ]
+  },
+  {
+    name: 'Daily Standup Log',
+    description: 'Keep record of daily team status updates.',
+    schema: [
+      { name: 'Date', type: 'date' },
+      { name: 'Person', type: 'text' },
+      { name: 'Yesterday', type: 'text' },
+      { name: 'Today', type: 'text' },
+      { name: 'Blockers', type: 'text' }
+    ]
+  },
+  {
+    name: 'Flashcards',
+    description: 'Study tool with terms and definitions.',
+    schema: [
+      { name: 'Term', type: 'text' },
+      { name: 'Definition', type: 'text' },
+      { name: 'Category', type: 'text' },
+      { name: 'Difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard'] }
+    ]
+  },
+  {
+    name: 'Gift Ideas',
+    description: 'Never forget a gift idea for friends/family.',
+    schema: [
+      { name: 'Person', type: 'text' },
+      { name: 'Occasion', type: 'select', options: ['Birthday', 'Holiday', 'Anniversary', 'Other'] },
+      { name: 'Idea', type: 'text' },
+      { name: 'Price Est.', type: 'number' },
+      { name: 'Purchased', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Code snippets',
+    description: 'Library of reusable code examples.',
+    schema: [
+      { name: 'Title', type: 'text' },
+      { name: 'Language', type: 'select', options: ['JS', 'TS', 'Python', 'Go', 'Rust'] },
+      { name: 'Description', type: 'text' },
+      { name: 'Complex?', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Restaurant Wishlist',
+    description: 'Places you want to try or have visited.',
+    schema: [
+      { name: 'Name', type: 'text' },
+      { name: 'Cuisine', type: 'text' },
+      { name: 'Rating', type: 'number' },
+      { name: 'Visits', type: 'number' },
+      { name: 'Must Try?', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Investment Portfolio',
+    description: 'Simple tracker for your holdings.',
+    schema: [
+      { name: 'Asset', type: 'text' },
+      { name: 'Ticker', type: 'text' },
+      { name: 'Shares', type: 'number' },
+      { name: 'Total Cost', type: 'number' },
+      { name: 'Type', type: 'select', options: ['Stock', 'Crypto', 'ETF', 'Real Estate'] }
+    ]
+  },
+  {
+    name: 'Pet Medical Records',
+    description: 'Track vaccinations and health visits.',
+    schema: [
+      { name: 'Pet Name', type: 'text' },
+      { name: 'Service', type: 'text' },
+      { name: 'Date', type: 'date' },
+      { name: 'Next Due', type: 'date' },
+      { name: 'Weight', type: 'number' }
+    ]
+  },
+  {
+    name: 'Garden Journal',
+    description: 'Monitor your plants and gardening tasks.',
+    schema: [
+      { name: 'Plant', type: 'text' },
+      { name: 'Planted Date', type: 'date' },
+      { name: 'Water Frequency', type: 'number' },
+      { name: 'Fertilized?', type: 'checkbox' },
+      { name: 'Status', type: 'select', options: ['Healthy', 'Needing Care', 'Struggling'] }
+    ]
+  },
+  {
+    name: 'House Hunting',
+    description: 'Organize properties you are viewing.',
+    schema: [
+      { name: 'Address', type: 'text' },
+      { name: 'Price', type: 'number' },
+      { name: 'Score', type: 'number' },
+      { name: 'Bedrooms', type: 'number' },
+      { name: 'Viewing Date', type: 'date' }
+    ]
+  },
+  {
+    name: 'Movie Watchlist',
+    description: 'Movies you want to see or have seen.',
+    schema: [
+      { name: 'Title', type: 'text' },
+      { name: 'Year', type: 'number' },
+      { name: 'Genre', type: 'select', options: ['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror'] },
+      { name: 'Seen', type: 'checkbox' },
+      { name: 'Rating', type: 'number' }
+    ]
+  },
+  {
+    name: 'Subscription Services',
+    description: 'Track all your recurring digital services.',
+    schema: [
+      { name: 'Service Name', type: 'text' },
+      { name: 'Monthly Fee', type: 'number' },
+      { name: 'Billing Date', type: 'date' },
+      { name: 'Sharing?', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Asset Registry',
+    description: 'Inventory of physical business assets.',
+    schema: [
+      { name: 'Item Name', type: 'text' },
+      { name: 'Serial #', type: 'text' },
+      { name: 'Purchase Price', type: 'number' },
+      { name: 'Location', type: 'text' }
+    ]
+  },
+  {
+    name: 'Scientific Research Bible',
+    description: 'Bibliography of papers and studies.',
+    schema: [
+      { name: 'Title', type: 'text' },
+      { name: 'Authors', type: 'text' },
+      { name: 'Year', type: 'number' },
+      { name: 'Field', type: 'text' },
+      { name: 'Relevance Status', type: 'select', options: ['Unread', 'Read', 'Cited'] }
+    ]
+  },
+  {
+    name: 'Sales Pipeline',
+    description: 'Move deals through your sales funnel.',
+    schema: [
+      { name: 'Contact', type: 'text' },
+      { name: 'Company', type: 'text' },
+      { name: 'Deal Value', type: 'number' },
+      { name: 'Probability (%)', type: 'number' },
+      { name: 'Stage', type: 'select', options: ['Prospect', 'Meeting', 'Negotiation', 'Closed Won', 'Closed Lost'] }
+    ]
+  },
+  {
+    name: 'Personal Journal (DB)',
+    description: 'Categorized daily entries.',
+    schema: [
+      { name: 'Title', type: 'text' },
+      { name: 'Date', type: 'date' },
+      { name: 'Mood', type: 'select', options: ['Happy', 'Productive', 'Tired', 'Creative', 'Reflective'] },
+      { name: 'Gratitude', type: 'text' }
+    ]
+  },
+  {
+    name: 'Inventory Count',
+    description: 'Track stock levels and reorder statuses.',
+    schema: [
+      { name: 'Product SKU', type: 'text' },
+      { name: 'Quantity on Hand', type: 'number' },
+      { name: 'Price per Unit', type: 'number' },
+      { name: 'Low Stock Level', type: 'number' },
+      { name: 'Total Value', type: 'number' }
+    ]
+  },
+  {
+    name: 'Blog Post Queue',
+    description: 'Content pipeline for your blog.',
+    schema: [
+      { name: 'Headline', type: 'text' },
+      { name: 'Author', type: 'text' },
+      { name: 'Category', type: 'select', options: ['Tech', 'Life', 'How-to', 'News'] },
+      { name: 'Status', type: 'select', options: ['Idea', 'Writing', 'Editing', 'Published'] }
+    ]
+  },
+  {
+    name: 'Competitor Analysis',
+    description: 'Benchmark your product against others.',
+    schema: [
+      { name: 'Competitor', type: 'text' },
+      { name: 'Strengths', type: 'text' },
+      { name: 'Weaknesses', type: 'text' },
+      { name: 'Price Comparison', type: 'number' }
+    ]
+  },
+  {
+    name: 'Brand Assets',
+    description: 'Guidelines and links for company branding.',
+    schema: [
+      { name: 'Asset Name', type: 'text' },
+      { name: 'File Format', type: 'select', options: ['SVG', 'PNG', 'AI', 'PDF'] },
+      { name: 'Last Updated', type: 'date' },
+      { name: 'Approved for Use?', type: 'checkbox' }
+    ]
   }
 ];
 
@@ -326,9 +662,10 @@ export function Databases() {
           </div>
           <button 
             onClick={() => setShowTemplates(true)}
-            className="p-1 hover:bg-surface-hover rounded-sm text-muted hover:text-foreground transition-colors"
+            className="flex items-center space-x-1 px-2 py-1 hover:bg-surface-hover rounded-sm text-muted hover:text-foreground transition-colors border border-border"
           >
-            <Plus size={16} />
+            <Plus size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Templates</span>
           </button>
         </div>
 
