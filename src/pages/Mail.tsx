@@ -200,7 +200,7 @@ export function Mail() {
           ) : emails.length === 0 ? (
              <div className="p-8 text-center text-muted text-sm font-medium">No emails found.</div>
           ) : (
-            <div className="divide-y divide-[#EEEEEE]">
+            <div className="divide-y divide-border">
               {emails.map(email => (
                 <div 
                   key={email.id} 
@@ -208,7 +208,7 @@ export function Mail() {
                     setSelectedEmail(email);
                     setIsComposing(false);
                   }}
-                  className={`p-4 cursor-pointer hover:bg-surface transition-colors ${selectedEmail?.id === email.id && !isComposing ? 'bg-surface border-l-2 border-[#111]' : 'border-l-2 border-transparent'}`}
+                  className={`p-4 cursor-pointer hover:bg-surface transition-colors ${selectedEmail?.id === email.id && !isComposing ? 'bg-surface border-l-2 border-foreground' : 'border-l-2 border-transparent'}`}
                 >
                   <div className="font-semibold text-foreground text-sm truncate mb-0.5">{email.from}</div>
                   <div className="text-sm font-medium text-foreground-muted truncate mb-1.5">{email.subject}</div>

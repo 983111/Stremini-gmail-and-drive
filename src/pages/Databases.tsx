@@ -36,6 +36,12 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const TEMPLATES = [
   {
+    name: 'Generate custom with AI',
+    description: 'Describe your idea and let AI build the table, columns, and data for you.',
+    isAi: true,
+    schema: []
+  },
+  {
     name: 'Weekly Planner',
     description: 'Structure your week with tasks, priorities, and deadlines.',
     schema: [
@@ -89,9 +95,19 @@ export function Databases() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
+  const [isAiMode, setIsAiMode] = useState(false);
   const [editingCell, setEditingCell] = useState<{recordId: string, field: string} | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumn, setNewColumn] = useState({ name: '', type: 'text', options: '' });
+
+  const handleTemplateClick = (tpl: any) => {
+    if (tpl.isAi) {
+      setIsAiMode(true);
+      setShowTemplates(false);
+    } else {
+      createDatabase(tpl.name, tpl.schema);
+    }
+  };
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -188,6 +204,7 @@ export function Databases() {
         setSelectedDb({ id: dbId, ...newDbData });
         setGenerationPrompt('');
         setShowTemplates(false);
+        setIsAiMode(false);
       }
     } catch (e) {
       console.error(e);
@@ -343,61 +360,63 @@ export function Databases() {
       <div className="w-64 border-r border-border bg-[#FBFBFA] dark:bg-[#0B0B0B] flex flex-col shrink-0">
         <div className="p-4 flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-surface shadow-sm border border-border rounded flex items-center justify-center">
-              <DatabaseIcon size={12} className="text-foreground" />
-            </div>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted">Workspace DBs</span>
+            <DatabaseIcon size={14} className="text-muted" />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted">Databases</span>
           </div>
           <button 
             onClick={() => setShowTemplates(true)}
             className="p-1 hover:bg-surface-hover rounded-sm text-muted transition-colors"
-            title="Add from Templates"
+            title="Templates"
           >
             <Plus size={16} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto px-2 space-y-1">
+        <div className="flex-1 overflow-auto px-2 space-y-0.5">
           {databases.length > 0 ? (
             databases.map(db => (
               <div 
                 key={db.id}
-                onClick={() => setSelectedDb(db)}
-                className={`group flex items-center justify-between px-3 py-1.5 rounded-sm cursor-pointer text-[13px] transition-all ${selectedDb?.id === db.id ? 'bg-surface text-foreground font-semibold shadow-sm' : 'text-muted hover:bg-surface-hover hover:text-foreground'}`}
+                onClick={() => { setSelectedDb(db); setIsAiMode(false); }}
+                className={`group flex items-center justify-between px-3 py-1.5 rounded-sm cursor-pointer text-[13px] transition-all ${selectedDb?.id === db.id && !isAiMode ? 'bg-surface text-foreground font-semibold' : 'text-muted hover:bg-surface-hover hover:text-foreground'}`}
               >
                 <div className="flex items-center space-x-2 truncate">
-                  <Table2 size={14} className={selectedDb?.id === db.id ? 'text-amber-500' : 'text-muted'} />
+                  <Table2 size={14} className={selectedDb?.id === db.id && !isAiMode ? 'text-amber-500' : 'text-muted'} />
                   <span className="truncate">{db.name}</span>
                 </div>
                 <button 
                   onClick={(e) => deleteDatabase(db.id, e)}
-                  className="opacity-0 group-hover:opacity-100 hover:text-red-500 p-0.5"
+                  className="opacity-0 group-hover:opacity-100 hover:text-red-500 p-0.5 transition-all"
                 >
                   <Trash2 size={12} />
                 </button>
               </div>
             ))
-          ) : (
-            <div className="px-5 py-8 text-center">
-              <p className="text-[11px] text-muted leading-relaxed">No databases created yet.</p>
-            </div>
-          )}
+          ) : null}
+          
+          <div 
+            onClick={() => { setIsAiMode(true); setSelectedDb(null); }}
+            className={`group flex items-center space-x-2 px-3 py-1.5 rounded-sm cursor-pointer text-[13px] transition-all ${isAiMode ? 'bg-surface text-foreground font-semibold' : 'text-muted hover:bg-surface-hover hover:text-foreground'}`}
+          >
+            <Sparkles size={14} className={isAiMode ? 'text-amber-500' : 'text-muted'} />
+            <span>Generate with AI</span>
+          </div>
         </div>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4">
           <button 
              onClick={() => createDatabase()}
-             className="w-full flex items-center justify-center space-x-2 border border-border border-dashed p-2 rounded-sm text-[11px] font-bold uppercase tracking-widest text-muted hover:border-border-strong hover:text-foreground transition-all"
+             className="w-full flex items-center justify-center space-x-2 p-2 rounded-sm text-[11px] font-bold uppercase tracking-widest text-muted hover:bg-surface-hover hover:text-foreground transition-all"
           >
             <Plus size={12} />
-            <span>New DB</span>
+            <span>Empty Table</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative flex flex-col bg-background">
-        {selectedDb ? (
+        {selectedDb && !isAiMode ? (
           <div className="flex flex-col h-full">
             {/* Context Header */}
             <div className="px-12 pt-12 pb-6">
@@ -550,83 +569,79 @@ export function Databases() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-[#FBFBFA] dark:bg-[#0B0B0B] p-12">
-            <div className="w-full max-w-lg">
+          <div className="flex-1 flex flex-col items-center justify-center bg-background p-12">
+            <div className="w-full max-w-2xl">
                <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center space-y-12"
                >
                   <div className="space-y-4">
-                    <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto shadow-xl border border-border border-b-4">
-                      <Target size={32} className="text-amber-500" />
+                    <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto border border-border">
+                      <Sparkles size={28} className="text-amber-500" />
                     </div>
-                    <h1 className="text-5xl font-black tracking-tighter text-foreground">Databases & Planners</h1>
-                    <p className="text-base text-muted font-medium max-w-md mx-auto leading-relaxed">
-                      Build highly structured modules for your business, personal life, or complex technical projects.
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground">AI Database Generator</h1>
+                    <p className="text-sm text-muted font-medium max-w-md mx-auto leading-relaxed">
+                      Describe your dream workspace, and I'll architect the tables, properties, and sample data in seconds.
                     </p>
                   </div>
 
-                  <div className="bg-background rounded-md border border-border shadow-2xl p-8 text-center relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+                  <div className="bg-surface rounded-lg border border-border p-8 text-center relative overflow-hidden">
                     <div className="relative z-10 space-y-6">
-                      <div className="inline-flex items-center space-x-2 bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        <Sparkles size={10} />
-                        <span>AI-Powered Design</span>
-                      </div>
-                      <h2 className="text-xl font-bold text-foreground">What do you want to build?</h2>
-                      <p className="text-xs text-muted mb-6 text-left max-w-2xl">
-                        Describe what you want to track (e.g. "Software Architecture Tasks", "SaaS Competitor Analysis", "Product Launch Tracker"), and let the AI design it.
-                      </p>
-                      <div className="flex space-x-2 mb-4">
-                        <input 
-                          type="text" 
+                      <div className="flex flex-col space-y-4">
+                        <textarea 
                           value={generationPrompt}
                           onChange={(e) => setGenerationPrompt(e.target.value)}
-                          placeholder="e.g. A content planner for YouTube..."
-                          className="flex-1 bg-surface border border-border rounded-sm py-4 px-4 text-sm outline-none focus:border-amber-500/50 transition-all"
+                          placeholder="e.g. A content calendar for high-growth startups with focus on video production and platform distribution..."
+                          className="w-full bg-background border border-border rounded-md py-4 px-4 text-sm outline-none focus:border-amber-500/30 transition-all min-h-[120px] resize-none"
                         />
                         <button 
                           onClick={handleAiGeneration}
                           disabled={!generationPrompt || isGenerating}
-                          className="bg-foreground text-background px-8 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all flex items-center space-x-2 disabled:opacity-50"
+                          className="w-full bg-foreground text-background py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
                         >
-                          {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                          <span>{isGenerating ? 'Building...' : 'Create'}</span>
+                          {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                          <span>{isGenerating ? 'Architecting your database...' : 'Build Workspace'}</span>
                         </button>
                       </div>
-                      <div className="flex flex-wrap gap-2 justify-start">
-                        {['Startup OKR Tracker', 'Weekly Meal Planner', 'Bug Tracking System', 'Client CRM'].map(p => (
-                          <button 
-                            key={p} 
-                            onClick={() => setGenerationPrompt(p)}
-                            className="text-[10px] font-bold text-muted border border-border px-3 py-1.5 rounded-sm hover:border-foreground hover:text-foreground transition-all uppercase tracking-tighter"
-                          >
-                            {p}
-                          </button>
-                        ))}
+                      
+                      <div className="pt-4">
+                        <p className="text-[10px] font-bold text-muted uppercase tracking-widest mb-3">Try these</p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {['SaaS Product Roadmap', 'Investor Outreach CRM', 'Student Study Planner', 'Gourmet Recipe Journal'].map(p => (
+                            <button 
+                              key={p} 
+                              onClick={() => setGenerationPrompt(p)}
+                              className="text-[11px] font-medium text-muted border border-border px-3 py-1.5 rounded-full hover:border-foreground hover:text-foreground transition-all"
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-8">
-                    <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-4">Or start with a template</p>
-                    <div className="grid grid-cols-2 gap-4">
-                       {TEMPLATES.slice(0, 4).map(tpl => (
-                         <div 
-                          key={tpl.name}
-                          onClick={() => createDatabase(tpl.name, tpl.schema)}
-                          className="p-4 bg-background border border-border rounded-sm text-left hover:border-foreground/20 cursor-pointer transition-all group"
-                         >
+                  {!databases.length && (
+                    <div className="pt-12 text-center">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-6">Or start with a preset</p>
+                      <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+                        {TEMPLATES.filter(t => !t.isAi).map(tpl => (
+                          <div 
+                            key={tpl.name}
+                            onClick={() => createDatabase(tpl.name, tpl.schema)}
+                            className="p-5 bg-surface border border-border rounded-lg text-left hover:border-foreground/30 cursor-pointer transition-all group"
+                          >
                             <h3 className="text-sm font-bold text-foreground flex items-center justify-between">
-                               {tpl.name}
-                               <ArrowRight size={14} className="text-muted opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                                {tpl.name}
+                                <ArrowRight size={14} className="text-muted opacity-0 group-hover:opacity-100 transition-all" />
                             </h3>
-                            <p className="text-[11px] text-muted mt-1 leading-relaxed">{tpl.description}</p>
-                         </div>
-                       ))}
+                            <p className="text-[11px] text-muted mt-1 leading-normal">{tpl.description}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                </motion.div>
             </div>
           </div>
@@ -639,41 +654,43 @@ export function Databases() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#00000040] backdrop-blur-sm z-50 flex items-center justify-center p-8"
+              className="fixed inset-0 bg-[#00000020] backdrop-blur-[2px] z-50 flex items-center justify-center p-8"
              >
                 <motion.div 
-                  initial={{ scale: 0.95, opacity: 0 }}
+                  initial={{ scale: 0.98, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  className="bg-background border border-border shadow-2xl w-full max-w-4xl overflow-hidden rounded-md flex flex-col max-h-[80vh]"
+                  exit={{ scale: 0.98, opacity: 0 }}
+                  className="bg-background border border-border shadow-huge w-full max-w-4xl overflow-hidden rounded-xl flex flex-col max-h-[85vh]"
                 >
-                  <div className="p-6 border-b border-border flex justify-between items-center bg-[#FBFBFA] dark:bg-[#0B0B0B]">
-                    <div className="flex items-center space-x-2">
-                       <Layout size={20} className="text-foreground" />
-                       <h2 className="text-xl font-bold uppercase tracking-tight text-foreground">Database Templates</h2>
-                    </div>
+                  <div className="p-6 border-b border-border flex justify-between items-center">
+                    <h2 className="text-lg font-bold tracking-tight text-foreground">Templates</h2>
                     <button 
                       onClick={() => setShowTemplates(false)}
-                      className="text-muted hover:text-foreground transition-all p-1 hover:bg-surface rounded-sm"
+                      className="text-muted hover:text-foreground transition-all p-1 hover:bg-surface rounded-md"
                     >
                       <X size={20} />
                     </button>
                   </div>
                   
-                  <div className="flex-1 overflow-auto p-8 bg-background">
-                     <div className="grid grid-cols-2 gap-6">
+                  <div className="flex-1 overflow-auto p-6 bg-surface/30">
+                     <div className="grid grid-cols-2 gap-4">
                         {TEMPLATES.map((tpl, i) => (
                            <div 
                             key={i} 
-                            onClick={() => createDatabase(tpl.name, tpl.schema)}
-                            className="group border border-border p-5 rounded-sm hover:bg-surface transition-all cursor-pointer relative overflow-hidden"
+                            onClick={() => handleTemplateClick(tpl)}
+                            className={`group border border-border p-6 rounded-xl hover:bg-background transition-all cursor-pointer relative overflow-hidden ${tpl.isAi ? 'bg-amber-500/5 border-amber-500/20' : 'bg-background'}`}
                            >
-                             <div className="absolute top-0 right-0 p-3 text-muted/20">
-                               <DatabaseIcon size={40} />
-                             </div>
-                             <h3 className="text-base font-bold text-foreground mb-1">{tpl.name}</h3>
+                             {tpl.isAi && (
+                               <div className="absolute top-0 right-0 p-3 text-amber-500/20">
+                                 <Sparkles size={48} />
+                               </div>
+                             )}
+                             <h3 className="text-base font-bold text-foreground mb-1 flex items-center space-x-2">
+                               {tpl.isAi && <Sparkles size={14} className="text-amber-500" />}
+                               <span>{tpl.name}</span>
+                             </h3>
                              <p className="text-xs text-muted leading-relaxed mb-4">{tpl.description}</p>
-                             <div className="flex flex-wrap gap-2 text-[10px] font-bold text-muted/60 uppercase tracking-widest">
+                             <div className="flex flex-wrap gap-2 text-[10px] font-bold text-muted/40 uppercase tracking-widest">
                                 {tpl.schema.map(f => (<span key={f.name}>• {f.name}</span>))}
                              </div>
                            </div>

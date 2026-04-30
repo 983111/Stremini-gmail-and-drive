@@ -105,13 +105,6 @@ export function Drive() {
       }
       const data = await fetchRecentDriveFiles(accessToken, qStr);
       setFiles(data);
-      
-      // Background fetch snippets for non-folders in small batches to avoid rate limits
-      const nonFolders = data.filter((f: any) => f.mimeType !== 'application/vnd.google-apps.folder');
-      for (let i = 0; i < nonFolders.length; i += 5) {
-        const batch = nonFolders.slice(i, i + 5);
-        await Promise.all(batch.map((f: any) => fetchSnippet(f)));
-      }
     } catch (e: any) {
       console.error(e);
       setError(e.message || 'An error occurred fetching Drive files.');
@@ -344,8 +337,8 @@ export function Drive() {
                       </div>
                     ) : (
                       <div className="text-[11px] text-muted font-italic opacity-50 flex items-center space-x-1">
-                        <Loader2 size={10} className={file.mimeType.includes('pdf') || file.mimeType.includes('image') ? '' : 'animate-spin'} />
-                        <span>{file.mimeType.includes('pdf') || file.mimeType.includes('image') ? 'Binary file (no preview)' : 'Fetching snippet...'}</span>
+                        <FileText size={10} />
+                        <span>{file.mimeType.includes('pdf') || file.mimeType.includes('image') ? 'Binary file' : 'Click to preview content'}</span>
                       </div>
                     )}
                   </div>

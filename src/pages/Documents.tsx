@@ -307,7 +307,7 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, title: newTitle });
                     updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
                   }}
-                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-[#DDD] text-foreground tracking-tight"
+                  className="w-full text-4xl font-bold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tighter"
                   placeholder="Document Title"
                 />
                 <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0">
@@ -381,12 +381,12 @@ export function Documents() {
                       setSelectedDoc({ ...selectedDoc, content: newContent });
                       updateDocument(selectedDoc.id, selectedDoc.title, newContent);
                     }}
-                    className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground text-base resize-none leading-relaxed placeholder-muted font-mono"
+                    className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground text-base resize-none leading-relaxed placeholder-muted font-sans"
                     placeholder="Start typing..."
                   />
                 </div>
               ) : (
-                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none text-foreground">
+                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-slate prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90">
                   <Markdown
                     components={{
                       code({ node, inline, className, children, ...props }: any) {
@@ -478,7 +478,7 @@ export function Documents() {
                  <div className="flex-1 flex flex-col space-y-4">
                    {chatMessages.map((msg, i) => (
                      <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-amber-200' : 'bg-surface border border-border text-amber-500'}`}>
+                        <div className={`max-w-[90%] p-4 rounded-xl text-sm ${msg.role === 'user' ? 'bg-foreground text-background shadow-sm' : 'bg-surface border border-border text-foreground shadow-sm'}`}>
                          <div className="prose dark:prose-invert prose-sm max-w-none text-inherit prose-p:text-inherit">
                            <Markdown>{msg.content}</Markdown>
                          </div>
