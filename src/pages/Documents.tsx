@@ -102,7 +102,7 @@ export function Documents() {
     `;
     container.appendChild(styles);
 
-    const opt = {
+    const opt: any = {
       margin:       1,
       filename:     `${selectedDoc.title || 'Document'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
@@ -262,9 +262,9 @@ export function Documents() {
   };
 
   return (
-    <div className="flex h-full bg-background">
-      {/* Sidebar list */}
-      <div className="w-64 border-r border-border bg-background flex flex-col flex-shrink-0 z-0">
+    <div className="flex h-full bg-background overflow-hidden">
+      {/* Sidebar list - Hidden on mobile if doc selected */}
+      <div className={`w-full lg:w-64 border-r border-border bg-background flex flex-col flex-shrink-0 z-0 ${selectedDoc ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-4 border-b border-border flex justify-between items-center bg-background">
           <h2 className="font-semibold text-xs text-muted uppercase tracking-wider">Workspace</h2>
           <button onClick={createDoc} className="p-1 hover:bg-surface rounded-sm text-muted hover:text-foreground transition-colors">
@@ -272,33 +272,63 @@ export function Documents() {
           </button>
         </div>
         <div className="flex-1 overflow-auto p-3 space-y-1">
-          {docs.map(d => (
-            <div 
-              key={d.id}
-              onClick={() => setSelectedDoc(d)}
-              className={`group flex items-center justify-between p-2 rounded-sm cursor-pointer text-sm transition-colors ${selectedDoc?.id === d.id ? 'bg-surface text-foreground font-medium' : 'text-muted hover:bg-surface'}`}
-            >
-              <div className="flex items-center space-x-2 truncate">
-                <FileText size={14} className={selectedDoc?.id === d.id ? "text-foreground" : "text-muted"} />
-                <span className="truncate">{d.title}</span>
-              </div>
+          {docs.length === 0 ? (
+            <div className="py-20 text-center px-4">
+              <p className="text-xs text-muted">No documents yet.</p>
               <button 
-                onClick={(e) => { e.stopPropagation(); deleteDocument(d.id); }} 
-                className={`opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity p-1 rounded-sm hover:bg-background`}
+                onClick={createDoc}
+                className="mt-4 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-surface px-4 py-2 border border-border rounded-sm transition-all"
               >
-                <Trash2 size={12} />
+                Create First Entry
               </button>
             </div>
-          ))}
+          ) : (
+            docs.map(d => (
+              <div 
+                key={d.id}
+                onClick={() => setSelectedDoc(d)}
+                className={`group flex items-center justify-between p-2 rounded-sm cursor-pointer text-sm transition-colors ${selectedDoc?.id === d.id ? 'bg-surface text-foreground font-medium' : 'text-muted hover:bg-surface'}`}
+              >
+                <div className="flex items-center space-x-2 truncate">
+                  <FileText size={14} className={selectedDoc?.id === d.id ? "text-foreground" : "text-muted"} />
+                  <span className="truncate">{d.title}</span>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); deleteDocument(d.id); }} 
+                  className={`opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity p-1 rounded-sm hover:bg-background`}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* Editor Main Content */}
-      <div className="flex-1 overflow-auto relative bg-background flex">
+      <div className={`flex-1 overflow-hidden relative bg-background flex flex-col ${selectedDoc ? 'flex' : 'hidden lg:flex'}`}>
         {selectedDoc ? (
           <>
-            <div className="flex-1 p-16 overflow-y-auto max-w-4xl mx-auto flex flex-col">
-              <div className="flex justify-between items-start mb-12 group">
+            <div className="flex-1 p-4 sm:p-8 lg:p-16 overflow-y-auto max-w-4xl mx-auto w-full flex flex-col">
+              {/* Mobile Page Header Buttons */}
+              <div className="flex lg:hidden items-center justify-between mb-8">
+                <button 
+                  onClick={() => setSelectedDoc(null)}
+                  className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted"
+                >
+                  <MoveRight size={14} className="rotate-180" />
+                  <span>Docs</span>
+                </button>
+                <button 
+                  onClick={() => setIsAssistantOpen(!isAssistantOpen)}
+                  className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-amber-600"
+                >
+                  <Sparkles size={14} />
+                  <span>Assistant</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 sm:mb-12 group gap-4">
                 <input 
                   type="text"
                   value={selectedDoc.title}
@@ -307,10 +337,10 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, title: newTitle });
                     updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
                   }}
-                  className="w-full text-4xl font-bold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tighter"
+                  className="w-full text-3xl sm:text-4xl font-bold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tighter"
                   placeholder="Document Title"
                 />
-                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0">
+                <div className="flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0 self-start">
                   <button 
                     onClick={() => setIsPreview(false)}
                     className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${!isPreview ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
@@ -328,51 +358,44 @@ export function Documents() {
                   <div className="w-[1px] h-4 bg-surface-hover mx-1"></div>
                   <button 
                     onClick={handleOpenLinkModal}
-                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
-                    title="Insert Drive Link"
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground"
+                    title="Insert Link"
                   >
                     <LinkIcon size={14} />
                   </button>
                   <button 
                     onClick={handleDownloadPDF}
-                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
-                    title="Download as PDF"
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground"
+                    title="PDF"
                   >
                     <Download size={14} />
                   </button>
                   <button 
                     onClick={() => setIsShareModalOpen(true)}
-                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
-                    title="Share Document"
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground"
+                    title="Share"
                   >
                     <Share2 size={14} />
                   </button>
-                  {!isAssistantOpen && (
-                    <>
-                      <div className="w-[1px] h-4 bg-surface-hover mx-1"></div>
-                      <button 
-                        onClick={() => setIsAssistantOpen(true)}
-                        className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
-                        title="Open Assistant"
-                      >
-                        <PanelRight size={14} />
-                      </button>
-                    </>
-                  )}
+                  <button 
+                    onClick={() => setIsAssistantOpen(!isAssistantOpen)}
+                    className={`hidden lg:flex p-1.5 rounded-sm transition-colors items-center justify-center ${isAssistantOpen ? 'bg-background shadow-sm text-amber-500' : 'text-muted hover:text-foreground'}`}
+                    title="Assistant"
+                  >
+                    <PanelRight size={14} />
+                  </button>
                 </div>
               </div>
 
               {!isPreview ? (
-                <div className="flex-1 flex flex-col">
-                  {!isAssistantOpen && (
-                    <div className="flex items-center space-x-2 mb-4 bg-surface p-1.5 rounded-sm border border-border w-fit animate-in fade-in slide-in-from-top-2 duration-200">
-                      <button onClick={() => applyFormatting('**')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Bold"><Bold size={16} /></button>
-                      <button onClick={() => applyFormatting('*')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Italic"><Italic size={16} /></button>
-                      <button onClick={() => applyFormatting('~~')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Strikethrough"><Strikethrough size={16} /></button>
-                      <div className="w-[1px] h-4 bg-border mx-1"></div>
-                      <button onClick={() => applyFormatting('```\n', '\n```')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Code Block"><Code size={16} /></button>
-                    </div>
-                  )}
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center space-x-2 mb-4 bg-surface p-1 border border-border w-fit rounded-sm overflow-x-auto max-w-full">
+                    <button onClick={() => applyFormatting('**')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all shrink-0" title="Bold"><Bold size={16} /></button>
+                    <button onClick={() => applyFormatting('*')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all shrink-0" title="Italic"><Italic size={16} /></button>
+                    <button onClick={() => applyFormatting('~~')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all shrink-0" title="Strike"><Strikethrough size={16} /></button>
+                    <div className="w-[1px] h-4 bg-border mx-1 shrink-0"></div>
+                    <button onClick={() => applyFormatting('```\n', '\n```')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all shrink-0" title="Code"><Code size={16} /></button>
+                  </div>
                   <textarea
                     ref={textareaRef}
                     value={selectedDoc.content}
@@ -386,20 +409,22 @@ export function Documents() {
                   />
                 </div>
               ) : (
-                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-slate prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90">
+                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-slate prose-lg max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 pb-20">
                   <Markdown
                     components={{
                       code({ node, inline, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || '');
                         return !inline && match ? (
-                          <SyntaxHighlighter
-                            style={shadesOfPurple as any}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
+                          <div className="overflow-x-auto">
+                            <SyntaxHighlighter
+                              style={shadesOfPurple as any}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          </div>
                         ) : (
                           <code className={className} {...props}>
                             {children}
@@ -414,9 +439,9 @@ export function Documents() {
               )}
             </div>
             
-            {/* AI Panel (Right Sidebar) */}
+            {/* AI Panel (Right Sidebar) - Mobile Overlay */}
             {isAssistantOpen && (
-            <div className="w-[340px] bg-background border-l border-border flex flex-col shrink-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
+            <div className="fixed inset-y-0 right-0 w-full sm:w-[340px] bg-background border-l border-border flex flex-col shrink-0 z-50 lg:relative lg:translate-x-0 shadow-2xl lg:shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
               {/* Header */}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">

@@ -355,9 +355,9 @@ export function Databases() {
   };
 
   return (
-    <div className="flex h-full bg-background font-sans">
-      {/* Sidebar - Notion style */}
-      <div className="w-64 border-r border-border bg-[#FBFBFA] dark:bg-[#0B0B0B] flex flex-col shrink-0">
+    <div className="flex h-full bg-background font-sans overflow-hidden">
+      {/* Sidebar - Notion style - Hidden on mobile */}
+      <div className="hidden lg:flex w-64 border-r border-border bg-[#FBFBFA] dark:bg-[#0B0B0B] flex-col shrink-0">
         <div className="p-4 flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
             <DatabaseIcon size={14} className="text-muted" />
@@ -417,69 +417,66 @@ export function Databases() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative flex flex-col bg-background">
         {selectedDb && !isAiMode ? (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             {/* Context Header */}
-            <div className="px-12 pt-12 pb-6">
+            <div className="px-4 sm:px-8 lg:px-12 pt-8 sm:pt-12 pb-6">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="p-2 bg-surface rounded-md border border-border">
                   <Table2 size={24} className="text-amber-500" />
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">{selectedDb.name}</h1>
+                <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground truncate">{selectedDb.name}</h1>
               </div>
 
-              <div className="flex items-center space-x-6 border-b border-border pb-2 mb-6">
-                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-foreground pb-2 border-b-2 border-foreground">
+              <div className="flex items-center space-x-4 sm:space-x-6 border-b border-border pb-2 mb-6 overflow-x-auto scrollbar-hide">
+                 <button className="flex items-center space-x-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-foreground pb-2 border-b-2 border-foreground whitespace-nowrap">
                    <Table2 size={14} />
                    <span>Table View</span>
                  </button>
-                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50">
+                 <button className="flex items-center space-x-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50 whitespace-nowrap">
                    <Kanban size={14} />
                    <span>Kanban</span>
                  </button>
-                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50">
+                 <button className="flex items-center space-x-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50 whitespace-nowrap">
                    <CalendarIcon size={14} />
                    <span>Timeline</span>
                  </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="relative group">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-foreground transition-colors" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-2 sm:space-x-4">
+                  <div className="relative flex-1 sm:flex-none">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                     <input 
                       type="text" 
-                      placeholder="Find in database..." 
-                      className="bg-surface border border-border rounded-sm py-1.5 pl-9 pr-4 text-xs outline-none focus:border-foreground/20 transition-all min-w-[240px]"
+                      placeholder="Find..." 
+                      className="w-full bg-surface border border-border rounded-sm py-1.5 pl-9 pr-4 text-xs outline-none focus:border-foreground/20 transition-all sm:min-w-[200px]"
                     />
                   </div>
                   <button className="text-xs font-bold uppercase tracking-widest text-muted hover:text-foreground flex items-center space-x-2 px-3 py-1.5 rounded-sm hover:bg-surface-hover transition-all">
                     <Filter size={14} />
-                    <span>Filter</span>
+                    <span className="hidden sm:inline">Filter</span>
                   </button>
                 </div>
-                <div className="flex items-center space-x-3">
-                   <div className="flex items-center bg-surface border border-border rounded-sm">
+                <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3">
+                   <div className="flex items-center bg-surface border border-border rounded-sm shrink-0">
                       <button 
                         onClick={() => setIsAddingColumn(true)}
-                        className="p-1 px-3 border-r border-border hover:bg-surface-hover text-muted hover:text-foreground transition-all"
+                        className="p-1 px-2.5 sm:px-3 border-r border-border hover:bg-surface-hover text-muted"
                         title="Add Column"
                       >
                          <ColumnsIcon size={14} />
                       </button>
-                      <label className="p-1 px-3 border-r border-border hover:bg-surface-hover text-muted hover:text-foreground transition-all cursor-pointer" title="Import CSV">
+                      <label className="p-1 px-2.5 sm:px-3 border-r border-border hover:bg-surface-hover text-muted cursor-pointer">
                         <UploadIcon size={14} />
-                        <input type="file" accept=".csv" className="hidden" onChange={(e) => {}} />
+                        <input type="file" accept=".csv" className="hidden" />
                       </label>
-                      <button 
-                        className="p-1 px-3 hover:bg-surface-hover text-muted hover:text-foreground transition-all"
-                        title="Database Settings"
-                      >
+                      <button className="p-1 px-2.5 sm:px-3 hover:bg-surface-hover text-muted">
                          <Settings2 size={14} />
                       </button>
                    </div>
                    <button 
                     onClick={addRecord}
-                    className="bg-foreground text-background px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-sm flex items-center space-x-2"
+                    className="flex-1 sm:flex-none bg-foreground text-background px-4 py-2 rounded-sm text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center justify-center space-x-2"
                   >
                     <Plus size={14} />
                     <span>New Entry</span>
@@ -489,9 +486,9 @@ export function Databases() {
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-auto px-12 pb-12">
-               <div className="border border-border border-b-0 rounded-sm overflow-hidden bg-background shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-                 <table className="w-full border-collapse">
+            <div className="flex-1 overflow-auto px-4 sm:px-8 lg:px-12 pb-12">
+               <div className="border border-border border-b-0 rounded-sm overflow-x-auto bg-background shadow-sm">
+                 <table className="w-full border-collapse min-w-[600px]">
                    <thead>
                      <tr className="bg-surface/50 border-b border-border">
                        {JSON.parse(selectedDb.schema).map((field: any, idx: number) => (
@@ -569,50 +566,50 @@ export function Databases() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-background p-12">
-            <div className="w-full max-w-2xl">
+          <div className="flex-1 flex flex-col items-center justify-center bg-background p-4 sm:p-12 overflow-y-auto">
+            <div className="w-full max-w-2xl px-4">
                <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-12"
+                className="text-center space-y-8 sm:space-y-12 py-8"
                >
                   <div className="space-y-4">
-                    <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto border border-border">
-                      <Sparkles size={28} className="text-amber-500" />
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto border border-border">
+                      <Sparkles size={24} className="text-amber-500" />
                     </div>
-                    <h1 className="text-4xl font-bold tracking-tight text-foreground">AI Database Generator</h1>
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">AI Database Generator</h1>
                     <p className="text-sm text-muted font-medium max-w-md mx-auto leading-relaxed">
                       Describe your dream workspace, and I'll architect the tables, properties, and sample data in seconds.
                     </p>
                   </div>
 
-                  <div className="bg-surface rounded-lg border border-border p-8 text-center relative overflow-hidden">
+                  <div className="bg-surface rounded-xl border border-border p-4 sm:p-8 text-center relative overflow-hidden">
                     <div className="relative z-10 space-y-6">
                       <div className="flex flex-col space-y-4">
                         <textarea 
                           value={generationPrompt}
                           onChange={(e) => setGenerationPrompt(e.target.value)}
-                          placeholder="e.g. A content calendar for high-growth startups with focus on video production and platform distribution..."
-                          className="w-full bg-background border border-border rounded-md py-4 px-4 text-sm outline-none focus:border-amber-500/30 transition-all min-h-[120px] resize-none"
+                          placeholder="e.g. A content calendar for high-growth startups..."
+                          className="w-full bg-background border border-border rounded-md py-4 px-4 text-sm outline-none focus:border-foreground/10 transition-all min-h-[100px] sm:min-h-[120px] resize-none"
                         />
                         <button 
                           onClick={handleAiGeneration}
                           disabled={!generationPrompt || isGenerating}
-                          className="w-full bg-foreground text-background py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                          className="w-full bg-foreground text-background py-3 rounded-md text-sm font-bold uppercase tracking-widest flex items-center justify-center space-x-2 disabled:opacity-50"
                         >
                           {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                          <span>{isGenerating ? 'Architecting your database...' : 'Build Workspace'}</span>
+                          <span>{isGenerating ? 'Building...' : 'Build Workspace'}</span>
                         </button>
                       </div>
                       
-                      <div className="pt-4">
+                      <div className="pt-2">
                         <p className="text-[10px] font-bold text-muted uppercase tracking-widest mb-3">Try these</p>
                         <div className="flex flex-wrap gap-2 justify-center">
-                          {['SaaS Product Roadmap', 'Investor Outreach CRM', 'Student Study Planner', 'Gourmet Recipe Journal'].map(p => (
+                          {['Product Roadmap', 'CRM', 'Study Planner'].map(p => (
                             <button 
                               key={p} 
                               onClick={() => setGenerationPrompt(p)}
-                              className="text-[11px] font-medium text-muted border border-border px-3 py-1.5 rounded-full hover:border-foreground hover:text-foreground transition-all"
+                              className="text-[10px] sm:text-[11px] font-medium text-muted border border-border px-3 py-1.5 rounded-full hover:border-foreground transition-all"
                             >
                               {p}
                             </button>
@@ -623,14 +620,14 @@ export function Databases() {
                   </div>
 
                   {!databases.length && (
-                    <div className="pt-12 text-center">
+                    <div className="pt-8 sm:pt-12 text-center pb-8">
                       <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-6">Or start with a preset</p>
-                      <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
                         {TEMPLATES.filter(t => !t.isAi).map(tpl => (
                           <div 
                             key={tpl.name}
                             onClick={() => createDatabase(tpl.name, tpl.schema)}
-                            className="p-5 bg-surface border border-border rounded-lg text-left hover:border-foreground/30 cursor-pointer transition-all group"
+                            className="p-4 sm:p-5 bg-surface border border-border rounded-lg text-left hover:border-foreground transition-all group"
                           >
                             <h3 className="text-sm font-bold text-foreground flex items-center justify-between">
                                 {tpl.name}
@@ -672,8 +669,8 @@ export function Databases() {
                     </button>
                   </div>
                   
-                  <div className="flex-1 overflow-auto p-6 bg-surface/30">
-                     <div className="grid grid-cols-2 gap-4">
+                  <div className="flex-1 overflow-auto p-4 sm:p-6 bg-surface/30">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {TEMPLATES.map((tpl, i) => (
                            <div 
                             key={i} 
