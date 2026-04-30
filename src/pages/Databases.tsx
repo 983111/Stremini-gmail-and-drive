@@ -27,7 +27,7 @@ import {
   Download as DownloadIcon,
   Upload as UploadIcon
 } from 'lucide-react';
-import { generateDatabaseSchema } from '../lib/gemini';
+import { generateDatabaseSchema, generateDatabaseRecords } from '../lib/gemini';
 
 const TEMPLATES = [
   {
@@ -538,14 +538,38 @@ export function Databases() {
     try {
       const schema = await generateDatabaseSchema(generationPrompt);
       if (schema && schema.length > 0) {
-        await createDatabase(generationPrompt.slice(0, 50), schema);
+        // Create the database first
+        const name = generationPrompt.slice(0, 50);
+        const newDbData = {
+          name,
+          schema: JSON.stringify(schema),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          userId: auth.currentUser!.uid
+        };
+        const docRef = await addDoc(collection(db, `users/${auth.currentUser!.uid}/databases`), newDbData);
+        const dbId = docRef.id;
+        
+        // Generate and add initial records
+        const recordsData = await generateDatabaseRecords(generationPrompt, JSON.stringify(schema));
+        if (recordsData && recordsData.length > 0) {
+          for (const record of recordsData) {
+            await addDoc(collection(db, `users/${auth.currentUser!.uid}/databases/${dbId}/records`), {
+              ...record,
+              createdAt: serverTimestamp()
+            });
+          }
+        }
+        
+        setSelectedDb({ id: dbId, ...newDbData });
         setGenerationPrompt('');
+        setShowTemplates(false);
       } else {
         alert("Sorry, I couldn't generate a schema for that prompt.");
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to generate database schema.");
+      alert("Failed to generate database.");
     } finally {
       setIsGenerating(false);
     }
@@ -870,69 +894,76 @@ export function Databases() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
             {showTemplates ? (
-              <div className="max-w-4xl w-full">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-foreground">Choose a Template</h2>
-                  <button onClick={() => setShowTemplates(false)} className="text-muted hover:text-foreground">
-                    <X size={24} />
-                  </button>
+            <div className="max-w-4xl w-full h-full flex flex-col pt-8">
+              <div className="flex items-center justify-between mb-8 shrink-0">
+                <div className="text-left">
+                  <h2 className="text-2xl font-bold text-foreground">Intelligence Templates</h2>
+                  <p className="text-muted text-sm">Choose a starting point or build with AI below.</p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+                <button onClick={() => setShowTemplates(false)} className="p-2 hover:bg-surface rounded-sm text-muted hover:text-foreground transition-all">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-10 pb-4">
                   {TEMPLATES.map((t, i) => (
                     <div 
                       key={i}
                       onClick={() => createDatabase(t.name, t.schema)}
-                      className="p-6 bg-surface border border-border rounded-sm hover:border-border-strong hover:shadow-md cursor-pointer transition-all text-left"
+                      className="p-5 bg-surface border border-border rounded-sm hover:border-border-strong hover:shadow-md cursor-pointer transition-all text-left flex flex-col h-[180px]"
                     >
-                      <div className="bg-background w-10 h-10 rounded-sm flex items-center justify-center border border-border mb-4">
-                        <Table2 size={20} className="text-foreground" />
+                      <div className="bg-background w-8 h-8 rounded-sm flex items-center justify-center border border-border mb-3">
+                        <Table2 size={16} className="text-foreground" />
                       </div>
-                      <h3 className="font-bold text-lg mb-2 text-foreground">{t.name}</h3>
-                      <p className="text-xs text-muted leading-relaxed">{t.description}</p>
+                      <h3 className="font-bold text-sm mb-2 text-foreground truncate">{t.name}</h3>
+                      <p className="text-[11px] text-muted leading-relaxed line-clamp-3 overflow-hidden">{t.description}</p>
+                      <div className="mt-auto pt-3 flex items-center text-[9px] font-bold text-muted uppercase tracking-widest group-hover:text-foreground">
+                        Use Template <Plus size={10} className="ml-1" />
+                      </div>
                     </div>
                   ))}
                   <div 
                     onClick={() => createDatabase()}
-                    className="p-6 border border-dashed border-border rounded-sm hover:border-border-strong hover:bg-surface cursor-pointer transition-all flex flex-col items-center justify-center text-center group"
+                    className="p-5 border border-dashed border-border rounded-sm hover:border-border-strong hover:bg-surface cursor-pointer transition-all flex flex-col items-center justify-center text-center group h-[180px]"
                   >
-                    <Plus size={24} className="text-muted group-hover:text-foreground mb-4" />
-                    <span className="text-sm font-medium text-muted group-hover:text-foreground">Empty Database</span>
+                    <Plus size={20} className="text-muted group-hover:text-foreground mb-2" />
+                    <span className="text-xs font-semibold text-muted group-hover:text-foregroundUppercase tracking-wider">Empty DB</span>
                   </div>
                 </div>
 
-                <div className="p-8 bg-surface rounded-sm border border-border relative overflow-hidden">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-foreground text-background p-2 rounded-sm">
-                      <Sparkles size={20} />
+                <div className="p-8 bg-surface rounded-sm border border-border relative overflow-hidden mb-12">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="bg-foreground text-background p-1.5 rounded-sm">
+                      <Sparkles size={16} />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">AI Database Architect</h3>
+                    <h3 className="text-lg font-bold text-foreground">AI Database Architect</h3>
                   </div>
-                  <p className="text-sm text-muted mb-8 text-left">
-                    Describe what you want to track, and let the AI design the columns and structure for you. 
-                    Try "Inventory tracking for a coffee shop" or "Candidate recruitment pipeline."
+                  <p className="text-xs text-muted mb-6 text-left max-w-2xl">
+                    Describe what you want to track, and let the AI design the columns and <strong>populate 5 sample rows</strong> for you. 
                   </p>
                   <div className="flex space-x-2">
                     <input 
                       type="text" 
                       value={generationPrompt}
                       onChange={e => setGenerationPrompt(e.target.value)}
-                      placeholder="What would you like to track?"
+                      placeholder="e.g. A planner for my garden with planting dates and health status..."
                       className="flex-1 bg-background border border-border-strong rounded-sm px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-foreground/5 transition-all"
                       onKeyDown={e => e.key === 'Enter' && handleAiGeneration()}
                     />
                     <button 
                       onClick={handleAiGeneration}
                       disabled={isGenerating || !generationPrompt}
-                      className="bg-foreground text-background px-8 py-3 rounded-sm font-bold text-sm hover:bg-foreground-hover transition-all flex items-center space-x-2 disabled:opacity-50"
+                      className="bg-foreground text-background px-6 py-3 rounded-sm font-bold text-sm hover:bg-foreground-hover transition-all flex items-center space-x-2 disabled:opacity-50 min-w-[140px] justify-center"
                     >
-                      {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                      <span>{isGenerating ? 'Architecting...' : 'Build It'}</span>
+                      {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                      <span>{isGenerating ? 'Building...' : 'Generate'}</span>
                     </button>
                   </div>
                 </div>
               </div>
-            ) : (
+            </div>
+          ) : (
               <div className="max-w-md">
                 <div className="bg-surface w-20 h-20 rounded-sm flex items-center justify-center border border-border mb-8 mx-auto shadow-sm">
                   <DatabaseIcon size={40} className="text-muted" />

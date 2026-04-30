@@ -87,6 +87,26 @@ export async function draftEmailWithAI(prompt: string, context: string = '') {
   return response.text;
 }
 
+export async function generateDatabaseRecords(description: string, schema: string) {
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `
+      You are a data architect. Generate a JSON array of 5 initial records for a database based on this schema: ${schema}.
+      The description of the data is: "${description}".
+      Follow the types strictly (text, number, select, date, checkbox).
+      The output must be a pure JSON array of objects where keys match the field names in the schema.
+      Example: [{"Task": "Complete report", "Status": "To Do", "Priority": "High"}]
+    `,
+  });
+
+  try {
+    const text = response.text.replace(/```json|```/g, '').trim();
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse AI records:", e);
+    return [];
+  }
+}
 export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',

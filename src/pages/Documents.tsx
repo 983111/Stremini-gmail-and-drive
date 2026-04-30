@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
-import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight } from 'lucide-react';
+import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Bold, Italic, Strikethrough, Code } from 'lucide-react';
 import { rewriteDocument, summarizeDocumentContent, askDocumentQuestion } from '../lib/gemini';
 import Markdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { shadesOfPurple } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles } from '../lib/googleApi';
 import html2pdf from 'html2pdf.js';
@@ -24,8 +26,35 @@ export function Documents() {
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [isAssistantOpen, setIsAssistantOpen] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const applyFormatting = (prefix: string, suffix: string = prefix) => {
+    if (!textareaRef.current || isPreview) return;
+    const { selectionStart, selectionEnd, value } = textareaRef.current;
+    
+    const selectedText = value.substring(selectionStart, selectionEnd);
+    const before = value.substring(0, selectionStart);
+    const after = value.substring(selectionEnd);
+    
+    const newContent = `${before}${prefix}${selectedText}${suffix}${after}`;
+    
+    if (selectedDoc) {
+      setSelectedDoc({ ...selectedDoc, content: newContent });
+      updateDocument(selectedDoc.id, selectedDoc.title, newContent);
+    }
+    
+    // Resume focus after state update
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(
+          selectionStart + prefix.length,
+          selectionEnd + prefix.length
+        );
+      }
+    }, 0);
+  };
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isAiLoading]);
@@ -317,19 +346,51 @@ export function Documents() {
               </div>
 
               {!isPreview ? (
-                <textarea
-                  value={selectedDoc.content}
-                  onChange={(e) => {
-                    const newContent = e.target.value;
-                    setSelectedDoc({ ...selectedDoc, content: newContent });
-                    updateDocument(selectedDoc.id, selectedDoc.title, newContent);
-                  }}
-                  className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground text-base resize-none leading-relaxed placeholder-muted"
-                  placeholder="Start typing..."
-                />
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center space-x-2 mb-4 bg-surface p-1.5 rounded-sm border border-border w-fit">
+                    <button onClick={() => applyFormatting('**')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Bold"><Bold size={16} /></button>
+                    <button onClick={() => applyFormatting('*')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Italic"><Italic size={16} /></button>
+                    <button onClick={() => applyFormatting('~~')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Strikethrough"><Strikethrough size={16} /></button>
+                    <div className="w-[1px] h-4 bg-border mx-1"></div>
+                    <button onClick={() => applyFormatting('```\n', '\n```')} className="p-1.5 hover:bg-background rounded-sm text-muted hover:text-foreground transition-all" title="Code Block"><Code size={16} /></button>
+                  </div>
+                  <textarea
+                    ref={textareaRef}
+                    value={selectedDoc.content}
+                    onChange={(e) => {
+                      const newContent = e.target.value;
+                      setSelectedDoc({ ...selectedDoc, content: newContent });
+                      updateDocument(selectedDoc.id, selectedDoc.title, newContent);
+                    }}
+                    className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground text-base resize-none leading-relaxed placeholder-muted font-mono"
+                    placeholder="Start typing..."
+                  />
+                </div>
               ) : (
                 <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none text-foreground">
-                  <Markdown>{selectedDoc.content}</Markdown>
+                  <Markdown
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            style={shadesOfPurple as any}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {selectedDoc.content}
+                  </Markdown>
                 </div>
               )}
             </div>
