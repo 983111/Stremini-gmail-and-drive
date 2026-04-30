@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
+import Papa from 'papaparse';
 import { 
   Database as DatabaseIcon, 
   Plus, 
@@ -22,7 +23,9 @@ import {
   Hash,
   List,
   Calendar as CalendarIcon,
-  CheckSquare
+  CheckSquare,
+  Download as DownloadIcon,
+  Upload as UploadIcon
 } from 'lucide-react';
 import { generateDatabaseSchema } from '../lib/gemini';
 
@@ -75,6 +78,56 @@ const TEMPLATES = [
       { name: 'Category', type: 'select', options: ['Food', 'Rent', 'Transport', 'Entertainment', 'Work'] },
       { name: 'Amount', type: 'number' },
       { name: 'Paid', type: 'checkbox' }
+    ]
+  },
+  {
+    name: 'Reading List',
+    description: 'Keep track of the books you want to read.',
+    schema: [
+      { name: 'Title', type: 'text' },
+      { name: 'Author', type: 'text' },
+      { name: 'Status', type: 'select', options: ['To Read', 'Reading', 'Finished'] },
+      { name: 'Rating', type: 'number' }
+    ]
+  },
+  {
+    name: 'Recipe Manager',
+    description: 'Store and organize your favorite recipes.',
+    schema: [
+      { name: 'Recipe Name', type: 'text' },
+      { name: 'Category', type: 'select', options: ['Breakfast', 'Lunch', 'Dinner', 'Dessert'] },
+      { name: 'Effort', type: 'select', options: ['Easy', 'Medium', 'Hard'] },
+      { name: 'Reference URL', type: 'text' }
+    ]
+  },
+  {
+    name: 'Inventory Tracker',
+    description: 'Manage your office or home inventory.',
+    schema: [
+      { name: 'Item', type: 'text' },
+      { name: 'Location', type: 'text' },
+      { name: 'Quantity', type: 'number' },
+      { name: 'Last Restocked', type: 'date' }
+    ]
+  },
+  {
+    name: 'Job Hunt Tracker',
+    description: 'Structure your job hunt process and interviews.',
+    schema: [
+      { name: 'Company', type: 'text' },
+      { name: 'Role', type: 'text' },
+      { name: 'Stage', type: 'select', options: ['Applied', 'Phone Screen', 'Interview', 'Offer', 'Rejected'] },
+      { name: 'Applied Date', type: 'date' }
+    ]
+  },
+  {
+    name: 'Event Planner',
+    description: 'Coordinate your upcoming events and guest lists.',
+    schema: [
+      { name: 'Task', type: 'text' },
+      { name: 'Due Date', type: 'date' },
+      { name: 'Budget', type: 'number' },
+      { name: 'Completed', type: 'checkbox' }
     ]
   }
 ];
@@ -212,6 +265,45 @@ export function Databases() {
     }
   };
 
+  const handleExport = () => {
+    if (records.length === 0) return;
+    const exportData = records.map(({ id, createdAt, ...rest }) => rest);
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${selectedDb.name}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !auth.currentUser || !selectedDb) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const data = results.data;
+        for (const row of data as any[]) {
+          try {
+            await addDoc(collection(db, `users/${auth.currentUser!.uid}/databases/${selectedDb.id}/records`), {
+              ...row,
+              createdAt: serverTimestamp()
+            });
+          } catch (err) {
+            console.error("Error importing row:", err);
+          }
+        }
+      }
+    });
+    e.target.value = '';
+  };
+
   const getFieldIcon = (type: string) => {
     switch (type) {
       case 'text': return <Type size={12} />;
@@ -303,13 +395,28 @@ export function Databases() {
                     <span>Filter</span>
                   </button>
                 </div>
-                <button 
-                  onClick={addRecord}
-                  className="bg-foreground text-background px-4 py-1.5 rounded-sm text-xs font-medium hover:bg-foreground-hover transition-colors flex items-center space-x-2"
-                >
-                  <Plus size={14} />
-                  <span>New Record</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={handleExport}
+                    className="text-xs font-medium text-muted hover:text-foreground flex items-center space-x-1 transition-colors px-2 py-1 rounded-sm hover:bg-surface-hover"
+                    title="Export to CSV"
+                  >
+                    <DownloadIcon size={14} />
+                    <span>Export</span>
+                  </button>
+                  <label className="text-xs font-medium text-muted hover:text-foreground flex items-center space-x-1 transition-colors px-2 py-1 rounded-sm hover:bg-surface-hover cursor-pointer" title="Import from CSV">
+                    <UploadIcon size={14} />
+                    <span>Import</span>
+                    <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+                  </label>
+                  <button 
+                    onClick={addRecord}
+                    className="bg-foreground text-background px-4 py-1.5 rounded-sm text-xs font-medium hover:bg-foreground-hover transition-colors flex items-center space-x-2"
+                  >
+                    <Plus size={14} />
+                    <span>New Record</span>
+                  </button>
+                </div>
               </div>
             </div>
 
