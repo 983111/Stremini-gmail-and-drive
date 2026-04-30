@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, Timestamp, getDocs, orderBy } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
 import Papa from 'papaparse';
@@ -9,7 +9,7 @@ import {
   Trash2, 
   Table2, 
   Layout, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Kanban, 
   Sparkles, 
   Filter, 
@@ -22,448 +22,61 @@ import {
   Type,
   Hash,
   List,
-  Calendar as CalendarIcon,
   CheckSquare,
   Download as DownloadIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  MoreVertical,
+  Settings2,
+  ColumnsIcon,
+  Target,
+  ArrowRight
 } from 'lucide-react';
 import { generateDatabaseSchema, generateDatabaseRecords } from '../lib/gemini';
+import { motion, AnimatePresence } from 'motion/react';
 
 const TEMPLATES = [
   {
-    name: 'Simple Task Tracker',
-    description: 'Track your daily tasks and their status.',
+    name: 'Weekly Planner',
+    description: 'Structure your week with tasks, priorities, and deadlines.',
     schema: [
       { name: 'Task', type: 'text' },
-      { name: 'Status', type: 'select', options: ['To Do', 'In Progress', 'Done'] },
-      { name: 'Due Date', type: 'date' },
-      { name: 'Priority', type: 'select', options: ['Low', 'Medium', 'High'] }
+      { name: 'Day', type: 'select', options: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+      { name: 'Priority', type: 'select', options: ['Low', 'Medium', 'High'] },
+      { name: 'Status', type: 'select', options: ['Planned', 'In Progress', 'Done'] },
+      { name: 'Due Date', type: 'date' }
     ]
   },
   {
-    name: 'Project Roadmap',
-    description: 'Overview of high-level project milestones.',
+    name: 'Project Tasker',
+    description: 'Manage complex projects with assignees and progress tracking.',
     schema: [
-      { name: 'Milestone', type: 'text' },
-      { name: 'Quarter', type: 'select', options: ['Q1', 'Q2', 'Q3', 'Q4'] },
-      { name: 'Progress', type: 'number' },
-      { name: 'Owner', type: 'text' }
+      { name: 'Action Item', type: 'text' },
+      { name: 'Module', type: 'text' },
+      { name: 'Assignee', type: 'text' },
+      { name: 'Status', type: 'select', options: ['Backlog', 'Todo', 'In Progress', 'Under Review', 'Archive'] },
+      { name: 'Estimation (h)', type: 'number' }
     ]
   },
   {
-    name: 'Content Calendar',
-    description: 'Plan your blog posts and social media content.',
-    schema: [
-      { name: 'Content Title', type: 'text' },
-      { name: 'Platform', type: 'select', options: ['Blog', 'Twitter', 'LinkedIn', 'YouTube'] },
-      { name: 'Publish Date', type: 'date' },
-      { name: 'Status', type: 'select', options: ['Draft', 'Review', 'Scheduled', 'Published'] }
-    ]
-  },
-  {
-    name: 'Simple CRM',
-    description: 'Manage your sales pipeline and contacts.',
-    schema: [
-      { name: 'Company', type: 'text' },
-      { name: 'Contact Name', type: 'text' },
-      { name: 'Deal Value', type: 'number' },
-      { name: 'Stage', type: 'select', options: ['Lead', 'Qualification', 'Proposal', 'Negotiation', 'Closed'] }
-    ]
-  },
-  {
-    name: 'Personal Budget',
-    description: 'Track your monthly expenses and income.',
-    schema: [
-      { name: 'Item', type: 'text' },
-      { name: 'Category', type: 'select', options: ['Food', 'Rent', 'Transport', 'Entertainment', 'Work'] },
-      { name: 'Amount', type: 'number' },
-      { name: 'Paid', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Reading List',
-    description: 'Keep track of the books you want to read.',
-    schema: [
-      { name: 'Title', type: 'text' },
-      { name: 'Author', type: 'text' },
-      { name: 'Status', type: 'select', options: ['To Read', 'Reading', 'Finished'] },
-      { name: 'Rating', type: 'number' }
-    ]
-  },
-  {
-    name: 'Recipe Manager',
-    description: 'Store and organize your favorite recipes.',
-    schema: [
-      { name: 'Recipe Name', type: 'text' },
-      { name: 'Category', type: 'select', options: ['Breakfast', 'Lunch', 'Dinner', 'Dessert'] },
-      { name: 'Effort', type: 'select', options: ['Easy', 'Medium', 'Hard'] },
-      { name: 'Reference URL', type: 'text' }
-    ]
-  },
-  {
-    name: 'Inventory Tracker',
-    description: 'Manage your office or home inventory.',
-    schema: [
-      { name: 'Item', type: 'text' },
-      { name: 'Location', type: 'text' },
-      { name: 'Quantity', type: 'number' },
-      { name: 'Last Restocked', type: 'date' }
-    ]
-  },
-  {
-    name: 'Job Hunt Tracker',
-    description: 'Structure your job hunt process and interviews.',
-    schema: [
-      { name: 'Company', type: 'text' },
-      { name: 'Role', type: 'text' },
-      { name: 'Stage', type: 'select', options: ['Applied', 'Phone Screen', 'Interview', 'Offer', 'Rejected'] },
-      { name: 'Applied Date', type: 'date' }
-    ]
-  },
-  {
-    name: 'Event Planner',
-    description: 'Coordinate your upcoming events and guest lists.',
-    schema: [
-      { name: 'Task', type: 'text' },
-      { name: 'Due Date', type: 'date' },
-      { name: 'Budget', type: 'number' },
-      { name: 'Completed', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Workout Log',
-    description: 'Track your exercises, sets, and reps.',
-    schema: [
-      { name: 'Exercise', type: 'text' },
-      { name: 'Date', type: 'date' },
-      { name: 'Weight (kg)', type: 'number' },
-      { name: 'Sets', type: 'number' },
-      { name: 'Reps', type: 'number' }
-    ]
-  },
-  {
-    name: 'Habit Tracker',
-    description: 'Monitor your daily habits and progress.',
+    name: 'Personal Habit Tracker',
+    description: 'Track your daily wins and build consistency.',
     schema: [
       { name: 'Habit', type: 'text' },
-      { name: 'Goal (Days/Week)', type: 'number' },
-      { name: 'Category', type: 'select', options: ['Health', 'Work', 'Personal', 'Finance'] },
-      { name: 'Active', type: 'checkbox' }
+      { name: 'Morning', type: 'checkbox' },
+      { name: 'Afternoon', type: 'checkbox' },
+      { name: 'Evening', type: 'checkbox' },
+      { name: 'Notes', type: 'text' }
     ]
   },
   {
-    name: 'Employee Directory',
-    description: 'Centralized list of team members and roles.',
+    name: 'Expense Tracker',
+    description: 'Keep your finances in check with categorized spending.',
     schema: [
-      { name: 'Name', type: 'text' },
-      { name: 'Role', type: 'text' },
-      { name: 'Department', type: 'select', options: ['Engineering', 'Marketing', 'Sales', 'HR', 'Design'] },
-      { name: 'Email', type: 'text' },
-      { name: 'Start Date', type: 'date' }
-    ]
-  },
-  {
-    name: 'Meeting Notes DB',
-    description: 'Store and categorize all your meeting records.',
-    schema: [
-      { name: 'Meeting Title', type: 'text' },
-      { name: 'Date', type: 'date' },
-      { name: 'Type', type: 'select', options: ['Sync', 'One-on-One', 'Brainstorm', 'Board'] },
-      { name: 'Attendees', type: 'text' }
-    ]
-  },
-  {
-    name: 'Bug Tracker',
-    description: 'Log and manage technical issues.',
-    schema: [
-      { name: 'Issue', type: 'text' },
-      { name: 'Severity', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
-      { name: 'Status', type: 'select', options: ['Backlog', 'In Dev', 'Testing', 'Resolved'] },
-      { name: 'Reported By', type: 'text' }
-    ]
-  },
-  {
-    name: 'Course Syllabus',
-    description: 'Organize your learning modules and progress.',
-    schema: [
-      { name: 'Module Name', type: 'text' },
-      { name: 'Order', type: 'number' },
-      { name: 'Status', type: 'select', options: ['Not Started', 'In Progress', 'Completed'] },
-      { name: 'Resources', type: 'text' }
-    ]
-  },
-  {
-    name: 'Expense Reports',
-    description: 'Track business expenses for reimbursement.',
-    schema: [
-      { name: 'Merchant', type: 'text' },
-      { name: 'Amount', type: 'number' },
-      { name: 'Category', type: 'select', options: ['Travel', 'Meals', 'Software', 'Hardware'] },
-      { name: 'Date', type: 'date' },
-      { name: 'Approved', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Product Roadmap',
-    description: 'Vision and timeline for product features.',
-    schema: [
-      { name: 'Feature', type: 'text' },
-      { name: 'Quarter', type: 'select', options: ['Q1', 'Q2', 'Q3', 'Q4'] },
-      { name: 'Priority', type: 'number' },
-      { name: 'Impact', type: 'select', options: ['Small', 'Medium', 'Large'] }
-    ]
-  },
-  {
-    name: 'OKR Tracker',
-    description: 'Measure objectives and key results.',
-    schema: [
-      { name: 'Objective', type: 'text' },
-      { name: 'Key Result', type: 'text' },
-      { name: 'Initial Value', type: 'number' },
-      { name: 'Target Value', type: 'number' },
-      { name: 'Current Progress (%)', type: 'number' }
-    ]
-  },
-  {
-    name: 'Marketing Campaigns',
-    description: 'Plan and analyze marketing initiatives.',
-    schema: [
-      { name: 'Campaign Name', type: 'text' },
-      { name: 'Channel', type: 'select', options: ['Email', 'Social', 'Search', 'Display'] },
-      { name: 'Budget', type: 'number' },
-      { name: 'Live Date', type: 'date' }
-    ]
-  },
-  {
-    name: 'User Feedback',
-    description: 'Repository for customer insights and requests.',
-    schema: [
-      { name: 'Feedback', type: 'text' },
-      { name: 'Customer Segment', type: 'select', options: ['Free', 'Pro', 'Enterprise'] },
-      { name: 'Sentiment', type: 'select', options: ['Positive', 'Neutral', 'Negative'] },
-      { name: 'Feature Request?', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Travel Itinerary',
-    description: 'Plan your trips day by day.',
-    schema: [
-      { name: 'Location', type: 'text' },
-      { name: 'Day', type: 'number' },
-      { name: 'Activity', type: 'text' },
-      { name: 'Confirmed?', type: 'checkbox' },
-      { name: 'Budget Est.', type: 'number' }
-    ]
-  },
-  {
-    name: 'Subscription Tracker',
-    description: 'Manage recurring costs and renewal dates.',
-    schema: [
-      { name: 'Service', type: 'text' },
-      { name: 'Cost/Month', type: 'number' },
-      { name: 'Renewal Date', type: 'date' },
-      { name: 'Category', type: 'select', options: ['Entertainment', 'Work', 'Health', 'Other'] }
-    ]
-  },
-  {
-    name: 'Daily Standup Log',
-    description: 'Keep record of daily team status updates.',
-    schema: [
-      { name: 'Date', type: 'date' },
-      { name: 'Person', type: 'text' },
-      { name: 'Yesterday', type: 'text' },
-      { name: 'Today', type: 'text' },
-      { name: 'Blockers', type: 'text' }
-    ]
-  },
-  {
-    name: 'Flashcards',
-    description: 'Study tool with terms and definitions.',
-    schema: [
-      { name: 'Term', type: 'text' },
-      { name: 'Definition', type: 'text' },
-      { name: 'Category', type: 'text' },
-      { name: 'Difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard'] }
-    ]
-  },
-  {
-    name: 'Gift Ideas',
-    description: 'Never forget a gift idea for friends/family.',
-    schema: [
-      { name: 'Person', type: 'text' },
-      { name: 'Occasion', type: 'select', options: ['Birthday', 'Holiday', 'Anniversary', 'Other'] },
-      { name: 'Idea', type: 'text' },
-      { name: 'Price Est.', type: 'number' },
-      { name: 'Purchased', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Code snippets',
-    description: 'Library of reusable code examples.',
-    schema: [
-      { name: 'Title', type: 'text' },
-      { name: 'Language', type: 'select', options: ['JS', 'TS', 'Python', 'Go', 'Rust'] },
       { name: 'Description', type: 'text' },
-      { name: 'Complex?', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Restaurant Wishlist',
-    description: 'Places you want to try or have visited.',
-    schema: [
-      { name: 'Name', type: 'text' },
-      { name: 'Cuisine', type: 'text' },
-      { name: 'Rating', type: 'number' },
-      { name: 'Visits', type: 'number' },
-      { name: 'Must Try?', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Investment Portfolio',
-    description: 'Simple tracker for your holdings.',
-    schema: [
-      { name: 'Asset', type: 'text' },
-      { name: 'Ticker', type: 'text' },
-      { name: 'Shares', type: 'number' },
-      { name: 'Total Cost', type: 'number' },
-      { name: 'Type', type: 'select', options: ['Stock', 'Crypto', 'ETF', 'Real Estate'] }
-    ]
-  },
-  {
-    name: 'Pet Medical Records',
-    description: 'Track vaccinations and health visits.',
-    schema: [
-      { name: 'Pet Name', type: 'text' },
-      { name: 'Service', type: 'text' },
+      { name: 'Amount', type: 'number' },
+      { name: 'Category', type: 'select', options: ['Rent', 'Food', 'Transport', 'SaaS', 'Misc'] },
       { name: 'Date', type: 'date' },
-      { name: 'Next Due', type: 'date' },
-      { name: 'Weight', type: 'number' }
-    ]
-  },
-  {
-    name: 'Garden Journal',
-    description: 'Monitor your plants and gardening tasks.',
-    schema: [
-      { name: 'Plant', type: 'text' },
-      { name: 'Planted Date', type: 'date' },
-      { name: 'Water Frequency', type: 'number' },
-      { name: 'Fertilized?', type: 'checkbox' },
-      { name: 'Status', type: 'select', options: ['Healthy', 'Needing Care', 'Struggling'] }
-    ]
-  },
-  {
-    name: 'House Hunting',
-    description: 'Organize properties you are viewing.',
-    schema: [
-      { name: 'Address', type: 'text' },
-      { name: 'Price', type: 'number' },
-      { name: 'Score', type: 'number' },
-      { name: 'Bedrooms', type: 'number' },
-      { name: 'Viewing Date', type: 'date' }
-    ]
-  },
-  {
-    name: 'Movie Watchlist',
-    description: 'Movies you want to see or have seen.',
-    schema: [
-      { name: 'Title', type: 'text' },
-      { name: 'Year', type: 'number' },
-      { name: 'Genre', type: 'select', options: ['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror'] },
-      { name: 'Seen', type: 'checkbox' },
-      { name: 'Rating', type: 'number' }
-    ]
-  },
-  {
-    name: 'Subscription Services',
-    description: 'Track all your recurring digital services.',
-    schema: [
-      { name: 'Service Name', type: 'text' },
-      { name: 'Monthly Fee', type: 'number' },
-      { name: 'Billing Date', type: 'date' },
-      { name: 'Sharing?', type: 'checkbox' }
-    ]
-  },
-  {
-    name: 'Asset Registry',
-    description: 'Inventory of physical business assets.',
-    schema: [
-      { name: 'Item Name', type: 'text' },
-      { name: 'Serial #', type: 'text' },
-      { name: 'Purchase Price', type: 'number' },
-      { name: 'Location', type: 'text' }
-    ]
-  },
-  {
-    name: 'Scientific Research Bible',
-    description: 'Bibliography of papers and studies.',
-    schema: [
-      { name: 'Title', type: 'text' },
-      { name: 'Authors', type: 'text' },
-      { name: 'Year', type: 'number' },
-      { name: 'Field', type: 'text' },
-      { name: 'Relevance Status', type: 'select', options: ['Unread', 'Read', 'Cited'] }
-    ]
-  },
-  {
-    name: 'Sales Pipeline',
-    description: 'Move deals through your sales funnel.',
-    schema: [
-      { name: 'Contact', type: 'text' },
-      { name: 'Company', type: 'text' },
-      { name: 'Deal Value', type: 'number' },
-      { name: 'Probability (%)', type: 'number' },
-      { name: 'Stage', type: 'select', options: ['Prospect', 'Meeting', 'Negotiation', 'Closed Won', 'Closed Lost'] }
-    ]
-  },
-  {
-    name: 'Personal Journal (DB)',
-    description: 'Categorized daily entries.',
-    schema: [
-      { name: 'Title', type: 'text' },
-      { name: 'Date', type: 'date' },
-      { name: 'Mood', type: 'select', options: ['Happy', 'Productive', 'Tired', 'Creative', 'Reflective'] },
-      { name: 'Gratitude', type: 'text' }
-    ]
-  },
-  {
-    name: 'Inventory Count',
-    description: 'Track stock levels and reorder statuses.',
-    schema: [
-      { name: 'Product SKU', type: 'text' },
-      { name: 'Quantity on Hand', type: 'number' },
-      { name: 'Price per Unit', type: 'number' },
-      { name: 'Low Stock Level', type: 'number' },
-      { name: 'Total Value', type: 'number' }
-    ]
-  },
-  {
-    name: 'Blog Post Queue',
-    description: 'Content pipeline for your blog.',
-    schema: [
-      { name: 'Headline', type: 'text' },
-      { name: 'Author', type: 'text' },
-      { name: 'Category', type: 'select', options: ['Tech', 'Life', 'How-to', 'News'] },
-      { name: 'Status', type: 'select', options: ['Idea', 'Writing', 'Editing', 'Published'] }
-    ]
-  },
-  {
-    name: 'Competitor Analysis',
-    description: 'Benchmark your product against others.',
-    schema: [
-      { name: 'Competitor', type: 'text' },
-      { name: 'Strengths', type: 'text' },
-      { name: 'Weaknesses', type: 'text' },
-      { name: 'Price Comparison', type: 'number' }
-    ]
-  },
-  {
-    name: 'Brand Assets',
-    description: 'Guidelines and links for company branding.',
-    schema: [
-      { name: 'Asset Name', type: 'text' },
-      { name: 'File Format', type: 'select', options: ['SVG', 'PNG', 'AI', 'PDF'] },
-      { name: 'Last Updated', type: 'date' },
-      { name: 'Approved for Use?', type: 'checkbox' }
+      { name: 'Reimbursed?', type: 'checkbox' }
     ]
   }
 ];
@@ -477,16 +90,26 @@ export function Databases() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingCell, setEditingCell] = useState<{recordId: string, field: string} | null>(null);
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumn, setNewColumn] = useState({ name: '', type: 'text', options: '' });
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const q = query(collection(db, `users/${auth.currentUser.uid}/databases`));
+    const q = query(
+      collection(db, `users/${auth.currentUser.uid}/databases`),
+      orderBy('createdAt', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const dbData = snapshot.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data()
       }));
       setDatabases(dbData);
+      
+      // Select the first one if none selected and there are databases
+      if (!selectedDb && dbData.length > 0) {
+        setSelectedDb(dbData[0]);
+      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, `users/${auth.currentUser?.uid}/databases`);
     });
@@ -499,7 +122,10 @@ export function Databases() {
       return;
     }
     setLoadingRecords(true);
-    const q = query(collection(db, `users/${auth.currentUser.uid}/databases/${selectedDb.id}/records`));
+    const q = query(
+      collection(db, `users/${auth.currentUser.uid}/databases/${selectedDb.id}/records`),
+      orderBy('createdAt', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const recordData = snapshot.docs.map(doc => ({ 
         id: doc.id, 
@@ -538,8 +164,7 @@ export function Databases() {
     try {
       const schema = await generateDatabaseSchema(generationPrompt);
       if (schema && schema.length > 0) {
-        // Create the database first
-        const name = generationPrompt.slice(0, 50);
+        const name = generationPrompt.length > 30 ? generationPrompt.substring(0, 30) + '...' : generationPrompt;
         const newDbData = {
           name,
           schema: JSON.stringify(schema),
@@ -550,7 +175,6 @@ export function Databases() {
         const docRef = await addDoc(collection(db, `users/${auth.currentUser!.uid}/databases`), newDbData);
         const dbId = docRef.id;
         
-        // Generate and add initial records
         const recordsData = await generateDatabaseRecords(generationPrompt, JSON.stringify(schema));
         if (recordsData && recordsData.length > 0) {
           for (const record of recordsData) {
@@ -564,19 +188,17 @@ export function Databases() {
         setSelectedDb({ id: dbId, ...newDbData });
         setGenerationPrompt('');
         setShowTemplates(false);
-      } else {
-        alert("Sorry, I couldn't generate a schema for that prompt.");
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to generate database.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const deleteDatabase = async (id: string) => {
-    if (!auth.currentUser || !window.confirm("Are you sure you want to delete this database?")) return;
+  const deleteDatabase = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!auth.currentUser || !window.confirm("Delete this entire database?")) return;
     try {
       await deleteDoc(doc(db, `users/${auth.currentUser.uid}/databases/${id}`));
       if (selectedDb?.id === id) setSelectedDb(null);
@@ -592,6 +214,7 @@ export function Databases() {
     schema.forEach((field: any) => {
       if (field.type === 'checkbox') initialData[field.name] = false;
       else if (field.type === 'number') initialData[field.name] = 0;
+      else if (field.type === 'select') initialData[field.name] = field.options?.[0] || '';
       else initialData[field.name] = '';
     });
 
@@ -625,43 +248,25 @@ export function Databases() {
     }
   };
 
-  const handleExport = () => {
-    if (records.length === 0) return;
-    const exportData = records.map(({ id, createdAt, ...rest }) => rest);
-    const csv = Papa.unparse(exportData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedDb.name}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !auth.currentUser || !selectedDb) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const data = results.data;
-        for (const row of data as any[]) {
-          try {
-            await addDoc(collection(db, `users/${auth.currentUser!.uid}/databases/${selectedDb.id}/records`), {
-              ...row,
-              createdAt: serverTimestamp()
-            });
-          } catch (err) {
-            console.error("Error importing row:", err);
-          }
-        }
-      }
-    });
-    e.target.value = '';
+  const handleAddColumn = async () => {
+    if (!auth.currentUser || !selectedDb || !newColumn.name) return;
+    try {
+      const currentSchema = JSON.parse(selectedDb.schema);
+      const newSchema = [...currentSchema, { 
+        name: newColumn.name, 
+        type: newColumn.type, 
+        options: newColumn.type === 'select' ? newColumn.options.split(',').map(o => o.trim()) : undefined 
+      }];
+      await updateDoc(doc(db, `users/${auth.currentUser.uid}/databases/${selectedDb.id}`), {
+        schema: JSON.stringify(newSchema),
+        updatedAt: serverTimestamp()
+      });
+      setSelectedDb({ ...selectedDb, schema: JSON.stringify(newSchema) });
+      setIsAddingColumn(false);
+      setNewColumn({ name: '', type: 'text', options: '' });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `schema update for ${selectedDb.id}`);
+    }
   };
 
   const getFieldIcon = (type: string) => {
@@ -675,332 +280,482 @@ export function Databases() {
     }
   };
 
+  const renderCell = (record: any, field: any) => {
+    const isEditing = editingCell?.recordId === record.id && editingCell?.field === field.name;
+    const value = record[field.name];
+
+    if (field.type === 'checkbox') {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <input 
+            type="checkbox" 
+            checked={!!value}
+            onChange={(e) => updateRecord(record.id, field.name, e.target.checked)}
+            className="w-4 h-4 rounded border-border text-foreground focus:ring-0 focus:ring-offset-0"
+          />
+        </div>
+      );
+    }
+
+    if (field.type === 'select') {
+      return (
+        <select 
+          value={value || ''}
+          onChange={(e) => updateRecord(record.id, field.name, e.target.value)}
+          className="w-full h-full bg-transparent border-none outline-none text-xs px-2 appearance-none cursor-pointer hover:bg-surface-hover rounded-sm"
+        >
+          <option value="" disabled>Select...</option>
+          {field.options?.map((opt: string) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (isEditing) {
+      return (
+        <input 
+          autoFocus
+          type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+          value={value ?? ''}
+          onChange={(e) => updateRecord(record.id, field.name, e.target.value)}
+          onBlur={() => setEditingCell(null)}
+          onKeyDown={(e) => { if (e.key === 'Enter') setEditingCell(null); }}
+          className="w-full h-full bg-surface border border-foreground/20 rounded-sm outline-none px-2 text-xs font-medium"
+        />
+      );
+    }
+
+    return (
+      <div 
+        onClick={() => setEditingCell({ recordId: record.id, field: field.name })}
+        className="w-full h-full min-h-[32px] flex items-center px-3 text-xs text-foreground cursor-text hover:bg-surface-hover/50 transition-colors"
+      >
+        {field.type === 'date' && value ? new Date(value).toLocaleDateString() : value}
+        {!value && value !== 0 && <span className="text-muted/30">...</span>}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex h-full bg-background font-sans antialiased">
-      {/* Sidebar */}
-      <div className="w-64 border-r border-border bg-surface flex flex-col shrink-0">
-        <div className="p-4 flex items-center justify-between">
+    <div className="flex h-full bg-background font-sans">
+      {/* Sidebar - Notion style */}
+      <div className="w-64 border-r border-border bg-[#FBFBFA] dark:bg-[#0B0B0B] flex flex-col shrink-0">
+        <div className="p-4 flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            <DatabaseIcon size={16} className="text-foreground" />
-            <span className="text-xs font-bold uppercase tracking-widest text-muted">Databases</span>
+            <div className="w-6 h-6 bg-surface shadow-sm border border-border rounded flex items-center justify-center">
+              <DatabaseIcon size={12} className="text-foreground" />
+            </div>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted">Workspace DBs</span>
           </div>
           <button 
             onClick={() => setShowTemplates(true)}
-            className="flex items-center space-x-1 px-2 py-1 hover:bg-surface-hover rounded-sm text-muted hover:text-foreground transition-colors border border-border"
+            className="p-1 hover:bg-surface-hover rounded-sm text-muted transition-colors"
+            title="Add from Templates"
           >
-            <Plus size={14} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Templates</span>
+            <Plus size={16} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto p-3 space-y-1">
-          {databases.map(db => (
-            <div 
-              key={db.id}
-              onClick={() => setSelectedDb(db)}
-              className={`group flex items-center justify-between p-2 rounded-sm cursor-pointer text-sm transition-all border ${selectedDb?.id === db.id ? 'bg-background border-border-strong text-foreground font-medium shadow-sm' : 'border-transparent text-muted hover:bg-surface-hover hover:text-foreground'}`}
-            >
-              <div className="flex items-center space-x-2 truncate">
-                <Table2 size={14} className={selectedDb?.id === db.id ? 'text-foreground' : 'text-muted'} />
-                <span className="truncate">{db.name}</span>
-              </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); deleteDatabase(db.id); }}
-                className="opacity-0 group-hover:opacity-100 hover:text-red-500 p-1 rounded-sm hover:bg-surface transition-all"
+        <div className="flex-1 overflow-auto px-2 space-y-1">
+          {databases.length > 0 ? (
+            databases.map(db => (
+              <div 
+                key={db.id}
+                onClick={() => setSelectedDb(db)}
+                className={`group flex items-center justify-between px-3 py-1.5 rounded-sm cursor-pointer text-[13px] transition-all ${selectedDb?.id === db.id ? 'bg-surface text-foreground font-semibold shadow-sm' : 'text-muted hover:bg-surface-hover hover:text-foreground'}`}
               >
-                <Trash2 size={12} />
-              </button>
+                <div className="flex items-center space-x-2 truncate">
+                  <Table2 size={14} className={selectedDb?.id === db.id ? 'text-amber-500' : 'text-muted'} />
+                  <span className="truncate">{db.name}</span>
+                </div>
+                <button 
+                  onClick={(e) => deleteDatabase(db.id, e)}
+                  className="opacity-0 group-hover:opacity-100 hover:text-red-500 p-0.5"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="px-5 py-8 text-center">
+              <p className="text-[11px] text-muted leading-relaxed">No databases created yet.</p>
             </div>
-          ))}
+          )}
+        </div>
+
+        <div className="p-4 border-t border-border">
+          <button 
+             onClick={() => createDatabase()}
+             className="w-full flex items-center justify-center space-x-2 border border-border border-dashed p-2 rounded-sm text-[11px] font-bold uppercase tracking-widest text-muted hover:border-border-strong hover:text-foreground transition-all"
+          >
+            <Plus size={12} />
+            <span>New DB</span>
+          </button>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden relative flex flex-col bg-background">
         {selectedDb ? (
-          <>
-            {/* Header */}
-            <div className="px-8 py-6 bg-background shrink-0">
-              <div className="flex justify-between items-end mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-foreground">{selectedDb.name}</h1>
+          <div className="flex flex-col h-full">
+            {/* Context Header */}
+            <div className="px-12 pt-12 pb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-surface rounded-md border border-border">
+                  <Table2 size={24} className="text-amber-500" />
                 </div>
-                <div className="flex items-center space-x-2 bg-surface p-1 rounded-sm border border-border">
-                  <button className="px-3 py-1.5 text-xs font-medium bg-background border border-border-strong shadow-sm rounded-sm text-foreground flex items-center space-x-2">
-                    <Table2 size={14} />
-                    <span>Table</span>
-                  </button>
-                  <button className="px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:bg-surface-hover rounded-sm flex items-center space-x-2 transition-colors">
-                    <Layout size={14} />
-                    <span>Board</span>
-                  </button>
-                  <button className="px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:bg-surface-hover rounded-sm flex items-center space-x-2 transition-colors">
-                    <CalendarIcon size={14} />
-                    <span>Calendar</span>
-                  </button>
-                </div>
+                <h1 className="text-4xl font-bold tracking-tight text-foreground">{selectedDb.name}</h1>
               </div>
 
-              <div className="flex items-center justify-between border-b border-border pb-4">
+              <div className="flex items-center space-x-6 border-b border-border pb-2 mb-6">
+                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-foreground pb-2 border-b-2 border-foreground">
+                   <Table2 size={14} />
+                   <span>Table View</span>
+                 </button>
+                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50">
+                   <Kanban size={14} />
+                   <span>Kanban</span>
+                 </button>
+                 <button className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-muted pb-2 border-b-2 border-transparent hover:text-foreground transition-all opacity-50">
+                   <CalendarIcon size={14} />
+                   <span>Timeline</span>
+                 </button>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+                  <div className="relative group">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-foreground transition-colors" />
                     <input 
                       type="text" 
-                      placeholder="Filter records..." 
-                      className="bg-surface border border-border rounded-sm py-1.5 pl-8 pr-3 text-xs outline-none focus:border-border-strong transition-colors min-w-[200px]"
+                      placeholder="Find in database..." 
+                      className="bg-surface border border-border rounded-sm py-1.5 pl-9 pr-4 text-xs outline-none focus:border-foreground/20 transition-all min-w-[240px]"
                     />
                   </div>
-                  <button className="text-xs font-medium text-muted hover:text-foreground flex items-center space-x-1 transition-colors">
+                  <button className="text-xs font-bold uppercase tracking-widest text-muted hover:text-foreground flex items-center space-x-2 px-3 py-1.5 rounded-sm hover:bg-surface-hover transition-all">
                     <Filter size={14} />
                     <span>Filter</span>
                   </button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={handleExport}
-                    className="text-xs font-medium text-muted hover:text-foreground flex items-center space-x-1 transition-colors px-2 py-1 rounded-sm hover:bg-surface-hover"
-                    title="Export to CSV"
-                  >
-                    <DownloadIcon size={14} />
-                    <span>Export</span>
-                  </button>
-                  <label className="text-xs font-medium text-muted hover:text-foreground flex items-center space-x-1 transition-colors px-2 py-1 rounded-sm hover:bg-surface-hover cursor-pointer" title="Import from CSV">
-                    <UploadIcon size={14} />
-                    <span>Import</span>
-                    <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
-                  </label>
-                  <button 
+                <div className="flex items-center space-x-3">
+                   <div className="flex items-center bg-surface border border-border rounded-sm">
+                      <button 
+                        onClick={() => setIsAddingColumn(true)}
+                        className="p-1 px-3 border-r border-border hover:bg-surface-hover text-muted hover:text-foreground transition-all"
+                        title="Add Column"
+                      >
+                         <ColumnsIcon size={14} />
+                      </button>
+                      <label className="p-1 px-3 border-r border-border hover:bg-surface-hover text-muted hover:text-foreground transition-all cursor-pointer" title="Import CSV">
+                        <UploadIcon size={14} />
+                        <input type="file" accept=".csv" className="hidden" onChange={(e) => {}} />
+                      </label>
+                      <button 
+                        className="p-1 px-3 hover:bg-surface-hover text-muted hover:text-foreground transition-all"
+                        title="Database Settings"
+                      >
+                         <Settings2 size={14} />
+                      </button>
+                   </div>
+                   <button 
                     onClick={addRecord}
-                    className="bg-foreground text-background px-4 py-1.5 rounded-sm text-xs font-medium hover:bg-foreground-hover transition-colors flex items-center space-x-2"
+                    className="bg-foreground text-background px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all shadow-sm flex items-center space-x-2"
                   >
                     <Plus size={14} />
-                    <span>New Record</span>
+                    <span>New Entry</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Grid */}
-            <div className="flex-1 overflow-auto px-8 pb-8">
-              <div className="min-w-full inline-block align-middle">
-                <div className="overflow-hidden border border-border rounded-sm shadow-sm bg-surface">
-                  <table className="min-w-full divide-y divide-border">
-                    <thead className="bg-[#FAFAFA] dark:bg-[#111]">
-                      <tr>
-                        {JSON.parse(selectedDb.schema).map((field: any, idx: number) => (
-                          <th key={idx} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-muted border-r border-border first:pl-6">
-                            <div className="flex items-center space-x-2">
-                              {getFieldIcon(field.type)}
-                              <span>{field.name}</span>
-                            </div>
-                          </th>
-                        ))}
-                        <th className="px-4 py-3 w-10"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-background divide-y divide-border">
-                      {records.length > 0 ? (
-                        records.map((record) => (
-                          <tr key={record.id} className="hover:bg-surface transition-colors group">
-                            {JSON.parse(selectedDb.schema).map((field: any, idx: number) => {
-                              const value = record[field.name];
-                              const isEditing = editingCell?.recordId === record.id && editingCell?.field === field.name;
-
-                              return (
-                                <td 
-                                  key={idx} 
-                                  className="px-4 py-3 text-sm text-foreground overflow-hidden whitespace-nowrap border-r border-border first:pl-6 relative"
-                                  onClick={() => setEditingCell({ recordId: record.id, field: field.name })}
-                                >
-                                  {field.type === 'checkbox' ? (
-                                    <div className="flex justify-center">
-                                      <input 
-                                        type="checkbox" 
-                                        checked={!!value} 
-                                        onChange={(e) => updateRecord(record.id, field.name, e.target.checked)}
-                                        className="h-4 w-4 rounded-sm border-border text-foreground focus:ring-foreground"
-                                      />
-                                    </div>
-                                  ) : isEditing ? (
-                                    field.type === 'select' ? (
-                                      <select 
-                                        autoFocus
-                                        value={value || ''}
-                                        onChange={(e) => {
-                                          updateRecord(record.id, field.name, e.target.value);
-                                          setEditingCell(null);
-                                        }}
-                                        onBlur={() => setEditingCell(null)}
-                                        className="w-full bg-background text-sm p-1 outline-none border border-border-strong rounded-sm"
-                                      >
-                                        <option value="">Select...</option>
-                                        {field.options?.map((opt: string) => (
-                                          <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <input 
-                                        autoFocus
-                                        type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                                        value={value || ''}
-                                        onChange={(e) => updateRecord(record.id, field.name, e.target.value)}
-                                        onBlur={() => setEditingCell(null)}
-                                        onKeyDown={(e) => e.key === 'Enter' && setEditingCell(null)}
-                                        className="w-full bg-background text-sm p-1 outline-none border border-border-strong rounded-sm"
-                                      />
-                                    )
-                                  ) : (
-                                    <div className="min-h-[20px] flex items-center">
-                                      {field.type === 'date' ? (value ? new Date(value).toLocaleDateString() : '') : 
-                                       field.type === 'select' ? (
-                                         value ? <span className="px-2 py-0.5 rounded-full text-[10px] bg-surface-hover border border-border font-medium">{value}</span> : null
-                                       ) : value}
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            <td className="px-4 py-3 text-right sticky right-0 bg-background group-hover:bg-surface">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); deleteRecord(record.id); }}
-                                className="text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X size={14} />
-                              </button>
+            {/* Table */}
+            <div className="flex-1 overflow-auto px-12 pb-12">
+               <div className="border border-border border-b-0 rounded-sm overflow-hidden bg-background shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                 <table className="w-full border-collapse">
+                   <thead>
+                     <tr className="bg-surface/50 border-b border-border">
+                       {JSON.parse(selectedDb.schema).map((field: any, idx: number) => (
+                         <th key={idx} className="h-10 px-4 border-r border-border last:border-r-0 text-left">
+                           <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-muted">
+                             {getFieldIcon(field.type)}
+                             <span>{field.name}</span>
+                           </div>
+                         </th>
+                       ))}
+                       <th className="w-12 h-10 border-l border-border bg-surface/50"></th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {loadingRecords ? (
+                       <tr>
+                         <td colSpan={100} className="py-20 text-center">
+                           <div className="flex flex-col items-center space-y-4">
+                             <Loader2 size={24} className="animate-spin text-muted/40" />
+                             <span className="text-[10px] font-bold text-muted uppercase tracking-widest animate-pulse">Accessing records...</span>
+                           </div>
+                         </td>
+                       </tr>
+                     ) : records.length > 0 ? (
+                        records.map(record => (
+                          <tr key={record.id} className="group border-b border-border hover:bg-surface/30 transition-colors">
+                            {JSON.parse(selectedDb.schema).map((field: any, idx: number) => (
+                              <td key={idx} className="h-10 border-r border-border last:border-r-0 p-0 align-middle">
+                                {renderCell(record, field)}
+                              </td>
+                            ))}
+                            <td className="w-12 h-10 border-l border-border align-middle text-center">
+                               <button 
+                                onClick={() => deleteRecord(record.id)}
+                                className="opacity-0 group-hover:opacity-100 p-2 text-muted hover:text-red-500 rounded-sm hover:bg-surface transition-all"
+                               >
+                                 <Trash2 size={12} />
+                               </button>
                             </td>
                           </tr>
                         ))
-                      ) : (
-                        <tr>
-                          <td colSpan={JSON.parse(selectedDb.schema).length + 1} className="px-6 py-12 text-center text-muted italic font-serif">
-                            No records yet. Add a row to get started.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                  <button 
+                     ) : (
+                       <tr>
+                         <td colSpan={100} className="py-20 text-center">
+                           <div className="max-w-xs mx-auto space-y-4">
+                             <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mx-auto border border-border">
+                               <Plus size={20} className="text-muted/50" />
+                             </div>
+                             <div>
+                               <h3 className="text-sm font-bold text-foreground">Empty Database</h3>
+                               <p className="text-xs text-muted leading-relaxed">Start by adding your first entry manually or use the AI to generate sample data.</p>
+                             </div>
+                             <button 
+                              onClick={addRecord}
+                              className="px-4 py-2 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest"
+                             >
+                               Add Entry
+                             </button>
+                           </div>
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+                 {records.length > 0 && (
+                   <div 
                     onClick={addRecord}
-                    className="w-full px-6 py-3 text-left text-sm text-muted hover:bg-surface hover:text-foreground transition-all flex items-center space-x-2"
-                  >
-                    <Plus size={14} />
-                    <span>Add New Row</span>
-                  </button>
-                </div>
-              </div>
+                    className="h-10 border-b border-border flex items-center px-4 space-x-2 text-muted hover:bg-surface/50 cursor-pointer transition-all border-t-0"
+                   >
+                     <Plus size={14} className="text-muted/40" />
+                     <span className="text-[11px] font-medium">New</span>
+                   </div>
+                 )}
+               </div>
             </div>
-          </>
+          </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-            {showTemplates ? (
-            <div className="max-w-4xl w-full h-full flex flex-col pt-8">
-              <div className="flex items-center justify-between mb-8 shrink-0">
-                <div className="text-left">
-                  <h2 className="text-2xl font-bold text-foreground">Intelligence Templates</h2>
-                  <p className="text-muted text-sm">Choose a starting point or build with AI below.</p>
-                </div>
-                <button onClick={() => setShowTemplates(false)} className="p-2 hover:bg-surface rounded-sm text-muted hover:text-foreground transition-all">
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-10 pb-4">
-                  {TEMPLATES.map((t, i) => (
-                    <div 
-                      key={i}
-                      onClick={() => createDatabase(t.name, t.schema)}
-                      className="p-5 bg-surface border border-border rounded-sm hover:border-border-strong hover:shadow-md cursor-pointer transition-all text-left flex flex-col h-[180px]"
-                    >
-                      <div className="bg-background w-8 h-8 rounded-sm flex items-center justify-center border border-border mb-3">
-                        <Table2 size={16} className="text-foreground" />
-                      </div>
-                      <h3 className="font-bold text-sm mb-2 text-foreground truncate">{t.name}</h3>
-                      <p className="text-[11px] text-muted leading-relaxed line-clamp-3 overflow-hidden">{t.description}</p>
-                      <div className="mt-auto pt-3 flex items-center text-[9px] font-bold text-muted uppercase tracking-widest group-hover:text-foreground">
-                        Use Template <Plus size={10} className="ml-1" />
-                      </div>
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#FBFBFA] dark:bg-[#0B0B0B] p-12">
+            <div className="w-full max-w-lg">
+               <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center space-y-12"
+               >
+                  <div className="space-y-4">
+                    <div className="w-20 h-20 bg-background rounded-2xl flex items-center justify-center mx-auto shadow-xl border border-border border-b-4">
+                      <Target size={32} className="text-amber-500" />
                     </div>
-                  ))}
-                  <div 
-                    onClick={() => createDatabase()}
-                    className="p-5 border border-dashed border-border rounded-sm hover:border-border-strong hover:bg-surface cursor-pointer transition-all flex flex-col items-center justify-center text-center group h-[180px]"
-                  >
-                    <Plus size={20} className="text-muted group-hover:text-foreground mb-2" />
-                    <span className="text-xs font-semibold text-muted group-hover:text-foregroundUppercase tracking-wider">Empty DB</span>
+                    <h1 className="text-5xl font-black tracking-tighter text-foreground">Databases & Planners</h1>
+                    <p className="text-base text-muted font-medium max-w-md mx-auto leading-relaxed">
+                      Build highly structured modules for your business, personal life, or complex technical projects.
+                    </p>
                   </div>
-                </div>
 
-                <div className="p-8 bg-surface rounded-sm border border-border relative overflow-hidden mb-12">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="bg-foreground text-background p-1.5 rounded-sm">
-                      <Sparkles size={16} />
+                  <div className="bg-background rounded-md border border-border shadow-2xl p-8 text-center relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+                    <div className="relative z-10 space-y-6">
+                      <div className="inline-flex items-center space-x-2 bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        <Sparkles size={10} />
+                        <span>AI-Powered Design</span>
+                      </div>
+                      <h2 className="text-xl font-bold text-foreground">What do you want to build?</h2>
+                      <p className="text-xs text-muted mb-6 text-left max-w-2xl">
+                        Describe what you want to track (e.g. "Software Architecture Tasks", "SaaS Competitor Analysis", "Product Launch Tracker"), and let the AI design it.
+                      </p>
+                      <div className="flex space-x-2 mb-4">
+                        <input 
+                          type="text" 
+                          value={generationPrompt}
+                          onChange={(e) => setGenerationPrompt(e.target.value)}
+                          placeholder="e.g. A content planner for YouTube..."
+                          className="flex-1 bg-surface border border-border rounded-sm py-4 px-4 text-sm outline-none focus:border-amber-500/50 transition-all"
+                        />
+                        <button 
+                          onClick={handleAiGeneration}
+                          disabled={!generationPrompt || isGenerating}
+                          className="bg-foreground text-background px-8 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all flex items-center space-x-2 disabled:opacity-50"
+                        >
+                          {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                          <span>{isGenerating ? 'Building...' : 'Create'}</span>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 justify-start">
+                        {['Startup OKR Tracker', 'Weekly Meal Planner', 'Bug Tracking System', 'Client CRM'].map(p => (
+                          <button 
+                            key={p} 
+                            onClick={() => setGenerationPrompt(p)}
+                            className="text-[10px] font-bold text-muted border border-border px-3 py-1.5 rounded-sm hover:border-foreground hover:text-foreground transition-all uppercase tracking-tighter"
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <h3 className="text-lg font-bold text-foreground">AI Database Architect</h3>
                   </div>
-                  <p className="text-xs text-muted mb-6 text-left max-w-2xl">
-                    Describe what you want to track, and let the AI design the columns and <strong>populate 5 sample rows</strong> for you. 
-                  </p>
-                  <div className="flex space-x-2 mb-4">
-                    <input 
-                      type="text" 
-                      value={generationPrompt}
-                      onChange={e => setGenerationPrompt(e.target.value)}
-                      placeholder="e.g. A planner for my garden with planting dates and health status..."
-                      className="flex-1 bg-background border border-border-strong rounded-sm px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-foreground/5 transition-all"
-                      onKeyDown={e => e.key === 'Enter' && handleAiGeneration()}
-                    />
-                    <button 
-                      onClick={handleAiGeneration}
-                      disabled={isGenerating || !generationPrompt}
-                      className="bg-foreground text-background px-6 py-3 rounded-sm font-bold text-sm hover:bg-foreground-hover transition-all flex items-center space-x-2 disabled:opacity-50 min-w-[140px] justify-center"
-                    >
-                      {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                      <span>{isGenerating ? 'Building...' : 'Generate'}</span>
-                    </button>
+
+                  <div className="pt-8">
+                    <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-4">Or start with a template</p>
+                    <div className="grid grid-cols-2 gap-4">
+                       {TEMPLATES.slice(0, 4).map(tpl => (
+                         <div 
+                          key={tpl.name}
+                          onClick={() => createDatabase(tpl.name, tpl.schema)}
+                          className="p-4 bg-background border border-border rounded-sm text-left hover:border-foreground/20 cursor-pointer transition-all group"
+                         >
+                            <h3 className="text-sm font-bold text-foreground flex items-center justify-between">
+                               {tpl.name}
+                               <ArrowRight size={14} className="text-muted opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                            </h3>
+                            <p className="text-[11px] text-muted mt-1 leading-relaxed">{tpl.description}</p>
+                         </div>
+                       ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 justify-start">
-                    {['Product Launch Planner', 'Daily Habit Tracker', 'Project Task List', 'Expense Tracker'].map(p => (
-                      <button 
-                        key={p} 
-                        onClick={() => setGenerationPrompt(p)}
-                        className="text-[10px] font-bold text-muted border border-border px-3 py-1 rounded-full hover:border-foreground hover:text-foreground transition-all uppercase tracking-tighter"
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+               </motion.div>
             </div>
-          ) : (
-              <div className="max-w-md">
-                <div className="bg-surface w-20 h-20 rounded-sm flex items-center justify-center border border-border mb-8 mx-auto shadow-sm">
-                  <DatabaseIcon size={40} className="text-muted" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground mb-4">Your Intelligence Workspace</h2>
-                <p className="text-muted mb-10 text-lg font-serif italic">
-                  Build custom tools to organize tasks, properties, research, and data precisely how you think.
-                </p>
-                <div className="flex flex-col space-y-3">
-                  <button 
-                    onClick={() => setShowTemplates(true)}
-                    className="bg-foreground text-background px-8 py-3 rounded-sm font-bold text-sm hover:bg-foreground-hover transition-all"
-                  >
-                    Create a New Database
-                  </button>
-                  <button 
-                    onClick={() => setShowTemplates(true)}
-                    className="text-muted hover:text-foreground text-sm font-medium transition-colors"
-                  >
-                    Browse Templates
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        {/* Templates Modal */}
+        <AnimatePresence>
+          {showTemplates && (
+             <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-[#00000040] backdrop-blur-sm z-50 flex items-center justify-center p-8"
+             >
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="bg-background border border-border shadow-2xl w-full max-w-4xl overflow-hidden rounded-md flex flex-col max-h-[80vh]"
+                >
+                  <div className="p-6 border-b border-border flex justify-between items-center bg-[#FBFBFA] dark:bg-[#0B0B0B]">
+                    <div className="flex items-center space-x-2">
+                       <Layout size={20} className="text-foreground" />
+                       <h2 className="text-xl font-bold uppercase tracking-tight text-foreground">Database Templates</h2>
+                    </div>
+                    <button 
+                      onClick={() => setShowTemplates(false)}
+                      className="text-muted hover:text-foreground transition-all p-1 hover:bg-surface rounded-sm"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-auto p-8 bg-background">
+                     <div className="grid grid-cols-2 gap-6">
+                        {TEMPLATES.map((tpl, i) => (
+                           <div 
+                            key={i} 
+                            onClick={() => createDatabase(tpl.name, tpl.schema)}
+                            className="group border border-border p-5 rounded-sm hover:bg-surface transition-all cursor-pointer relative overflow-hidden"
+                           >
+                             <div className="absolute top-0 right-0 p-3 text-muted/20">
+                               <DatabaseIcon size={40} />
+                             </div>
+                             <h3 className="text-base font-bold text-foreground mb-1">{tpl.name}</h3>
+                             <p className="text-xs text-muted leading-relaxed mb-4">{tpl.description}</p>
+                             <div className="flex flex-wrap gap-2 text-[10px] font-bold text-muted/60 uppercase tracking-widest">
+                                {tpl.schema.map(f => (<span key={f.name}>• {f.name}</span>))}
+                             </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+                </motion.div>
+             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Add Column Modal */}
+        <AnimatePresence>
+          {isAddingColumn && (
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="fixed inset-0 bg-[#00000040] backdrop-blur-sm z-50 flex items-center justify-center p-8"
+             >
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="bg-background border border-border shadow-2xl w-full max-w-md overflow-hidden rounded-md flex flex-col"
+                >
+                  <div className="p-6 border-b border-border flex justify-between items-center bg-[#FBFBFA] dark:bg-[#0B0B0B]">
+                    <h2 className="text-lg font-bold text-foreground uppercase tracking-widest">Add Variable</h2>
+                    <button onClick={() => setIsAddingColumn(false)} className="text-muted">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted uppercase tracking-widest">Variable Name</label>
+                        <input 
+                          type="text" 
+                          value={newColumn.name}
+                          onChange={(e) => setNewColumn({ ...newColumn, name: e.target.value })}
+                          className="w-full bg-surface border border-border p-3 rounded-sm text-sm outline-none focus:border-foreground/20"
+                          placeholder="e.g. Priority, Category, etc."
+                        />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted uppercase tracking-widest">Data Type</label>
+                        <select 
+                          value={newColumn.type}
+                          onChange={(e) => setNewColumn({ ...newColumn, type: e.target.value })}
+                          className="w-full bg-surface border border-border p-3 rounded-sm text-sm outline-none"
+                        >
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="date">Date</option>
+                          <option value="select">Select (Multi-option)</option>
+                          <option value="checkbox">Checkbox</option>
+                        </select>
+                     </div>
+                     {newColumn.type === 'select' && (
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted uppercase tracking-widest">Options (Comma separated)</label>
+                          <input 
+                            type="text" 
+                            value={newColumn.options}
+                            onChange={(e) => setNewColumn({ ...newColumn, options: e.target.value })}
+                            className="w-full bg-surface border border-border p-3 rounded-sm text-sm outline-none focus:border-foreground/20"
+                            placeholder="To Do, In Progress, Done"
+                          />
+                       </div>
+                     )}
+                     <button 
+                      onClick={handleAddColumn}
+                      disabled={!newColumn.name}
+                      className="w-full bg-foreground text-background py-3 rounded-sm text-[11px] font-bold uppercase tracking-widest hover:bg-foreground/90 transition-all disabled:opacity-50"
+                     >
+                       Confirm Addition
+                     </button>
+                  </div>
+                </motion.div>
+             </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );

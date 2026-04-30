@@ -111,14 +111,16 @@ export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `
-      You are a database architect for a Notion-like productivity tool. 
+      You are a database architect for a productivity tool. 
       Create a JSON schema array for a database based on this description: "${description}".
       The schema should be highly relevant to the concept defined. 
       If it's a planner, include status, priority, and date fields.
       
       Valid types are "text", "number", "select", "date", "checkbox".
+      For "select" type, you MUST provide a list of relevant options in an "options" field.
+      
       The output must be a PURE JSON array (no markdown blocks, no prefix text).
-      Format: [{"name": "Field Name", "type": "text"}, {"name": "Field Name", "type": "select"}]
+      Format: [{"name": "Field Name", "type": "text"}, {"name": "Field Name", "type": "select", "options": ["Option 1", "Option 2"]}]
     `,
   });
 
