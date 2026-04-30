@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    function isValidDocument(data) {
+      return data.keys().hasAll(['title', 'content', 'createdAt', 'updatedAt', 'userId'])
+        && data.keys().size() == 5
+        && data.title is string && data.title.size() <= 1000
+        && data.content is string && data.content.size() <= 1000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.userId is string && data.userId == request.auth.uid;
+    }
+
+    function isValidAppDatabase(data) {
+      return data.keys().hasAll(['name', 'schema', 'createdAt', 'updatedAt', 'userId'])
+        && data.keys().size() == 5
+        && data.name is string && data.name.size() <= 1000
+        && data.schema is string && data.schema.size() <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.userId is string && data.userId == request.auth.uid;
+    }
+
+    function isValidDatabaseRecord(data) {
+      return data.keys().hasAll(['data', 'createdAt', 'updatedAt', 'databaseId', 'userId'])
+        && data.keys().size() == 5
+        && data.data is string && data.data.size() <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.databaseId is string && data.databaseId.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      match /documents/{docId} {
+        allow read, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(docId) && isValidDocument(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId) && isValidId(docId) && isValidDocument(incoming())
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+      
+      match /databases/{dbId} {
+        allow read, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(dbId) && isValidAppDatabase(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId) && isValidId(dbId) && isValidAppDatabase(incoming())
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'schema', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(dbId);
+        
+        match /records/{recordId} {
+          allow read, list: if isOwner(userId);
+          allow create: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
+            && incoming().databaseId == dbId
+            && incoming().createdAt == request.time
+            && incoming().updatedAt == request.time;
+          allow update: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
+            && incoming().userId == existing().userId
+            && incoming().databaseId == existing().databaseId
+            && incoming().createdAt == existing().createdAt
+            && incoming().updatedAt == request.time
+            && incoming().diff(existing()).affectedKeys().hasOnly(['data', 'updatedAt']);
+          allow delete: if isOwner(userId) && isValidId(dbId) && isValidId(recordId);
+        }
+      }
+    }
+  }
+}

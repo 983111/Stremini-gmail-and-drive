@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "Document": {
+      "title": "Document",
+      "description": "A notion-style document with block content",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "timestamp", "description": "ISO 8601 or Firestore Timestamp" },
+        "updatedAt": { "type": "timestamp", "description": "ISO 8601 or Firestore Timestamp" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "content", "createdAt", "updatedAt", "userId"]
+    },
+    "AppDatabase": {
+      "title": "AppDatabase",
+      "description": "A database schema definition",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "schema": { "type": "string", "description": "JSON string of the schema" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "schema", "createdAt", "updatedAt", "userId"]
+    },
+    "DatabaseRecord": {
+      "title": "DatabaseRecord",
+      "description": "A dynamically structured record",
+      "type": "object",
+      "properties": {
+        "data": { "type": "string", "description": "JSON string" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" },
+        "databaseId": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["data", "createdAt", "updatedAt", "databaseId", "userId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/documents/{docId}": {
+      "schema": { "$ref": "#/entities/Document" },
+      "description": "User documents"
+    },
+    "users/{userId}/databases/{dbId}": {
+      "schema": { "$ref": "#/entities/AppDatabase" },
+      "description": "User databases"
+    },
+    "users/{userId}/databases/{dbId}/records/{recordId}": {
+      "schema": { "$ref": "#/entities/DatabaseRecord" },
+      "description": "User database records"
+    }
+  }
+}
