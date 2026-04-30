@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X } from 'lucide-react';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Database } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -89,6 +89,14 @@ export function Layout() {
               <>
                 <FileText size={16} className={isActive ? "text-foreground" : "text-muted"} />
                 <span>Documents</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/databases" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
+            {({ isActive }) => (
+              <>
+                <Database size={16} className={isActive ? "text-foreground" : "text-muted"} />
+                <span>Databases</span>
               </>
             )}
           </NavLink>
@@ -198,6 +206,7 @@ export function Layout() {
                 <li>Use <strong>Drive Connect</strong> to preview your files and analyze them with Gemini.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
                 <li>Visit <strong>Documents</strong> to write rich notes, use the AI assistant, or link Drive files.</li>
+                <li>Explore <strong>Databases</strong> to build custom Notion-styled tools with AI.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">
