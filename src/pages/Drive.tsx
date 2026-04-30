@@ -21,6 +21,33 @@ export function Drive() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [fileSnippets, setFileSnippets] = useState<Record<string, string>>({});
+
+  const fetchSnippet = async (file: any) => {
+    if (!accessToken) return;
+    const previewableTypes = [
+      'application/vnd.google-apps.document',
+      'text/plain',
+      'application/json',
+      'text/markdown',
+      'text/javascript',
+      'text/html'
+    ];
+    
+    if (!previewableTypes.includes(file.mimeType) && !file.mimeType.startsWith('text/')) {
+      return;
+    }
+
+    try {
+      const content = await fetchDriveFileContent(accessToken, file.id, file.mimeType);
+      if (typeof content === 'string') {
+        const snippet = content.substring(0, 150).trim() + (content.length > 150 ? '...' : '');
+        setFileSnippets(prev => ({ ...prev, [file.id]: snippet }));
+      }
+    } catch (e) {
+      console.error(`Failed to fetch snippet for ${file.name}`, e);
+    }
+  };
 
   useEffect(() => {
     if (selectedFile && accessToken) {
@@ -56,6 +83,13 @@ export function Drive() {
       }
       const data = await fetchRecentDriveFiles(accessToken, qStr);
       setFiles(data);
+      
+      // Background fetch snippets for non-folders in small batches to avoid rate limits
+      const nonFolders = data.filter((f: any) => f.mimeType !== 'application/vnd.google-apps.folder');
+      for (let i = 0; i < nonFolders.length; i += 5) {
+        const batch = nonFolders.slice(i, i + 5);
+        await Promise.all(batch.map((f: any) => fetchSnippet(f)));
+      }
     } catch (e: any) {
       console.error(e);
       setError(e.message || 'An error occurred fetching Drive files.');
@@ -253,7 +287,7 @@ export function Drive() {
             files.map(file => (
               <div 
                 key={file.id} 
-                className={`p-3 cursor-pointer hover:bg-surface transition-colors rounded-sm flex items-center space-x-3 group ${selectedFile?.id === file.id ? 'bg-surface-hover border border-border-strong shadow-sm text-foreground' : 'border border-transparent text-muted'}`}
+                className={`p-3 cursor-pointer hover:bg-surface transition-colors rounded-sm flex flex-col space-y-2 group ${selectedFile?.id === file.id ? 'bg-surface-hover border border-border-strong shadow-sm text-foreground' : 'border border-transparent text-muted'}`}
                 onClick={() => {
                   if (file.mimeType === 'application/vnd.google-apps.folder') {
                     navigateToFolder(file);
@@ -262,21 +296,38 @@ export function Drive() {
                   }
                 }}
               >
-                <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-foreground" : "text-muted"}`}>
-                  {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
-                  <div className="text-[10px] text-muted font-semibold uppercase tracking-widest truncate mt-0.5">
-                    {new Date(file.modifiedTime).toLocaleDateString()}
+                <div className="flex items-center space-x-3">
+                  <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-foreground" : "text-muted"}`}>
+                    {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
+                    <div className="text-[10px] text-muted font-semibold uppercase tracking-widest truncate mt-0.5">
+                      {new Date(file.modifiedTime).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={(e) => handleDeleteFile(file.id, e)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-                <button 
-                  onClick={(e) => handleDeleteFile(file.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
-                >
-                  <Trash2 size={14} />
-                </button>
+                
+                {file.mimeType !== 'application/vnd.google-apps.folder' && (
+                  <div className="pl-7">
+                    {fileSnippets[file.id] ? (
+                      <div className="text-[11px] text-muted line-clamp-2 leading-relaxed bg-surface/50 p-2 rounded-sm italic border-l-2 border-border">
+                        "{fileSnippets[file.id]}"
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-muted font-italic opacity-50 flex items-center space-x-1">
+                        <Loader2 size={10} className={file.mimeType.includes('pdf') || file.mimeType.includes('image') ? '' : 'animate-spin'} />
+                        <span>{file.mimeType.includes('pdf') || file.mimeType.includes('image') ? 'Binary file (no preview)' : 'Fetching snippet...'}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
