@@ -1,5 +1,6 @@
-export async function fetchRecentEmails(accessToken: string, query = 'is:unread') {
-  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=10`;
+export async function fetchRecentEmails(accessToken: string, query = '') {
+  const qStr = query ? `&q=${encodeURIComponent(query)}` : '';
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${qStr}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
     const errorText = await res.text();
@@ -12,13 +13,18 @@ export async function fetchRecentEmails(accessToken: string, query = 'is:unread'
   const data = await res.json();
   if (!data.messages) return [];
   
-  // Fetch details for each message
-  const messages = await Promise.all(data.messages.map(async (m: any) => {
-    const mRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    return mRes.json();
-  }));
+  // Fetch details for each message in batches to avoid 429 Too Many Requests
+  const messages = [];
+  for (let i = 0; i < data.messages.length; i += 10) {
+    const batch = data.messages.slice(i, i + 10);
+    const batchResults = await Promise.all(batch.map(async (m: any) => {
+      const mRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      return mRes.json();
+    }));
+    messages.push(...batchResults);
+  }
   return messages.map((m: any) => ({
     id: m.id,
     snippet: m.snippet,
@@ -38,7 +44,7 @@ export async function fetchEmailThread(accessToken: string, threadId: string) {
 
 export async function fetchRecentDriveFiles(accessToken: string, query = '') {
   const qStr = query ? `&q=${encodeURIComponent(query)}` : '';
-  const url = `https://www.googleapis.com/drive/v3/files?pageSize=10&fields=files(id,name,mimeType,modifiedTime,webViewLink)${qStr}`;
+  const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=modifiedTime desc&fields=files(id,name,mimeType,modifiedTime,webViewLink)${qStr}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
     const errorText = await res.text();

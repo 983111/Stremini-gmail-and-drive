@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles, fetchDriveFileContent } from '../lib/googleApi';
-import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive } from 'lucide-react';
+import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
 
@@ -16,6 +16,8 @@ export function Drive() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string>('root');
+  const [folderPath, setFolderPath] = useState<{id: string, name: string}[]>([{id: 'root', name: 'Drive'}]);
 
   useEffect(() => {
     if (selectedFile && accessToken) {
@@ -38,12 +40,18 @@ export function Drive() {
     }
   }, [selectedFile, accessToken]);
 
-  const loadFiles = async (q: string) => {
+  const loadFiles = async (searchQuery: string, folderId: string) => {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchRecentDriveFiles(accessToken, q);
+      let qStr = `trashed=false`;
+      if (searchQuery) {
+        qStr += ` and name contains '${searchQuery.replace(/'/g, "\\'")}'`;
+      } else {
+        qStr += ` and '${folderId}' in parents`;
+      }
+      const data = await fetchRecentDriveFiles(accessToken, qStr);
       setFiles(data);
     } catch (e: any) {
       console.error(e);
@@ -55,13 +63,26 @@ export function Drive() {
 
   useEffect(() => {
     if (accessToken) {
-      loadFiles('');
+      loadFiles(query, currentFolderId);
     }
-  }, [accessToken]);
+  }, [accessToken, currentFolderId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadFiles(query);
+    loadFiles(query, currentFolderId);
+  };
+
+  const navigateToFolder = (file: any) => {
+    setCurrentFolderId(file.id);
+    setFolderPath(prev => [...prev, { id: file.id, name: file.name }]);
+    setQuery('');
+  };
+
+  const navigateUp = (index: number) => {
+    const target = folderPath[index];
+    setCurrentFolderId(target.id);
+    setFolderPath(prev => prev.slice(0, index + 1));
+    setQuery('');
   };
 
   const handleAnalze = async (file: any) => {
@@ -111,7 +132,23 @@ export function Drive() {
 
       <div className="flex-1 overflow-hidden flex">
         {/* Drive List */}
-        <div className="w-[340px] border-r border-[#EEEEEE] bg-[#FDFDFD] overflow-auto p-4 space-y-1.5 flex flex-col shrink-0">
+        <div className="w-[340px] border-r border-[#EEEEEE] bg-[#FDFDFD] flex flex-col shrink-0">
+          {/* Breadcrumbs */}
+          <div className="px-4 py-2 border-b border-[#EEEEEE] flex items-center space-x-1 overflow-x-auto whitespace-nowrap">
+            {folderPath.map((folder, index) => (
+              <div key={folder.id} className="flex items-center space-x-1">
+                <button 
+                  onClick={() => navigateUp(index)}
+                  className={`text-xs ${index === folderPath.length - 1 ? 'text-[#111] font-semibold' : 'text-[#888] hover:text-[#111]'} transition-colors`}
+                >
+                  {folder.name}
+                </button>
+                {index < folderPath.length - 1 && <span className="text-[#CCC] text-xs">/</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-auto p-4 space-y-1.5 flex flex-col pt-2">
           {error && (
             <div className="mb-4 p-4 bg-red-50 text-red-800 text-sm border border-red-100 rounded-sm">
               {error}
@@ -125,11 +162,17 @@ export function Drive() {
             files.map(file => (
               <div 
                 key={file.id} 
-                onClick={() => setSelectedFile(file)}
                 className={`p-3 cursor-pointer hover:bg-[#F5F5F5] transition-colors rounded-sm flex items-center space-x-3 ${selectedFile?.id === file.id ? 'bg-[#EEEEEE] border border-[#DDD] shadow-sm text-[#111]' : 'border border-transparent text-[#555]'}`}
+                onClick={() => {
+                  if (file.mimeType === 'application/vnd.google-apps.folder') {
+                    navigateToFolder(file);
+                  } else {
+                    setSelectedFile(file);
+                  }
+                }}
               >
                 <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-[#111]" : "text-[#888]"}`}>
-                  <File size={16} />
+                  {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-[#111]" : "text-[#333]"}`}>{file.name}</div>
@@ -140,6 +183,7 @@ export function Drive() {
               </div>
             ))
           )}
+          </div>
         </div>
 
         {/* Action Panel */}

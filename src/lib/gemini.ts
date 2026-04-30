@@ -52,7 +52,8 @@ export async function rewriteDocument(content: string, tone: 'formal' | 'casual'
 }
 
 export async function askDocumentQuestion(content: string, question: string, history: {role: string, parts: {text: string}[]}[] = []) {
-  const chat = ai.models.getGenerativeModel({ model: 'gemini-2.5-flash' }).startChat({
+  const chat = ai.chats.create({
+    model: 'gemini-3-flash-preview',
     history: [
       {
         role: 'user',
@@ -66,8 +67,8 @@ export async function askDocumentQuestion(content: string, question: string, his
     ]
   });
 
-  const result = await chat.sendMessage(question);
-  return result.response.text();
+  const result = await chat.sendMessage({ message: question });
+  return result.text;
 }
 
 export async function generateDatabaseSchema(description: string) {

@@ -40,7 +40,7 @@ export function Mail() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchRecentEmails(accessToken, q || 'is:unread');
+      const data = await fetchRecentEmails(accessToken, q);
       setEmails(data);
     } catch (e: any) {
       console.error(e);
@@ -52,7 +52,7 @@ export function Mail() {
 
   useEffect(() => {
     if (accessToken) {
-      loadEmails('is:unread');
+      loadEmails('');
     }
   }, [accessToken]);
 
@@ -294,26 +294,28 @@ export function Mail() {
                </p>
 
                <div className="mt-12 pt-8 border-t border-[#EEEEEE]">
-                 <button 
-                  onClick={() => handleSummarize(selectedEmail)}
-                  disabled={isAiLoading}
-                  className="bg-[#F5F5F5] hover:bg-[#EAEAEA] text-[#111] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-[#EEEEEE]"
-                 >
-                   {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                   <span>Synthesize Thread</span>
-                 </button>
-                 <button 
-                   onClick={() => {
-                     setComposeTo(selectedEmail.from);
-                     setComposeSubject(selectedEmail.subject.toLowerCase().startsWith('re:') ? selectedEmail.subject : `Re: ${selectedEmail.subject}`);
-                     setComposeBody(`\n\n\nOn ${selectedEmail.date}, ${selectedEmail.from} wrote:\n> ${selectedEmail.snippet.replace(/&quot;/g, '"')}...`);
-                     setIsComposing(true);
-                   }}
-                   className="bg-[#F5F5F5] hover:bg-[#EAEAEA] text-[#111] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-[#EEEEEE] ml-4"
-                 >
-                   <MailIcon size={14} />
-                   <span>Reply</span>
-                 </button>
+                 <div className="flex items-center space-x-4">
+                   <button 
+                    onClick={() => handleSummarize(selectedEmail)}
+                    disabled={isAiLoading}
+                    className="bg-[#F5F5F5] hover:bg-[#EAEAEA] text-[#111] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-[#EEEEEE]"
+                   >
+                     {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                     <span>Synthesize Thread</span>
+                   </button>
+                   <button 
+                     onClick={() => {
+                       setComposeTo(selectedEmail.from);
+                       setComposeSubject(selectedEmail.subject.toLowerCase().startsWith('re:') ? selectedEmail.subject : `Re: ${selectedEmail.subject}`);
+                       setComposeBody(`\n\n\nOn ${selectedEmail.date}, ${selectedEmail.from} wrote:\n> ${selectedEmail.snippet.replace(/&quot;/g, '"')}...`);
+                       setIsComposing(true);
+                     }}
+                     className="bg-[#F5F5F5] hover:bg-[#EAEAEA] text-[#111] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors flex items-center space-x-2 border border-[#EEEEEE]"
+                   >
+                     <MailIcon size={14} />
+                     <span>Reply</span>
+                   </button>
+                 </div>
 
                  {aiSummary && (
                    <div className="mt-8 bg-[#F9F9F9] p-6 border border-[#EEEEEE] rounded-sm">
