@@ -180,12 +180,12 @@ export function Documents() {
   };
 
   return (
-    <div className="flex h-full bg-[#FFFFFF]">
+    <div className="flex h-full bg-background">
       {/* Sidebar list */}
-      <div className="w-64 border-r border-[#EEEEEE] bg-[#FDFDFD] flex flex-col flex-shrink-0 z-0">
-        <div className="p-4 border-b border-[#EEEEEE] flex justify-between items-center bg-[#FFFFFF]">
-          <h2 className="font-semibold text-xs text-[#888] uppercase tracking-wider">Workspace</h2>
-          <button onClick={createDoc} className="p-1 hover:bg-[#F5F5F5] rounded-sm text-[#888] hover:text-[#111] transition-colors">
+      <div className="w-64 border-r border-border bg-background flex flex-col flex-shrink-0 z-0">
+        <div className="p-4 border-b border-border flex justify-between items-center bg-background">
+          <h2 className="font-semibold text-xs text-muted uppercase tracking-wider">Workspace</h2>
+          <button onClick={createDoc} className="p-1 hover:bg-surface rounded-sm text-muted hover:text-foreground transition-colors">
             <Plus size={16} />
           </button>
         </div>
@@ -194,15 +194,15 @@ export function Documents() {
             <div 
               key={d.id}
               onClick={() => setSelectedDoc(d)}
-              className={`group flex items-center justify-between p-2 rounded-sm cursor-pointer text-sm transition-colors ${selectedDoc?.id === d.id ? 'bg-[#F5F5F5] text-[#111] font-medium' : 'text-[#555] hover:bg-[#FAFAFA]'}`}
+              className={`group flex items-center justify-between p-2 rounded-sm cursor-pointer text-sm transition-colors ${selectedDoc?.id === d.id ? 'bg-surface text-foreground font-medium' : 'text-muted hover:bg-surface'}`}
             >
               <div className="flex items-center space-x-2 truncate">
-                <FileText size={14} className={selectedDoc?.id === d.id ? "text-[#111]" : "text-[#888]"} />
+                <FileText size={14} className={selectedDoc?.id === d.id ? "text-foreground" : "text-muted"} />
                 <span className="truncate">{d.title}</span>
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); deleteDocument(d.id); }} 
-                className={`opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity p-1 rounded-sm hover:bg-white`}
+                className={`opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity p-1 rounded-sm hover:bg-background`}
               >
                 <Trash2 size={12} />
               </button>
@@ -212,7 +212,7 @@ export function Documents() {
       </div>
 
       {/* Editor Main Content */}
-      <div className="flex-1 overflow-auto relative bg-[#FFFFFF] flex">
+      <div className="flex-1 overflow-auto relative bg-background flex">
         {selectedDoc ? (
           <>
             <div className="flex-1 p-16 overflow-y-auto max-w-4xl mx-auto flex flex-col">
@@ -225,28 +225,28 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, title: newTitle });
                     updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
                   }}
-                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-[#DDD] text-[#111] tracking-tight"
+                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-[#DDD] text-foreground tracking-tight"
                   placeholder="Document Title"
                 />
-                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-[#F5F5F5] p-1 rounded-sm border border-[#EEEEEE] transition-opacity shrink-0">
+                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0">
                   <button 
                     onClick={() => setIsPreview(false)}
-                    className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${!isPreview ? 'bg-white shadow-sm text-[#111]' : 'text-[#888] hover:text-[#111]'}`}
+                    className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${!isPreview ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
                     title="Edit Mode"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button 
                     onClick={() => setIsPreview(true)}
-                    className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${isPreview ? 'bg-white shadow-sm text-[#111]' : 'text-[#888] hover:text-[#111]'}`}
+                    className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${isPreview ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
                     title="Preview Mode"
                   >
                     <Eye size={14} />
                   </button>
-                  <div className="w-[1px] h-4 bg-[#EEEEEE] mx-1"></div>
+                  <div className="w-[1px] h-4 bg-surface-hover mx-1"></div>
                   <button 
                     onClick={handleOpenLinkModal}
-                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-[#888] hover:text-[#111] hover:bg-[#EAEAEA]"
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
                     title="Insert Drive Link"
                   >
                     <LinkIcon size={14} />
@@ -262,33 +262,33 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, content: newContent });
                     updateDocument(selectedDoc.id, selectedDoc.title, newContent);
                   }}
-                  className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-[#333] text-base resize-none leading-relaxed placeholder-[#DDD]"
+                  className="w-full flex-1 min-h-[60vh] bg-transparent border-none focus:outline-none text-foreground-muted text-base resize-none leading-relaxed placeholder-[#DDD]"
                   placeholder="Start typing..."
                 />
               ) : (
-                <div className="w-full flex-1 min-h-[60vh] prose prose-sm text-[#333] max-w-none">
+                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none">
                   <Markdown>{selectedDoc.content}</Markdown>
                 </div>
               )}
             </div>
             
             {/* AI Panel (Right Sidebar) */}
-            <div className="w-[340px] bg-[#FDFDFD] border-l border-[#EEEEEE] flex flex-col shrink-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
+            <div className="w-[340px] bg-background border-l border-border flex flex-col shrink-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
               {/* Header */}
-              <div className="h-14 px-4 border-b border-[#EEEEEE] flex items-center justify-between bg-white shrink-0">
+              <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">
-                  <Sparkles size={16} className="text-[#111]" />
-                  <h3 className="text-sm font-semibold text-[#111]">Assistant</h3>
+                  <Sparkles size={16} className="text-foreground" />
+                  <h3 className="text-sm font-semibold text-foreground">Assistant</h3>
                 </div>
                 <div className="flex space-x-1">
                   <button 
                     onClick={() => setChatMessages([])}
-                    className="p-1.5 text-[#888] hover:bg-[#F5F5F5] rounded-sm transition-colors"
+                    className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors"
                     title="Clear Chat"
                   >
                     <RefreshCw size={14} />
                   </button>
-                  <button className="p-1.5 text-[#888] hover:bg-[#F5F5F5] rounded-sm transition-colors">
+                  <button className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors">
                     <X size={14} />
                   </button>
                 </div>
@@ -299,24 +299,24 @@ export function Documents() {
                  
                  {/* System context state */}
                  <div className="flex justify-center shrink-0">
-                   <div className="bg-[#EAEAEA] text-[#555] text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-sm flex items-center space-x-1">
+                   <div className="bg-surface-hover text-muted text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-sm flex items-center space-x-1">
                      <FileText size={10} /> <span>Context Linked</span>
                    </div>
                  </div>
 
                  {chatMessages.length === 0 && (
-                   <div className="bg-white border border-[#EEE] rounded-sm p-4 shadow-sm shrink-0">
-                     <p className="text-sm text-[#111] font-medium mb-3">How can I help you refine this?</p>
+                   <div className="bg-background border border-border rounded-sm p-4 shadow-sm shrink-0">
+                     <p className="text-sm text-foreground font-medium mb-3">How can I help you refine this?</p>
                      <div className="space-y-2">
-                       <button onClick={() => handleRewrite('formal')} className="w-full text-left px-3 py-2 text-xs text-[#555] bg-[#F5F5F5] hover:bg-[#EEE] border border-transparent rounded-sm transition-colors flex justify-between items-center group">
+                       <button onClick={() => handleRewrite('formal')} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
                          <span>Make it authoritative</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
-                       <button onClick={() => handleRewrite('casual')} className="w-full text-left px-3 py-2 text-xs text-[#555] bg-[#F5F5F5] hover:bg-[#EEE] border border-transparent rounded-sm transition-colors flex justify-between items-center group">
+                       <button onClick={() => handleRewrite('casual')} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
                          <span>Simplify formatting</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
-                       <button onClick={handleSummarize} className="w-full text-left px-3 py-2 text-xs text-[#555] bg-[#F5F5F5] hover:bg-[#EEE] border border-transparent rounded-sm transition-colors flex justify-between items-center group">
+                       <button onClick={handleSummarize} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
                          <span>Generate brief summary</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
@@ -327,15 +327,15 @@ export function Documents() {
                  <div className="flex-1 flex flex-col space-y-4">
                    {chatMessages.map((msg, i) => (
                      <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-[#111] text-white' : 'bg-[#F5F5F5] border border-[#EEE] text-[#333]'}`}>
-                         <div className="prose prose-sm prose-invert max-w-none">
+                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-background' : 'bg-surface border border-border text-foreground-muted'}`}>
+                         <div className="prose dark:prose-invert prose-sm prose-invert max-w-none">
                            <Markdown>{msg.content}</Markdown>
                          </div>
                        </div>
                        {msg.role === 'assistant' && !isAiLoading && i === chatMessages.length - 1 && (
                          <button 
                            onClick={() => replaceContent(msg.content)}
-                           className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[#888] hover:text-[#111] flex items-center space-x-1"
+                           className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted hover:text-foreground flex items-center space-x-1"
                          >
                            <RefreshCw size={10} /> <span>Apply to Document</span>
                          </button>
@@ -345,7 +345,7 @@ export function Documents() {
                  </div>
 
                  {isAiLoading && (
-                   <div className="flex items-center space-x-3 text-[#666] bg-[#F5F5F5] p-3 rounded-sm text-sm shrink-0">
+                   <div className="flex items-center space-x-3 text-muted bg-surface p-3 rounded-sm text-sm shrink-0">
                      <Loader2 className="animate-spin" size={16} />
                      <span>Processing...</span>
                    </div>
@@ -354,7 +354,7 @@ export function Documents() {
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 border-t border-[#EEEEEE] bg-white shrink-0">
+              <div className="p-4 border-t border-border bg-background shrink-0">
                 <div className="relative">
                   <input 
                     type="text" 
@@ -362,17 +362,17 @@ export function Documents() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleChat()}
                     placeholder="Ask about this document..."
-                    className="w-full bg-[#F5F5F5] border border-[#EEEEEE] focus:border-[#CCCCCC] focus:outline-none rounded-sm pl-3 pr-10 py-2.5 text-sm text-[#111] transition-colors"
+                    className="w-full bg-surface border border-border focus:border-border-strong focus:outline-none rounded-sm pl-3 pr-10 py-2.5 text-sm text-foreground transition-colors"
                   />
                   <button 
                     onClick={handleChat}
                     disabled={isAiLoading || !chatInput.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#888] hover:text-[#111] p-1 disabled:opacity-30"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground p-1 disabled:opacity-30"
                   >
                      <Send size={16} />
                   </button>
                 </div>
-                <div className="flex justify-between items-center mt-3 px-1 text-xs text-[#888]">
+                <div className="flex justify-between items-center mt-3 px-1 text-xs text-muted">
                   <span className="flex items-center space-x-1 tracking-widest uppercase text-[9px] font-semibold"><Sparkles size={10} /> <span>Parameters</span></span>
                   <span className="tracking-widest uppercase text-[9px] font-semibold">Gemini Pro</span>
                 </div>
@@ -381,36 +381,36 @@ export function Documents() {
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center flex-1 h-full flex-col text-center bg-[#FDFDFD]">
-             <div className="w-16 h-16 bg-[#F5F5F5] rounded-full flex items-center justify-center mb-4 text-[#CCC]">
+          <div className="flex items-center justify-center flex-1 h-full flex-col text-center bg-background">
+             <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-[#CCC]">
                 <FileText size={24} />
              </div>
-             <p className="text-lg text-[#111] font-semibold mb-2">No Document Selected</p>
-             <p className="text-[#888] text-sm max-w-sm">Select an existing workspace document from the sidebar or draft a new entry.</p>
+             <p className="text-lg text-foreground font-semibold mb-2">No Document Selected</p>
+             <p className="text-muted text-sm max-w-sm">Select an existing workspace document from the sidebar or draft a new entry.</p>
           </div>
         )}
       </div>
 
       {isLinkModalOpen && (
         <div className="fixed inset-0 bg-[#00000020] backdrop-blur-sm z-50 flex items-center justify-center p-8">
-          <div className="bg-white border border-[#EEE] shadow-xl w-full max-w-lg min-h-[50vh] max-h-[80vh] flex flex-col relative rounded-md">
+          <div className="bg-background border border-border shadow-xl w-full max-w-lg min-h-[50vh] max-h-[80vh] flex flex-col relative rounded-md">
             <button 
               onClick={() => setIsLinkModalOpen(false)}
-              className="absolute top-4 right-4 text-[#888] hover:text-[#111] transition-colors p-2"
+              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2"
             >
               <X size={18} />
             </button>
-            <div className="p-6 border-b border-[#EEE]">
-              <h2 className="text-xl font-semibold text-[#111]">Insert Drive Link</h2>
-              <p className="text-[#666] text-sm mt-1">Select a recent file to insert into your document.</p>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-semibold text-foreground">Insert Drive Link</h2>
+              <p className="text-muted text-sm mt-1">Select a recent file to insert into your document.</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col">
               {isDriveLoading ? (
-                <div className="flex-1 flex items-center justify-center text-[#888]">
+                <div className="flex-1 flex items-center justify-center text-muted">
                   <Loader2 className="animate-spin" size={24} />
                 </div>
               ) : driveFiles.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-[#888] text-sm">
+                <div className="flex-1 flex items-center justify-center text-muted text-sm">
                   No recent files found.
                 </div>
               ) : (
@@ -419,13 +419,13 @@ export function Documents() {
                     <div 
                       key={file.id}
                       onClick={() => handleInsertLink(file)}
-                      className="flex items-center space-x-3 p-3 hover:bg-[#F5F5F5] rounded-sm cursor-pointer transition-colors border border-transparent hover:border-[#EEE]"
+                      className="flex items-center space-x-3 p-3 hover:bg-surface rounded-sm cursor-pointer transition-colors border border-transparent hover:border-border"
                     >
-                      <div className="text-[#888] shrink-0"><File size={16} /></div>
+                      <div className="text-muted shrink-0"><File size={16} /></div>
                       <div className="flex-1 min-w-0">
-                         <div className="text-sm font-medium text-[#111] truncate">{file.name}</div>
+                         <div className="text-sm font-medium text-foreground truncate">{file.name}</div>
                       </div>
-                      <div className="text-[#888] shrink-0 opacity-0 group-hover:opacity-100">
+                      <div className="text-muted shrink-0 opacity-0 group-hover:opacity-100">
                         <Plus size={16} />
                       </div>
                     </div>

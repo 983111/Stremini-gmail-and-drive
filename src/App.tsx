@@ -22,13 +22,13 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function Login() {
   const { signIn } = useAuth();
   return (
-    <div className="flex bg-white flex-col items-center justify-center min-h-screen">
+    <div className="flex bg-background flex-col items-center justify-center min-h-screen">
       <div className="max-w-md w-full text-center">
-        <h1 className="text-4xl font-semibold mb-2 text-[#111]">Executive</h1>
-        <p className="text-xs tracking-[0.2em] uppercase text-[#666] mb-8">Productivity</p>
+        <h1 className="text-4xl font-semibold mb-2 text-foreground">Executive</h1>
+        <p className="text-xs tracking-[0.2em] uppercase text-muted mb-8">Productivity</p>
         <button
           onClick={signIn}
-          className="bg-black hover:bg-[#222] text-white w-full py-3 px-4 rounded-md font-medium transition-colors"
+          className="bg-foreground hover:bg-foreground-hover text-background w-full py-3 px-4 rounded-md font-medium transition-colors"
         >
           Continue with Google
         </button>

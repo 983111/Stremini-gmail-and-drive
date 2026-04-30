@@ -71,6 +71,22 @@ export async function askDocumentQuestion(content: string, question: string, his
   return result.text;
 }
 
+export async function draftEmailWithAI(prompt: string, context: string = '') {
+  const finalPrompt = `
+    You are an AI assistant helping a user write an email. 
+    ${context ? `Here is the context/previous thread:\n${context}` : ''}
+    
+    User prompt: ${prompt}
+    
+    Please draft a professional, concise email. Output only the email body text, no subject line or meta-commentary, just the content that should go into the email body.
+  `;
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: finalPrompt,
+  });
+  return response.text;
+}
+
 export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',

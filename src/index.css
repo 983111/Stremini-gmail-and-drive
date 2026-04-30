@@ -1,7 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
+  --color-background: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-surface-active: var(--bg-surface-active);
+  --color-foreground: var(--text-foreground);
+  --color-foreground-hover: var(--text-foreground-hover);
+  --color-foreground-muted: var(--text-foreground-muted);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-border-strong: var(--border-strong);
+  
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+}
+
+:root {
+  --bg-base: #FDFDFD;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F5F5F5;
+  --bg-surface-active: #EEEEEE;
+  
+  --text-foreground: #111111;
+  --text-foreground-hover: #000000;
+  --text-foreground-muted: #333333;
+  --text-muted: #666666;
+  
+  --border-color: #EEEEEE;
+  --border-strong: #CCCCCC;
+}
+
+.dark {
+  --bg-base: #0F0F0F;
+  --bg-surface: #1A1A1A;
+  --bg-surface-hover: #2A2A2A;
+  --bg-surface-active: #3A3A3A;
+  
+  --text-foreground: #EEEEEE;
+  --text-foreground-hover: #FFFFFF;
+  --text-foreground-muted: #CCCCCC;
+  --text-muted: #888888;
+  
+  --border-color: #2A2A2A;
+  --border-strong: #444444;
 }

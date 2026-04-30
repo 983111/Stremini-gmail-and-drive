@@ -42,6 +42,35 @@ export async function fetchEmailThread(accessToken: string, threadId: string) {
   return data;
 }
 
+export async function createDriveFolder(accessToken: string, name: string, parentId: string = 'root') {
+  const metadata = {
+    name: name,
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [parentId]
+  };
+  const res = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(metadata)
+  });
+  if (!res.ok) throw new Error('Failed to create folder');
+  return res.json();
+}
+
+export async function deleteDriveFile(accessToken: string, fileId: string) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  if (!res.ok) throw new Error('Failed to delete file');
+  return true;
+}
+
 export async function fetchRecentDriveFiles(accessToken: string, query = '') {
   const qStr = query ? `&q=${encodeURIComponent(query)}` : '';
   const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=modifiedTime desc&fields=files(id,name,mimeType,modifiedTime,webViewLink)${qStr}`;

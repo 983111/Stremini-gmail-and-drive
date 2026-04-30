@@ -61,7 +61,7 @@ export function Databases() {
       <div className="w-64 border-r border-[#E8E6E1] bg-[#F5F4F0] flex flex-col">
         <div className="p-4 border-b border-[#E8E6E1] flex justify-between items-center">
           <h2 className="font-bold text-[10px] text-[#A19E95] uppercase tracking-widest">Databases</h2>
-          <button onClick={createDatabase} className="p-1 hover:bg-white rounded text-[#A19E95] hover:text-black hover:border-black border border-transparent transition-colors">
+          <button onClick={createDatabase} className="p-1 hover:bg-background rounded text-[#A19E95] hover:text-black hover:border-black border border-transparent transition-colors">
             <Plus size={14} />
           </button>
         </div>
@@ -70,7 +70,7 @@ export function Databases() {
             <div 
               key={d.id}
               onClick={() => setSelectedDb(d)}
-              className={`flex items-center justify-between p-2 rounded cursor-pointer text-sm transition-colors border ${selectedDb?.id === d.id ? 'bg-white border-[#E8E6E1] text-black font-semibold shadow-sm' : 'border-transparent text-[#6B685E] hover:bg-white/50'}`}
+              className={`flex items-center justify-between p-2 rounded cursor-pointer text-sm transition-colors border ${selectedDb?.id === d.id ? 'bg-background border-[#E8E6E1] text-black font-semibold shadow-sm' : 'border-transparent text-[#6B685E] hover:bg-background/50'}`}
             >
               <div className="flex items-center space-x-2 truncate">
                 <span className="truncate">{d.name}</span>
@@ -86,7 +86,7 @@ export function Databases() {
       {/* Main Database View */}
       <div className="flex-1 overflow-auto relative p-8">
         {selectedDb ? (
-          <div className="max-w-5xl mx-auto border border-[#E8E6E1] bg-white p-6">
+          <div className="max-w-5xl mx-auto border border-[#E8E6E1] bg-background p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-serif italic text-xl text-[#1A1A1A]">{selectedDb.name}</h3>
               <div className="flex space-y-0 space-x-4 text-[10px] font-bold uppercase tracking-widest">
@@ -109,7 +109,7 @@ export function Databases() {
                   <tr className="border-b border-[#F5F4F0]">
                     <td className="py-4 font-semibold text-[#1A1A1A]">Example Record 1</td>
                     <td className="py-4"><span className="bg-blue-50 text-blue-800 px-2 py-0.5 rounded-sm border border-blue-200 text-[9px] font-bold">TEXT</span></td>
-                    <td className="py-4 font-mono text-[#888476]">Today</td>
+                    <td className="py-4 font-mono text-muted">Today</td>
                   </tr>
                   <tr>
                     <td colSpan={3} className="py-4 text-[#A19E95] italic">Use the AI Planner (Planned feature) to generate records and schema structure automatically.</td>
