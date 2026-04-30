@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
-import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User } from 'lucide-react';
+import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight } from 'lucide-react';
 import { rewriteDocument, summarizeDocumentContent, askDocumentQuestion } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles } from '../lib/googleApi';
+import html2pdf from 'html2pdf.js';
+import { marked } from 'marked';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,6 +23,7 @@ export function Documents() {
   const [isPreview, setIsPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,6 +33,46 @@ export function Documents() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState<any[]>([]);
   const [isDriveLoading, setIsDriveLoading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!selectedDoc) return;
+    
+    const htmlContent = await marked.parse(selectedDoc.content);
+    
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div style="padding: 40px; font-family: sans-serif; color: #000; background: #fff;">
+        <h1 style="margin-bottom: 20px;">${selectedDoc.title}</h1>
+        <div style="color: #000; line-height: 1.6;">
+          ${htmlContent}
+        </div>
+      </div>
+    `;
+    
+    // Quick style tweaks for the PDF
+    const styles = document.createElement('style');
+    styles.innerHTML = `
+      h1, h2, h3 { color: #111; }
+      p { margin-bottom: 1em; color: #333; }
+      a { color: #0066cc; text-decoration: none; }
+      ul, ol { margin-bottom: 1em; padding-left: 2em; }
+      li { margin-bottom: 0.5em; }
+      code { background: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
+      pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; font-family: monospace; }
+      blockquote { border-left: 4px solid #ddd; padding-left: 1em; color: #666; margin-left: 0; }
+    `;
+    container.appendChild(styles);
+
+    const opt = {
+      margin:       1,
+      filename:     `${selectedDoc.title || 'Document'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(container).save();
+  };
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -251,6 +294,25 @@ export function Documents() {
                   >
                     <LinkIcon size={14} />
                   </button>
+                  <button 
+                    onClick={handleDownloadPDF}
+                    className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
+                    title="Download as PDF"
+                  >
+                    <Download size={14} />
+                  </button>
+                  {!isAssistantOpen && (
+                    <>
+                      <div className="w-[1px] h-4 bg-surface-hover mx-1"></div>
+                      <button 
+                        onClick={() => setIsAssistantOpen(true)}
+                        className="p-1.5 rounded-sm transition-colors flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover"
+                        title="Open Assistant"
+                      >
+                        <PanelRight size={14} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -273,6 +335,7 @@ export function Documents() {
             </div>
             
             {/* AI Panel (Right Sidebar) */}
+            {isAssistantOpen && (
             <div className="w-[340px] bg-background border-l border-border flex flex-col shrink-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
               {/* Header */}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
@@ -288,7 +351,7 @@ export function Documents() {
                   >
                     <RefreshCw size={14} />
                   </button>
-                  <button className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors">
+                  <button onClick={() => setIsAssistantOpen(false)} className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors">
                     <X size={14} />
                   </button>
                 </div>
@@ -379,6 +442,7 @@ export function Documents() {
               </div>
 
             </div>
+            )}
           </>
         ) : (
           <div className="flex items-center justify-center flex-1 h-full flex-col text-center bg-background">
