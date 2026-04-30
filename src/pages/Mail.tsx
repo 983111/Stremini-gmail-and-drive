@@ -369,7 +369,7 @@ export function Mail() {
                      <h3 className="text-xs font-semibold text-muted mb-4 uppercase tracking-wider flex items-center space-x-2">
                         <Sparkles size={12}/> <span>AI Synthesis</span>
                      </h3>
-                     <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                     <div className="prose dark:prose-invert prose-sm text-amber-500 max-w-none">
                        <Markdown>{aiSummary}</Markdown>
                      </div>
                    </div>

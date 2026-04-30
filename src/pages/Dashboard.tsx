@@ -105,7 +105,7 @@ export function Dashboard() {
                    <span>Analyzing recent context...</span>
                  </div>
               ) : briefing ? (
-                <div className="prose dark:prose-invert prose-sm prose-p:my-1 text-foreground-muted">
+                <div className="prose dark:prose-invert prose-sm prose-p:my-1 text-amber-500">
                   <Markdown>{briefing}</Markdown>
                 </div>
               ) : (
@@ -247,7 +247,7 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="flex-1 overflow-auto bg-background p-6 border border-border rounded-sm">
-                  <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                  <div className="prose dark:prose-invert prose-sm text-amber-500 max-w-none">
                     <Markdown>{meetingIntelligenceOutput}</Markdown>
                   </div>
                   <div className="mt-8 pt-6 border-t border-border flex justify-end">

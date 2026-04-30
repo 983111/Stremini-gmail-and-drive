@@ -406,6 +406,14 @@ export function Documents() {
                 </div>
                 <div className="flex space-x-1">
                   <button 
+                    onClick={handleSummarize}
+                    className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors"
+                    title="Summarize Document"
+                    disabled={isAiLoading}
+                  >
+                    <FileText size={14} />
+                  </button>
+                  <button 
                     onClick={() => setChatMessages([])}
                     className="p-1.5 text-muted hover:bg-surface rounded-sm transition-colors"
                     title="Clear Chat"
@@ -451,8 +459,8 @@ export function Documents() {
                  <div className="flex-1 flex flex-col space-y-4">
                    {chatMessages.map((msg, i) => (
                      <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-background' : 'bg-surface border border-border text-foreground-muted'}`}>
-                         <div className="prose dark:prose-invert prose-sm max-w-none">
+                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-amber-200' : 'bg-surface border border-border text-amber-500'}`}>
+                         <div className="prose dark:prose-invert prose-sm max-w-none text-inherit prose-p:text-inherit">
                            <Markdown>{msg.content}</Markdown>
                          </div>
                        </div>
