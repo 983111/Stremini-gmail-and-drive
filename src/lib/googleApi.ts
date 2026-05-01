@@ -140,6 +140,45 @@ export async function sendEmail(accessToken: string, to: string, subject: string
   return res.json();
 }
 
+export async function fetchEmailBody(accessToken: string, messageId: string) {
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error('Failed to fetch message body');
+  const data = await res.json();
+  
+  const getBody = (payload: any): string => {
+    if (payload.body?.data) {
+      return b64DecodeUnicode(payload.body.data);
+    }
+    if (payload.parts) {
+      // Prefer html if available, otherwise plain text
+      const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
+      if (htmlPart && htmlPart.body?.data) return b64DecodeUnicode(htmlPart.body.data);
+      
+      const plainPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
+      if (plainPart && plainPart.body?.data) return b64DecodeUnicode(plainPart.body.data);
+
+      // Check sub-parts recursively
+      for (const part of payload.parts) {
+        const body = getBody(part);
+        if (body) return body;
+      }
+    }
+    return '';
+  };
+
+  return getBody(data.payload);
+}
+
+function b64DecodeUnicode(str: string) {
+  // Convert base64url to base64
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  // Decode base64
+  return decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
+
 export async function fetchDriveFileContent(accessToken: string, fileId: string, mimeType: string) {
   let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   

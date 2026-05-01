@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchRecentEmails, sendEmail } from '../lib/googleApi';
+import { fetchRecentEmails, sendEmail, fetchEmailThread, fetchEmailBody } from '../lib/googleApi';
 import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Sparkles, Mail as MailIcon, Wand2 } from 'lucide-react';
 import { summarizeThread, draftEmailWithAI } from '../lib/gemini';
 import Markdown from 'react-markdown';
@@ -16,6 +16,7 @@ export function Mail() {
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [aiSummary, setAiSummary] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isBodyLoading, setIsBodyLoading] = useState(false);
   
   const [isComposing, setIsComposing] = useState(false);
   const [composeTo, setComposeTo] = useState('');
@@ -50,6 +51,20 @@ export function Mail() {
       setError(e.message || 'An error occurred fetching emails.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEmailBody = async (email: any) => {
+    if (!accessToken || !email || email.body) return;
+    setIsBodyLoading(true);
+    try {
+      const body = await fetchEmailBody(accessToken, email.id);
+      setSelectedEmail((prev: any) => ({ ...prev, body }));
+      setEmails((prev) => prev.map(e => e.id === email.id ? { ...e, body } : e));
+    } catch (e) {
+      console.error("Failed to fetch email body:", e);
+    } finally {
+      setIsBodyLoading(false);
     }
   };
 
@@ -203,6 +218,7 @@ export function Mail() {
                     setSelectedEmail(email);
                     setIsComposing(false);
                     setAiSummary(''); // Clear previous summary
+                    loadEmailBody(email);
                   }}
                   className={`p-4 cursor-pointer hover:bg-surface transition-colors ${selectedEmail?.id === email.id && !isComposing ? 'bg-surface border-l-2 border-[#111]' : 'border-l-2 border-transparent'}`}
                 >
@@ -389,11 +405,21 @@ export function Mail() {
                  </div>
                )}
 
-               <p className="text-foreground-muted text-base leading-relaxed mb-8">
-                 {selectedEmail.snippet.replace(/&quot;/g, '"')}...
-                 <br/><br/>
-                 <span className="text-muted italic text-sm">(Full content hidden in preview)</span>
-               </p>
+               <div className="text-foreground-muted text-base leading-relaxed mb-8 min-h-[200px]">
+                 {isBodyLoading ? (
+                    <div className="flex items-center space-x-2 text-muted animate-pulse">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Retrieving full content...</span>
+                    </div>
+                 ) : selectedEmail.body ? (
+                    <div 
+                      className="email-content prose dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
+                    />
+                 ) : (
+                    <p>{selectedEmail.snippet.replace(/&quot;/g, '"')}...</p>
+                 )}
+               </div>
              </div>
           ) : (
             <div className="flex h-full items-center justify-center text-muted font-medium text-sm bg-background w-full">
