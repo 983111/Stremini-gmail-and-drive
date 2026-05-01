@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu } from 'lucide-react';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu, Database } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 
@@ -107,6 +107,14 @@ export function Layout() {
               <>
                 <FileText size={16} className={isActive ? "text-foreground" : "text-muted"} />
                 <span>Documents</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/databases" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
+            {({ isActive }) => (
+              <>
+                <Database size={16} className={isActive ? "text-foreground" : "text-muted"} />
+                <span>Databases</span>
               </>
             )}
           </NavLink>
@@ -224,7 +232,8 @@ export function Layout() {
               <ul className="text-sm text-foreground-muted space-y-2 list-disc pl-4">
                 <li>Use <strong>Drive Connect</strong> to preview your files and analyze them effortlessly.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
-                <li>Visit <strong>Documents</strong> to write rich notes, use the writing assistant, or link Drive files.</li>
+                <li>Visit <strong>Documents</strong> to write rich notes and use the assistant.</li>
+                <li>Use <strong>AI Databases</strong> to build production-grade structured systems from a prompt.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">

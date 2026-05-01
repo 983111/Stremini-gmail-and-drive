@@ -88,21 +88,47 @@ export async function draftEmailWithAI(prompt: string, context: string = '') {
 }
 
 export async function generateDatabaseSchema(description: string) {
+  const prompt = `
+    You are a professional product manager and database architect.
+    Your goal is to design a fully structured, detailed database system in JSON format based on the user's prompt: "${description}".
+
+    STRICT GUIDELINES:
+    1. UNDERSTAND INTENT: Think like a human expert. For a "diet plan", include timings, meal types, and nutrition. For a "startup tracker", include task owners, priorities, and deadlines.
+    2. SMART DESIGN: Dynamically decide the best column structure for the specific use case.
+    3. DEPTH & DETAIL: Provide at least 15-20 rows of highly realistic, varied, and detailed data. No generic placeholders like "Item 1".
+    4. PREMIUM TONE: No emojis. Use professional, clean naming for columns (e.g., "Maturity Level" instead of "Growth").
+    5. LOGICAL CONSISTENCY: Ensure internal logic. If it's a schedule, ensure times follow a sensible sequence. If it's a tracker, ensure status and priorities make sense relative to each other.
+    6. NO EXPLANATIONS: Return ONLY the JSON object.
+
+    OUTPUT STRUCTURE:
+    {
+      "databaseTitle": "A professional title for the database",
+      "columns": [
+        { "key": "string", "name": "string", "type": "text | number | date | select | checkbox", "options": ["option1", "option2"] (only for select) }
+      ],
+      "rows": [
+        { "columnKey": "value", ... }
+      ]
+    }
+
+    Note: The first column should always be the primary "title" or "name" field.
+  `;
+
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: `
-      You are a database designer. Create a JSON object for a Notion-like database based on this description: "${description}".
-      The output must contain exactly two keys: "schema" and "records".
-      "schema" must be a JSON array, like: [{"key": "status", "name": "Status", "type": "select", "options": ["Todo", "Done"]}]
-      Valid types are text, number, select, date, checkbox.
-      "records" must be a JSON array of objects representing initial rows, exactly matching the keys in the schema, PLUS a "title" key for the main field. For example: [{"title": "Buy milk", "status": "Todo"}]
-      Provide 3 to 5 realistic records.
-    `,
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
     config: {
       responseMimeType: "application/json"
     }
   });
-  return JSON.parse(response.text || '{"schema":[], "records":[]}');
+
+  try {
+    const data = JSON.parse(response.text || '{}');
+    return data;
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return { databaseTitle: "Error", columns: [], rows: [] };
+  }
 }
 
 export async function generateMeetingIntelligence(notes: any[], emails: any[]) {
