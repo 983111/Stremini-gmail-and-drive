@@ -391,9 +391,9 @@ export function Documents() {
                    {chatMessages.map((msg, i) => (
                      <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                        <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-background' : 'bg-surface border border-border text-foreground-muted'}`}>
-                         <div className="prose dark:prose-invert prose-sm max-w-none">
-                           <Markdown>{msg.content}</Markdown>
-                         </div>
+                         {msg.role === 'user' ? <div className="whitespace-pre-wrap">{msg.content}</div> : <div className="prose dark:prose-invert prose-sm max-w-none">
+                          <Markdown>{msg.content}</Markdown>
+                        </div>}
                        </div>
                        {msg.role === 'assistant' && !isAiLoading && i === chatMessages.length - 1 && (
                          <button 

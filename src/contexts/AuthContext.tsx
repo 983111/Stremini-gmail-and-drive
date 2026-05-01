@@ -23,7 +23,18 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    const saved = localStorage.getItem('executive_access_token');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.token && parsed.expiresAt > Date.now()) {
+          return parsed.token;
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -40,6 +51,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
          const credential = GoogleAuthProvider.credentialFromResult(result);
          if (credential && credential.accessToken) {
            setAccessToken(credential.accessToken);
+           // Token usually expires in 1 hour (3600 seconds)
+           localStorage.setItem('executive_access_token', JSON.stringify({
+             token: credential.accessToken,
+             expiresAt: Date.now() + 3500 * 1000 // 58 minutes buffer
+           }));
          }
       });
     } catch (error: any) {
@@ -57,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await firebaseSignOut(auth);
     setAccessToken(null);
+    localStorage.removeItem('executive_access_token');
   };
 
   return (

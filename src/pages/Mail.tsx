@@ -246,32 +246,35 @@ export function Mail() {
                     />
                   </div>
                   <div className="flex flex-col flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                       <label className="text-xs font-semibold uppercase tracking-wider text-muted">Message</label>
-                       <div className="flex border border-border rounded-sm overflow-hidden bg-surface focus-within:border-border-strong w-64 transition-colors">
-                          <input 
-                            type="text" 
-                            className="bg-transparent text-xs px-2 py-1 outline-none flex-1 text-foreground" 
-                            placeholder="Draft with AI..." 
-                            value={draftPrompt}
-                            onChange={e => setDraftPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleDraftWithAI()}
-                          />
-                          <button 
-                            onClick={handleDraftWithAI} 
-                            disabled={isDrafting || !draftPrompt}
-                            className="bg-surface-hover px-2 text-muted hover:text-foreground disabled:opacity-50 transition-colors"
-                          >
-                            {isDrafting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                          </button>
-                       </div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">Message</label>
+                    <div className="flex flex-col border border-border rounded-sm bg-surface transition-colors focus-within:border-border-strong flex-1 mb-6">
+                      <div className="flex items-center justify-between p-2 border-b border-border bg-background">
+                         <div className="flex items-center flex-1 max-w-sm border border-border rounded-sm overflow-hidden bg-surface focus-within:border-border-strong transition-colors mr-4">
+                            <Wand2 size={12} className="ml-2 text-muted" />
+                            <input 
+                              type="text" 
+                              className="bg-transparent text-xs px-2 py-1.5 outline-none flex-1 text-foreground" 
+                              placeholder="Draft with AI (e.g. 'Ask for a meeting on Tuesday')" 
+                              value={draftPrompt}
+                              onChange={e => setDraftPrompt(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleDraftWithAI()}
+                            />
+                            <button 
+                              onClick={handleDraftWithAI} 
+                              disabled={isDrafting || !draftPrompt}
+                              className="bg-foreground text-background px-3 py-1.5 text-xs font-medium hover:bg-foreground-hover disabled:opacity-50 transition-colors flex items-center space-x-1"
+                            >
+                              {isDrafting ? <Loader2 size={12} className="animate-spin" /> : <span>Draft</span>}
+                            </button>
+                         </div>
+                      </div>
+                      <textarea 
+                        value={composeBody}
+                        onChange={e => setComposeBody(e.target.value)}
+                        placeholder="Write your email here..." 
+                        className="w-full flex-1 bg-transparent p-4 text-sm outline-none resize-none text-foreground leading-relaxed"
+                      />
                     </div>
-                    <textarea 
-                      value={composeBody}
-                      onChange={e => setComposeBody(e.target.value)}
-                      placeholder="Write your email here..." 
-                      className="w-full flex-1 bg-surface border border-border p-4 rounded-sm text-sm focus:border-border-strong outline-none transition-colors resize-none mb-6 text-foreground"
-                    />
                   </div>
                   <div className="flex justify-end pt-4 border-t border-border">
                     <button 
