@@ -3,8 +3,9 @@ import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, deleteDoc
 import { db } from "../firebase";
 import { handleFirestoreError, OperationType } from "../lib/errorHandlers";
 import { useAuth } from "../contexts/AuthContext";
-import { Plus, Settings2, GripVertical, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Settings2, GripVertical, Trash2, Filter, Sparkles, Loader2, Archive, Copy, Send, Bot, X } from "lucide-react";
+import { generateDatabaseSchema, askDocumentQuestion } from "../lib/gemini";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +24,18 @@ export function DatabaseView({ pageId }: { pageId: string }) {
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
   const [editingCellId, setEditingCellId] = useState<string | null>(null);
+
+  const [isSchemaDialogOpen, setIsSchemaDialogOpen] = useState(false);
+  const [schemaPrompt, setSchemaPrompt] = useState('');
+  const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
+
+  const [selectedRecords, setSelectedRecords] = useState<string[]>([]);
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [focusedRecordId, setFocusedRecordId] = useState<string | null>(null);
+
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   useEffect(() => {
     if (!pageId || !user) return;
@@ -222,17 +235,103 @@ export function DatabaseView({ pageId }: { pageId: string }) {
     if (confirm("Are you sure you want to delete this record?")) {
       try {
         await deleteDoc(doc(db, `users/${user.uid}/databases/${pageId}/records/${recordId}`));
+        setSelectedRecords(prev => prev.filter(id => id !== recordId));
       } catch (e) {
         handleFirestoreError(e, OperationType.DELETE, 'records');
       }
     }
   };
 
+  const handleGenerateSchema = async () => {
+    if (!schemaPrompt || !user || !pageId) return;
+    setIsGeneratingSchema(true);
+    try {
+      const generatedSchema = await generateDatabaseSchema(schemaPrompt);
+      if (generatedSchema && Array.isArray(generatedSchema)) {
+         const newSchema = [...schema, ...generatedSchema.filter(col => !schema.find(s => s.key === col.key))];
+         setSchema(newSchema);
+         await updateDoc(doc(db, `users/${user.uid}/databases/${pageId}`), { schema: JSON.stringify(newSchema), updatedAt: serverTimestamp() });
+         setIsSchemaDialogOpen(false);
+         setSchemaPrompt('');
+      } else {
+         alert("Could not generate schema.");
+      }
+    } catch(e) {
+      console.error(e);
+      alert("Error generating schema");
+    } finally {
+      setIsGeneratingSchema(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (!user || selectedRecords.length === 0) return;
+    if (confirm(`Delete ${selectedRecords.length} records?`)) {
+      try {
+        await Promise.all(selectedRecords.map(id => deleteDoc(doc(db, `users/${user.uid}/databases/${pageId}/records/${id}`))));
+        setSelectedRecords([]);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const bulkDuplicate = async () => {
+     if (!user || selectedRecords.length === 0) return;
+     try {
+        const toDup = records.filter(r => selectedRecords.includes(r.id));
+        await Promise.all(toDup.map(r => {
+           const { id, ...data } = r;
+           return addDoc(collection(db, `users/${user.uid}/databases/${pageId}/records`), {
+             ...data,
+             title: data.title ? `${data.title} (Copy)` : '',
+             createdAt: serverTimestamp(),
+             updatedAt: serverTimestamp()
+           });
+        }));
+        setSelectedRecords([]);
+     } catch(e) {
+        console.error(e);
+     }
+  };
+
+  const handleAskAi = async () => {
+    if (!aiQuery || !focusedRecordId) return;
+    setIsAiLoading(true);
+    try {
+      const rec = records.find(r => r.id === focusedRecordId);
+      const content = `Record Details: Title: ${rec?.title}, Properties: ${rec?.properties}`;
+      const ans = await askDocumentQuestion(content, aiQuery);
+      setAiResponse(ans);
+    } catch (e) {
+      console.error(e);
+      setAiResponse("Failed to get response.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const filteredRecords = records.filter(rec => {
+    let props = {};
+    try { props = JSON.parse(rec.properties || '{}'); } catch(e) {}
+    for (const key in filters) {
+      if (filters[key]) {
+        if (key === 'title') {
+           if (!rec.title?.toLowerCase().includes(filters[key].toLowerCase())) return false;
+        } else {
+           const val = props[key] || '';
+           if (!String(val).toLowerCase().includes(filters[key].toLowerCase())) return false;
+        }
+      }
+    }
+    return true;
+  });
+
   if (!page) return null;
 
   return (
-    <div className="flex-1 overflow-hidden flex flex-col mb-12 bg-background">
-      <div className="p-12 overflow-y-auto w-full">
+    <div className="flex-1 overflow-hidden flex flex-row mb-12 bg-background h-full">
+      <div className="flex-1 overflow-y-auto w-full p-12">
         <div className="max-w-5xl mx-auto w-full">
         <div className="mt-4 mb-4">
         </div>
@@ -249,6 +348,17 @@ export function DatabaseView({ pageId }: { pageId: string }) {
             <button className="border-b-2 border-foreground pb-2 text-foreground">Table</button>
           </div>
           <div className="flex space-x-2">
+            {selectedRecords.length > 0 && (
+               <div className="flex items-center space-x-2 bg-surface border border-border px-2 rounded-sm mr-4">
+                  <span className="text-xs font-medium text-muted mr-2">{selectedRecords.length} selected</span>
+                  <button onClick={bulkDuplicate} className="p-1 text-muted hover:text-foreground hover:bg-surface-hover rounded-sm"><Copy className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setSelectedRecords([])} className="p-1 text-muted hover:text-foreground hover:bg-surface-hover rounded-sm"><Archive className="w-3.5 h-3.5" /></button>
+                  <button onClick={bulkDelete} className="p-1 text-muted hover:text-red-500 hover:bg-surface-hover rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+               </div>
+            )}
+            <button onClick={() => setIsSchemaDialogOpen(true)} className="text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-sm hover:bg-purple-100 flex items-center transition-colors">
+              <Sparkles className="w-3 h-3 mr-1.5" /> Generate Schema
+            </button>
             <button onClick={() => setIsColDialogOpen(true)} className="text-xs font-medium text-foreground bg-surface border border-border px-3 py-1.5 rounded-sm hover:bg-surface-hover flex items-center transition-colors">
               <Settings2 className="w-3 h-3 mr-1.5" /> Add Column
             </button>
@@ -262,7 +372,20 @@ export function DatabaseView({ pageId }: { pageId: string }) {
           <table className="w-full text-left whitespace-nowrap">
             <thead>
               <tr className="border-b border-border bg-background text-muted text-xs font-medium uppercase tracking-wider">
-                <th className="py-2.5 px-4 w-64 min-w-[200px] border-r border-border">Primary Field</th>
+                <th className="py-2.5 px-3 w-10 border-r border-border text-center">
+                   <input type="checkbox" className="w-3.5 h-3.5 accent-foreground" checked={selectedRecords.length === records.length && records.length > 0} onChange={(e) => setSelectedRecords(e.target.checked ? records.map(r => r.id) : [])} />
+                </th>
+                <th className="py-2.5 px-4 w-64 min-w-[200px] border-r border-border">
+                  <div className="flex items-center justify-between">
+                    <span>Primary Field</span>
+                    <div className="relative group/filter">
+                       <Filter className="w-3.5 h-3.5 text-muted hover:text-foreground cursor-pointer" />
+                       <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-border shadow-md rounded-sm p-2 hidden group-hover/filter:block z-20">
+                          <input type="text" placeholder="Filter title..." className="w-full bg-background border border-border px-2 py-1 text-xs rounded-sm outline-none" value={filters['title'] || ''} onChange={e => setFilters({...filters, title: e.target.value})} />
+                       </div>
+                    </div>
+                  </div>
+                </th>
                 {schema.map(col => (
                   <th 
                     key={col.key} 
@@ -291,9 +414,17 @@ export function DatabaseView({ pageId }: { pageId: string }) {
                          onBlur={e => renameColumn(col.key, e.target.value)}
                          onClick={e => e.stopPropagation()}
                       />
-                      <button onClick={(e) => { e.stopPropagation(); deleteColumn(col.key); }} className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-500 transition-opacity">
-                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="relative group/filter">
+                           <Filter className="w-3.5 h-3.5 text-muted hover:text-foreground cursor-pointer" />
+                           <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-border shadow-md rounded-sm p-2 hidden group-hover/filter:block z-20">
+                              <input type="text" placeholder="Filter..." className="w-full bg-background border border-border px-2 py-1 text-xs rounded-sm outline-none normal-case font-normal text-foreground" value={filters[col.key] || ''} onChange={e => setFilters({...filters, [col.key]: e.target.value})} />
+                           </div>
+                         </div>
+                         <button onClick={(e) => { e.stopPropagation(); deleteColumn(col.key); }} className="text-muted hover:text-red-500">
+                            <Trash2 className="w-3.5 h-3.5" />
+                         </button>
+                      </div>
                     </div>
                   </th>
                 ))}
@@ -301,7 +432,7 @@ export function DatabaseView({ pageId }: { pageId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {records.map(record => {
+              {filteredRecords.map(record => {
                 let props: any = {};
                 try { props = JSON.parse(record.properties || '{}'); } catch(e) {}
                 
@@ -314,15 +445,22 @@ export function DatabaseView({ pageId }: { pageId: string }) {
                      onDragLeave={() => setDragOverRowId(null)}
                      onDrop={(e) => handleDrop(e, record.id)}
                      onDragEnd={() => setDraggedRowId(null)}
-                     className={`hover:bg-background transition-all group relative ${draggedRowId === record.id ? 'opacity-30' : 'opacity-100'}`}
+                     onClick={() => setFocusedRecordId(record.id)}
+                     className={`hover:bg-background cursor-pointer transition-all group relative ${draggedRowId === record.id ? 'opacity-30' : 'opacity-100'} ${focusedRecordId === record.id ? 'bg-surface-hover' : ''}`}
                   >
-                    <td className="py-2 px-4 font-medium text-foreground border-r border-border min-w-[200px] relative">
+                    <td className="py-2 px-3 border-r border-border w-10 text-center relative">
                        {dragOverRowId === record.id && (
                          <div className="absolute top-0 left-0 right-0 h-0.5 bg-foreground z-10" />
                        )}
                        <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-muted hover:text-foreground">
                          <GripVertical className="w-3.5 h-3.5" />
                        </div>
+                       <input type="checkbox" className="w-3.5 h-3.5 accent-foreground relative z-10" checked={selectedRecords.includes(record.id)} onChange={e => {
+                         if (e.target.checked) setSelectedRecords([...selectedRecords, record.id])
+                         else setSelectedRecords(selectedRecords.filter(id => id !== record.id))
+                       }} onClick={e => e.stopPropagation()} />
+                    </td>
+                    <td className="py-2 px-4 font-medium text-foreground border-r border-border min-w-[200px] relative">
                        <input 
                          className="w-full bg-transparent outline-none placeholder-muted focus:bg-background focus:ring-2 ring-border rounded-sm px-2 py-1 pl-4 transition-all" 
                          value={record.title || ''}
@@ -429,6 +567,49 @@ export function DatabaseView({ pageId }: { pageId: string }) {
         </div>
       </div>
       </div>
+      {focusedRecordId && (
+        <div className="w-80 border-l border-border bg-surface flex flex-col flex-shrink-0 relative">
+          <div className="p-4 border-b border-border flex justify-between items-center bg-background">
+             <div className="flex items-center space-x-2">
+                <Bot className="w-4 h-4 text-purple-500" />
+                <h3 className="font-semibold text-sm">AI Assistant</h3>
+             </div>
+             <button onClick={() => setFocusedRecordId(null)} className="text-muted hover:text-foreground"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="flex-1 p-4 overflow-y-auto space-y-4">
+            <p className="text-xs text-muted">Ask questions about this record or request edits.</p>
+            {aiResponse && (
+               <div className="bg-background rounded-sm p-3 border border-border text-sm">
+                 <p className="text-foreground whitespace-pre-wrap">{aiResponse}</p>
+               </div>
+            )}
+          </div>
+          <div className="p-4 bg-background border-t border-border">
+            <div className="relative">
+              <textarea 
+                className="w-full bg-surface border border-border outline-none rounded-sm px-3 py-2 text-sm resize-none focus:ring-1 ring-border-strong pr-10"
+                rows={3}
+                placeholder="Ask AI..."
+                value={aiQuery}
+                onChange={e => setAiQuery(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAskAi();
+                  }
+                }}
+              />
+              <button 
+                 disabled={!aiQuery || isAiLoading}
+                 onClick={handleAskAi}
+                 className="absolute right-2 bottom-2 p-1.5 bg-foreground text-background rounded-sm hover:bg-foreground-hover disabled:opacity-50"
+              >
+                 {isAiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Dialog open={isColDialogOpen} onOpenChange={setIsColDialogOpen}>
         <DialogContent className="bg-background text-foreground border border-border">
           <DialogHeader>
@@ -461,6 +642,28 @@ export function DatabaseView({ pageId }: { pageId: string }) {
               </div>
             )}
             <Button className="w-full bg-foreground text-background hover:bg-foreground-hover" onClick={addColumn} disabled={!newColName}>Add Column</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isSchemaDialogOpen} onOpenChange={setIsSchemaDialogOpen}>
+        <DialogContent className="bg-background text-foreground border border-border">
+          <DialogHeader>
+            <DialogTitle>Generate Schema with AI</DialogTitle>
+            <DialogDescription>Describe the data you want to track, and AI will create columns for you.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <textarea 
+                 value={schemaPrompt} 
+                 onChange={e => setSchemaPrompt(e.target.value)} 
+                 placeholder="e.g. A recruitment pipeline tracking candidates, interviews, and status" 
+                 className="w-full bg-surface border border-border outline-none rounded-sm px-3 py-2 text-sm resize-none focus:ring-1 ring-border-strong min-h-[100px]" 
+              />
+            </div>
+            <Button className="w-full bg-purple-600 text-white hover:bg-purple-700" onClick={handleGenerateSchema} disabled={!schemaPrompt || isGeneratingSchema}>
+               {isGeneratingSchema ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate</>}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

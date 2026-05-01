@@ -89,10 +89,10 @@ export async function draftEmailWithAI(prompt: string, context: string = '') {
 
 export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.1-flash',
     contents: `
       You are a database designer. Create a JSON schema array for a Notion-like database based on this description: "${description}".
-      The output must be pure JSON array, like: [{"name": "Task", "type": "text"}, {"name": "Status", "type": "select"}]
+      The output must be pure JSON array, like: [{"key": "task", "name": "Task", "type": "text"}, {"key": "status", "name": "Status", "type": "select", "options": ["Todo", "Done"]}]
       Valid types are text, number, select, date, checkbox.
     `,
     config: {
