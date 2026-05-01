@@ -32,13 +32,13 @@ service cloud.firestore {
     }
 
     function isValidDatabaseRecord(data) {
-      return data.keys().hasAll(['data', 'createdAt', 'updatedAt', 'databaseId', 'userId'])
+      return data.keys().hasAll(['title', 'properties', 'order', 'createdAt', 'updatedAt'])
         && data.keys().size() == 5
-        && data.data is string && data.data.size() <= 100000
+        && data.title is string && data.title.size() <= 1000
+        && data.properties is string && data.properties.size() <= 100000
+        && data.order is number
         && data.createdAt is timestamp
-        && data.updatedAt is timestamp
-        && data.databaseId is string && data.databaseId.size() <= 128
-        && data.userId is string && data.userId == request.auth.uid;
+        && data.updatedAt is timestamp;
     }
 
     match /users/{userId} {
@@ -70,15 +70,12 @@ service cloud.firestore {
         match /records/{recordId} {
           allow read, list: if isOwner(userId);
           allow create: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
-            && incoming().databaseId == dbId
             && incoming().createdAt == request.time
             && incoming().updatedAt == request.time;
           allow update: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
-            && incoming().userId == existing().userId
-            && incoming().databaseId == existing().databaseId
             && incoming().createdAt == existing().createdAt
             && incoming().updatedAt == request.time
-            && incoming().diff(existing()).affectedKeys().hasOnly(['data', 'updatedAt']);
+            && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'properties', 'order', 'updatedAt']);
           allow delete: if isOwner(userId) && isValidId(dbId) && isValidId(recordId);
         }
       }

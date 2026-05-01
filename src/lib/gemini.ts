@@ -91,15 +91,18 @@ export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
     model: 'gemini-3.1-flash',
     contents: `
-      You are a database designer. Create a JSON schema array for a Notion-like database based on this description: "${description}".
-      The output must be pure JSON array, like: [{"key": "task", "name": "Task", "type": "text"}, {"key": "status", "name": "Status", "type": "select", "options": ["Todo", "Done"]}]
+      You are a database designer. Create a JSON object for a Notion-like database based on this description: "${description}".
+      The output must contain exactly two keys: "schema" and "records".
+      "schema" must be a JSON array, like: [{"key": "status", "name": "Status", "type": "select", "options": ["Todo", "Done"]}]
       Valid types are text, number, select, date, checkbox.
+      "records" must be a JSON array of objects representing initial rows, exactly matching the keys in the schema, PLUS a "title" key for the main field. For example: [{"title": "Buy milk", "status": "Todo"}]
+      Provide 3 to 5 realistic records.
     `,
     config: {
       responseMimeType: "application/json"
     }
   });
-  return JSON.parse(response.text || '[]');
+  return JSON.parse(response.text || '{"schema":[], "records":[]}');
 }
 
 export async function generateMeetingIntelligence(notes: any[], emails: any[]) {

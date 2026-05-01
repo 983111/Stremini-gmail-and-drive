@@ -175,7 +175,7 @@ export function DatabaseView({ pageId }: { pageId: string }) {
 
     // Persist order
     try {
-      await Promise.all(newRecords.map((r, i) => updateDoc(doc(db, `users/${user.uid}/databases/${pageId}/records/${r.id}`), { order: i })));
+      await Promise.all(newRecords.map((r, i) => updateDoc(doc(db, `users/${user.uid}/databases/${pageId}/records/${r.id}`), { order: i, updatedAt: serverTimestamp() })));
     } catch (e) {
       console.error('Failed to update order', e);
     }
@@ -246,11 +246,29 @@ export function DatabaseView({ pageId }: { pageId: string }) {
     if (!schemaPrompt || !user || !pageId) return;
     setIsGeneratingSchema(true);
     try {
-      const generatedSchema = await generateDatabaseSchema(schemaPrompt);
-      if (generatedSchema && Array.isArray(generatedSchema)) {
-         const newSchema = [...schema, ...generatedSchema.filter(col => !schema.find(s => s.key === col.key))];
+      const generated = await generateDatabaseSchema(schemaPrompt);
+      if (generated && generated.schema && Array.isArray(generated.schema)) {
+         const newSchema = [...schema, ...generated.schema.filter((col: any) => !schema.find(s => s.key === col.key))];
          setSchema(newSchema);
          await updateDoc(doc(db, `users/${user.uid}/databases/${pageId}`), { schema: JSON.stringify(newSchema), updatedAt: serverTimestamp() });
+         
+         if (generated.records && Array.isArray(generated.records)) {
+           const newOrder = records.length;
+           await Promise.all(generated.records.map((rec: any, idx: number) => {
+             const title = rec.title || '';
+             const properties = { ...rec };
+             delete properties.title;
+             
+             return addDoc(collection(db, `users/${user.uid}/databases/${pageId}/records`), {
+               title,
+               properties: JSON.stringify(properties),
+               order: newOrder + idx,
+               createdAt: serverTimestamp(),
+               updatedAt: serverTimestamp()
+             });
+           }));
+         }
+         
          setIsSchemaDialogOpen(false);
          setSchemaPrompt('');
       } else {
@@ -295,6 +313,25 @@ export function DatabaseView({ pageId }: { pageId: string }) {
      }
   };
 
+  const bulkArchive = async () => {
+     if (!user || selectedRecords.length === 0) return;
+     try {
+        const toArchive = records.filter(r => selectedRecords.includes(r.id));
+        await Promise.all(toArchive.map(r => {
+           let props = {};
+           try { props = JSON.parse(r.properties || '{}'); } catch(e){}
+           props['_archived'] = 'true';
+           return updateDoc(doc(db, `users/${user.uid}/databases/${pageId}/records/${r.id}`), {
+             properties: JSON.stringify(props),
+             updatedAt: serverTimestamp()
+           });
+        }));
+        setSelectedRecords([]);
+     } catch(e) {
+        console.error(e);
+     }
+  };
+
   const handleAskAi = async () => {
     if (!aiQuery || !focusedRecordId) return;
     setIsAiLoading(true);
@@ -312,8 +349,10 @@ export function DatabaseView({ pageId }: { pageId: string }) {
   };
 
   const filteredRecords = records.filter(rec => {
-    let props = {};
+    let props: any = {};
     try { props = JSON.parse(rec.properties || '{}'); } catch(e) {}
+    if (props['_archived'] === 'true') return false;
+    
     for (const key in filters) {
       if (filters[key]) {
         if (key === 'title') {
@@ -352,7 +391,7 @@ export function DatabaseView({ pageId }: { pageId: string }) {
                <div className="flex items-center space-x-2 bg-surface border border-border px-2 rounded-sm mr-4">
                   <span className="text-xs font-medium text-muted mr-2">{selectedRecords.length} selected</span>
                   <button onClick={bulkDuplicate} className="p-1 text-muted hover:text-foreground hover:bg-surface-hover rounded-sm"><Copy className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => setSelectedRecords([])} className="p-1 text-muted hover:text-foreground hover:bg-surface-hover rounded-sm"><Archive className="w-3.5 h-3.5" /></button>
+                  <button onClick={bulkArchive} className="p-1 text-muted hover:text-foreground hover:bg-surface-hover rounded-sm" title="Archive"><Archive className="w-3.5 h-3.5" /></button>
                   <button onClick={bulkDelete} className="p-1 text-muted hover:text-red-500 hover:bg-surface-hover rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
                </div>
             )}
