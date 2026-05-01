@@ -89,7 +89,7 @@ export async function draftEmailWithAI(prompt: string, context: string = '') {
 
 export async function generateDatabaseSchema(description: string) {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash',
+    model: 'gemini-2.5-flash',
     contents: `
       You are a database designer. Create a JSON object for a Notion-like database based on this description: "${description}".
       The output must contain exactly two keys: "schema" and "records".
