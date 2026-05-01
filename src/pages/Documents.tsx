@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
-import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Search } from 'lucide-react';
+import { FileText, Plus, Trash2, Cpu, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Search } from 'lucide-react';
 import { rewriteDocument, summarizeDocumentContent, askDocumentQuestion } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
@@ -352,7 +352,7 @@ export function Documents() {
               )}
             </div>
             
-            {/* AI Panel (Right Sidebar) */}
+            {/* Assistant Panel (Right Sidebar) */}
             {isAssistantOpen && (
             <div className={cn(
               "fixed inset-y-0 right-0 w-full sm:w-[340px] md:relative bg-background border-l border-border flex flex-col shrink-0 z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.05)]",
@@ -361,7 +361,7 @@ export function Documents() {
               {/* Header */}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">
-                  <Sparkles size={16} className="text-foreground" />
+                  <Cpu size={16} className="text-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Assistant</h3>
                 </div>
                 <div className="flex space-x-1">
@@ -482,8 +482,8 @@ export function Documents() {
                   </button>
                 </div>
                 <div className="flex justify-between items-center mt-3 px-1 text-xs text-muted">
-                  <span className="flex items-center space-x-1 tracking-widest uppercase text-[9px] font-semibold"><Sparkles size={10} /> <span>Parameters</span></span>
-                  <span className="tracking-widest uppercase text-[9px] font-semibold">Gemini Pro</span>
+                  <span className="flex items-center space-x-1 tracking-widest uppercase text-[9px] font-semibold"><Cpu size={10} /> <span>Parameters</span></span>
+                  <span className="tracking-widest uppercase text-[9px] font-semibold">Engine Pro</span>
                 </div>
               </div>
 

@@ -4,7 +4,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function generateBriefing(emails: any[], driveFiles: any[]) {
   const prompt = `
-    You are a daily briefing AI. Analyze the following unread emails and recent drive activity and generate a concise morning briefing.
+    You are a professional assistant. Analyze the following unread emails and recent drive activity and generate a concise morning briefing.
     Extract any urgent tasks, follow-ups, and financial alerts. Do not make up information that is not there.
     Emails: ${JSON.stringify(emails)}
     Drive Files: ${JSON.stringify(driveFiles)}
@@ -57,7 +57,7 @@ export async function askDocumentQuestion(content: string, question: string, his
     history: [
       {
         role: 'user',
-        parts: [{ text: `You are an AI assistant helping a user with a document. Here is the document content for context:\n\n${content}` }]
+        parts: [{ text: `You are an automated assistant helping a user with a document. Here is the document content for context:\n\n${content}` }]
       },
       {
         role: 'model',
@@ -73,7 +73,7 @@ export async function askDocumentQuestion(content: string, question: string, his
 
 export async function draftEmailWithAI(prompt: string, context: string = '') {
   const finalPrompt = `
-    You are an AI assistant helping a user write an email. 
+    You are an automated assistant helping a user write an email. 
     ${context ? `Here is the context/previous thread:\n${context}` : ''}
     
     User prompt: ${prompt}
@@ -106,7 +106,7 @@ export async function generateDatabaseSchema(description: string) {
 }
 
 export async function generateMeetingIntelligence(notes: any[], emails: any[]) {
-  const prompt = `You are a Meeting Intelligence assistant. You are given an array of Google Drive meeting notes and an array of Gmail threads potentially related to a meeting.
+  const prompt = `You are a Meeting Synthesis assistant. You are given an array of Google Drive meeting notes and an array of Gmail threads potentially related to a meeting.
   
   Notes: ${JSON.stringify(notes)}
   Emails: ${JSON.stringify(emails)}

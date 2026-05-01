@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentEmails, sendEmail, fetchEmailThread, fetchEmailBody } from '../lib/googleApi';
-import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Sparkles, Mail as MailIcon, Wand2 } from 'lucide-react';
+import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Cpu, Mail as MailIcon, Edit3 } from 'lucide-react';
 import { summarizeThread, draftEmailWithAI } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
@@ -155,7 +155,7 @@ export function Mail() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
         <h2 className="text-2xl font-semibold mb-4 text-foreground">Connect Gmail</h2>
-        <p className="text-muted mb-8 max-w-md">To access Mail Intelligence, please grant access to your Gmail account.</p>
+        <p className="text-muted mb-8 max-w-md">To access Mail, please grant access to your Gmail account.</p>
         <button onClick={signIn} className="bg-foreground text-background px-6 py-2.5 rounded-sm text-sm font-medium hover:bg-foreground-hover transition-colors">
           Connect Account
         </button>
@@ -166,7 +166,7 @@ export function Mail() {
   return (
     <div className="flex flex-col h-full bg-background relative">
       <div className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background shrink-0">
-        <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">Mail Intelligence</h1>
+        <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">Mail Inbox</h1>
         <div className="flex items-center space-x-2 md:space-x-6">
           <form onSubmit={handleSearch} className="relative hidden sm:flex items-center bg-surface rounded-sm border border-border focus-within:border-border-strong transition-colors">
             <span className="pl-3 text-muted">
@@ -280,11 +280,11 @@ export function Mail() {
                     <div className="flex flex-col border border-border rounded-sm bg-surface transition-colors focus-within:border-border-strong flex-1 mb-6">
                       <div className="flex items-center justify-between p-2 border-b border-border bg-background">
                          <div className="flex items-center flex-1 max-w-sm border border-border rounded-sm overflow-hidden bg-surface focus-within:border-border-strong transition-colors mr-4">
-                            <Wand2 size={12} className="ml-2 text-muted" />
+                            <Edit3 size={12} className="ml-2 text-muted" />
                             <input 
                               type="text" 
                               className="bg-transparent text-xs px-2 py-1.5 outline-none flex-1 text-foreground" 
-                              placeholder="Draft with AI (e.g. 'Ask for a meeting on Tuesday')" 
+                              placeholder="Draft message (e.g. 'Ask for a meeting on Tuesday')" 
                               value={draftPrompt}
                               onChange={e => setDraftPrompt(e.target.value)}
                               onKeyDown={e => e.key === 'Enter' && handleDraftWithAI()}
@@ -369,9 +369,9 @@ export function Mail() {
                       onClick={() => handleSummarize(selectedEmail)}
                       disabled={isAiLoading}
                       className="bg-foreground text-background px-4 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center space-x-2 disabled:opacity-50"
-                      title="Summarize thread with AI"
+                      title="Summarize thread"
                     >
-                      {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                      {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Cpu size={14} />}
                       <span>Summarize</span>
                     </button>
                     <button 
@@ -393,7 +393,7 @@ export function Mail() {
                  <div className="mb-10 bg-surface p-6 border border-border rounded-sm animate-in fade-in slide-in-from-top-2 duration-300">
                    <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center space-x-2">
-                         <Sparkles size={14} className="text-foreground" /> <span>AI Synthesis</span>
+                         <Cpu size={14} className="text-foreground" /> <span>Thread Synthesis</span>
                       </h3>
                       <button onClick={() => setAiSummary('')} className="text-muted hover:text-foreground">
                         <X size={14} />

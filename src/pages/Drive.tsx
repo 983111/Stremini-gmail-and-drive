@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile } from '../lib/googleApi';
-import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
+import { Search, Loader2, File, ExternalLink, Cpu, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
@@ -158,7 +158,7 @@ export function Drive() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
         <h2 className="text-2xl font-semibold mb-4 text-foreground">Connect Google Drive</h2>
-        <p className="text-muted mb-8 max-w-md">To access drive intelligence, please grant access to your Google Drive account.</p>
+        <p className="text-muted mb-8 max-w-md">To access drive logic, please grant access to your Google Drive account.</p>
         <button onClick={signIn} className="bg-foreground text-background px-6 py-2.5 rounded-sm text-sm font-medium hover:bg-foreground-hover transition-colors">
           Connect Account
         </button>
@@ -328,8 +328,8 @@ export function Drive() {
                   disabled={isAiLoading}
                   className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
                  >
-                   {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                   <span>Analyze with AI</span>
+                   {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Cpu size={14} />}
+                   <span>Analyze</span>
                  </button>
                </div>
 
@@ -350,7 +350,7 @@ export function Drive() {
                {aiSummary && (
                  <div className="bg-surface p-8 border border-border rounded-sm">
                    <h3 className="text-xs font-semibold text-muted mb-6 uppercase tracking-wider flex items-center space-x-2">
-                       <Sparkles size={12}/> <span>AI Analysis Result</span>
+                       <Cpu size={12}/> <span>Analysis Result</span>
                    </h3>
                    <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
                      <Markdown>{aiSummary}</Markdown>

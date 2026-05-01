@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Sparkles, Loader2, FileText, Mail, X, Activity, HardDrive, Clock, Lock } from 'lucide-react';
+import { Cpu, Loader2, FileText, Mail, X, Activity, HardDrive, Clock, Lock } from 'lucide-react';
 import { fetchRecentEmails, fetchRecentDriveFiles } from '../lib/googleApi';
 import { generateBriefing, generateMeetingIntelligence } from '../lib/gemini';
 import Markdown from 'react-markdown';
@@ -12,7 +12,7 @@ export function Dashboard() {
   const [loadingBriefing, setLoadingBriefing] = useState(false);
   const [files, setFiles] = useState<any[]>([]);
   
-  const [meetingIntelligenceOutput, setMeetingIntelligenceOutput] = useState('');
+  const [meetingLogicOutput, setMeetingLogicOutput] = useState('');
   const [isMeetingLoading, setIsMeetingLoading] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
@@ -60,16 +60,16 @@ export function Dashboard() {
       return;
     }
     setIsMeetingLoading(true);
-    setMeetingIntelligenceOutput('');
+    setMeetingLogicOutput('');
     try {
       const [emails, files] = await Promise.all([
         fetchRecentEmails(accessToken, 'meeting OR notes'),
         fetchRecentDriveFiles(accessToken, 'name contains "meeting"')
       ]);
       const result = await generateMeetingIntelligence(files, emails);
-      setMeetingIntelligenceOutput(result);
+      setMeetingLogicOutput(result);
     } catch (e: any) {
-      setMeetingIntelligenceOutput("Error generating meeting intelligence: " + e.message);
+      setMeetingLogicOutput("Error generating meeting synthesis: " + e.message);
     } finally {
       setIsMeetingLoading(false);
     }
@@ -94,7 +94,7 @@ export function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="col-span-1 md:col-span-2 border border-border rounded-sm p-6 bg-background relative">
             <div className="flex items-center space-x-2 mb-4 text-foreground">
-              <Sparkles size={18} />
+              <Cpu size={18} />
               <h3 className="font-semibold text-lg">Daily Synthesis</h3>
             </div>
             
@@ -125,7 +125,7 @@ export function Dashboard() {
             
             {/* Background design elements */}
             <div className="absolute top-4 right-4 text-[#F5F5F5]">
-               <Sparkles size={64} className="opacity-50" />
+               <Cpu size={64} className="opacity-50" />
             </div>
           </div>
 
@@ -165,7 +165,7 @@ export function Dashboard() {
                 <FileText size={20} className="text-foreground" />
                 <span className="text-[10px] text-muted">Workflow</span>
               </div>
-              <h4 className="font-semibold text-lg mb-2 text-foreground">Meeting Intelligence</h4>
+              <h4 className="font-semibold text-lg mb-2 text-foreground">Meeting Synthesis</h4>
               <p className="text-muted text-sm leading-relaxed mb-6 flex-1">
                 Synthesize unread emails and recent Drive documents into a clean briefing.
               </p>
@@ -224,14 +224,14 @@ export function Dashboard() {
               <X size={18} />
             </button>
             <div className="p-6 md:p-8 border-b border-border">
-              <h2 className="text-xl md:text-2xl font-semibold text-foreground">Meeting Intelligence Synthesis</h2>
+              <h2 className="text-xl md:text-2xl font-semibold text-foreground">Meeting Synthesis Flow</h2>
               <p className="text-sm text-muted mt-2">
                 Scanning Workspace Drive and Mail for meeting context...
               </p>
             </div>
             
             <div className="p-4 md:p-8 flex-1 flex flex-col bg-surface overflow-y-auto">
-              {!meetingIntelligenceOutput && !isMeetingLoading ? (
+              {!meetingLogicOutput && !isMeetingLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
                   <button 
                     onClick={runMeetingIntelligence}
@@ -248,11 +248,11 @@ export function Dashboard() {
               ) : (
                 <div className="flex-1 overflow-auto bg-background p-6 border border-border rounded-sm">
                   <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
-                    <Markdown>{meetingIntelligenceOutput}</Markdown>
+                    <Markdown>{meetingLogicOutput}</Markdown>
                   </div>
                   <div className="mt-8 pt-6 border-t border-border flex justify-end">
                     <button 
-                      onClick={() => setMeetingIntelligenceOutput('')}
+                      onClick={() => setMeetingLogicOutput('')}
                       className="text-muted hover:text-foreground text-sm font-medium transition-colors mr-6"
                     >
                       Clear

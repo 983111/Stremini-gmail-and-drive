@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Sparkles } from 'lucide-react';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 
@@ -63,8 +63,8 @@ export function Layout() {
       )}>
         <div className="p-6 pb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Executive</h1>
-            <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Productivity</p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Stremini</h1>
+            <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Workspace Suite</p>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-muted hover:text-foreground">
             <X size={20} />
@@ -220,11 +220,11 @@ export function Layout() {
               <button onClick={() => setIsHelpOpen(false)} className="text-muted hover:text-foreground"><X size={18}/></button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-muted mb-4">Welcome to Executive Productivity! Here you can manage your emails, drive documents, and notes all in one place with AI assistance.</p>
+              <p className="text-sm text-muted mb-4">Welcome to Stremini Workspace! Here you can manage your emails, drive documents, and notes all in one place with advanced intelligence.</p>
               <ul className="text-sm text-foreground-muted space-y-2 list-disc pl-4">
-                <li>Use <strong>Drive Connect</strong> to preview your files and analyze them with Gemini.</li>
+                <li>Use <strong>Drive Connect</strong> to preview your files and analyze them effortlessly.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
-                <li>Visit <strong>Documents</strong> to write rich notes, use the AI assistant, or link Drive files.</li>
+                <li>Visit <strong>Documents</strong> to write rich notes, use the writing assistant, or link Drive files.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">
