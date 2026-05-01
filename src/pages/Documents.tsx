@@ -268,7 +268,7 @@ export function Documents() {
                     setSelectedDoc({ ...selectedDoc, title: newTitle });
                     updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
                   }}
-                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-[#DDD] text-foreground tracking-tight"
+                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tight"
                   placeholder="Document Title"
                 />
                 <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0">
@@ -446,7 +446,7 @@ export function Documents() {
           </>
         ) : (
           <div className="flex items-center justify-center flex-1 h-full flex-col text-center bg-background">
-             <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-[#CCC]">
+             <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 text-muted">
                 <FileText size={24} />
              </div>
              <p className="text-lg text-foreground font-semibold mb-2">No Document Selected</p>

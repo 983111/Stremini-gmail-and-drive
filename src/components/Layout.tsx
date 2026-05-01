@@ -92,14 +92,6 @@ export function Layout() {
               </>
             )}
           </NavLink>
-          <NavLink to="/databases" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
-            {({ isActive }) => (
-              <>
-                <Database size={16} className={isActive ? "text-foreground" : "text-muted"} />
-                <span>Databases</span>
-              </>
-            )}
-          </NavLink>
         </nav>
 
         <div className="mt-auto px-4 py-6 border-t border-border space-y-1">
@@ -135,7 +127,7 @@ export function Layout() {
              <input 
                type="text" 
                placeholder="Search across Workspace..." 
-               className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-[#DDDDDD] placeholder-[#888] transition-all"
+               className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring placeholder-muted transition-all"
              />
           </div>
 
@@ -206,7 +198,6 @@ export function Layout() {
                 <li>Use <strong>Drive Connect</strong> to preview your files and analyze them with Gemini.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
                 <li>Visit <strong>Documents</strong> to write rich notes, use the AI assistant, or link Drive files.</li>
-                <li>Explore <strong>Databases</strong> to build custom Notion-styled tools with AI.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">

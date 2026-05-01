@@ -367,7 +367,7 @@ export function Mail() {
           ) : (
             <div className="flex h-full items-center justify-center text-muted font-medium text-sm bg-background w-full">
                <div className="text-center">
-                 <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 text-[#CCC]">
+                 <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mx-auto mb-4 text-muted">
                     <MailIcon size={20} />
                  </div>
                  Select an email to view or tap Compose to draft a new message.

@@ -195,7 +195,7 @@ export function Drive() {
                   >
                     {folder.name}
                   </button>
-                  {index < folderPath.length - 1 && <span className="text-[#CCC] text-xs">/</span>}
+                  {index < folderPath.length - 1 && <span className="text-muted text-xs">/</span>}
                 </div>
               ))}
             </div>
@@ -343,7 +343,7 @@ export function Drive() {
           ) : (
             <div className="flex h-full items-center justify-center text-muted font-medium text-sm w-full bg-background">
                <div className="text-center flex flex-col items-center">
-                  <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-4 text-[#CCC]">
+                  <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-4 text-muted">
                     <HardDrive size={20} />
                   </div>
                   Select a Google Drive file to sync and analyze
