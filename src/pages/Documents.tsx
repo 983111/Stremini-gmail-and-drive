@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
-import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight } from 'lucide-react';
+import { FileText, Plus, Trash2, Sparkles, Loader2, Eye, Edit3, X, RefreshCw, Send, MoveRight, Link as LinkIcon, File, User, Download, PanelRight, Search } from 'lucide-react';
 import { rewriteDocument, summarizeDocumentContent, askDocumentQuestion } from '../lib/gemini';
 import Markdown from 'react-markdown';
+import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles } from '../lib/googleApi';
 import html2pdf from 'html2pdf.js';
@@ -33,6 +34,11 @@ export function Documents() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState<any[]>([]);
   const [isDriveLoading, setIsDriveLoading] = useState(false);
+  const [driveSearch, setDriveSearch] = useState('');
+
+  const filteredDriveFiles = driveFiles.filter(f => 
+    f.name.toLowerCase().includes(driveSearch.toLowerCase())
+  );
 
   const handleDownloadPDF = async () => {
     if (!selectedDoc) return;
@@ -203,6 +209,7 @@ export function Documents() {
     }
     setIsLinkModalOpen(true);
     setIsDriveLoading(true);
+    setDriveSearch('');
     try {
       const files = await fetchRecentDriveFiles(accessToken, '');
       setDriveFiles(files);
@@ -223,10 +230,13 @@ export function Documents() {
   };
 
   return (
-    <div className="flex h-full bg-background">
+    <div className="flex h-full bg-background relative">
       {/* Sidebar list */}
-      <div className="w-64 border-r border-border bg-background flex flex-col flex-shrink-0 z-0">
-        <div className="p-4 border-b border-border flex justify-between items-center bg-background">
+      <div className={cn(
+        "w-full md:w-64 border-r border-border bg-background flex flex-col shrink-0 overflow-y-auto",
+        selectedDoc && "hidden md:flex"
+      )}>
+        <div className="p-4 border-b border-border flex justify-between items-center bg-background shrink-0">
           <h2 className="font-semibold text-xs text-muted uppercase tracking-wider">Workspace</h2>
           <button onClick={createDoc} className="p-1 hover:bg-surface rounded-sm text-muted hover:text-foreground transition-colors">
             <Plus size={16} />
@@ -255,23 +265,31 @@ export function Documents() {
       </div>
 
       {/* Editor Main Content */}
-      <div className="flex-1 overflow-auto relative bg-background flex">
+      <div className={cn(
+        "flex-1 overflow-auto relative bg-background flex",
+        !selectedDoc && "hidden md:flex"
+      )}>
         {selectedDoc ? (
           <>
-            <div className="flex-1 p-16 overflow-y-auto max-w-4xl mx-auto flex flex-col">
-              <div className="flex justify-between items-start mb-12 group">
-                <input 
-                  type="text"
-                  value={selectedDoc.title}
-                  onChange={(e) => {
-                    const newTitle = e.target.value;
-                    setSelectedDoc({ ...selectedDoc, title: newTitle });
-                    updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
-                  }}
-                  className="w-full text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tight"
-                  placeholder="Document Title"
-                />
-                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0">
+            <div className="flex-1 p-6 md:p-16 overflow-y-auto max-w-4xl mx-auto flex flex-col">
+              <div className="flex flex-col sm:flex-row justify-between items-start mb-8 md:mb-12 group gap-4">
+                <div className="flex items-center space-x-3 w-full">
+                  <button onClick={() => setSelectedDoc(null)} className="md:hidden text-muted hover:text-foreground shrink-0">
+                    <X size={20} />
+                  </button>
+                  <input 
+                    type="text"
+                    value={selectedDoc.title}
+                    onChange={(e) => {
+                      const newTitle = e.target.value;
+                      setSelectedDoc({ ...selectedDoc, title: newTitle });
+                      updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
+                    }}
+                    className="w-full text-2xl md:text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tight"
+                    placeholder="Document Title"
+                  />
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0 self-end sm:self-auto">
                   <button 
                     onClick={() => setIsPreview(false)}
                     className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${!isPreview ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
@@ -336,7 +354,10 @@ export function Documents() {
             
             {/* AI Panel (Right Sidebar) */}
             {isAssistantOpen && (
-            <div className="w-[340px] bg-background border-l border-border flex flex-col shrink-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
+            <div className={cn(
+              "fixed inset-y-0 right-0 w-full sm:w-[340px] md:relative bg-background border-l border-border flex flex-col shrink-0 z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.05)]",
+              !isAssistantOpen && "hidden"
+            )}>
               {/* Header */}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">
@@ -388,20 +409,45 @@ export function Documents() {
                  )}
 
                  <div className="flex-1 flex flex-col space-y-4">
+                   {chatMessages.length > 0 && (
+                     <div className="flex justify-center shrink-0 mb-2">
+                       <div className="bg-surface text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border border-border flex items-center space-x-2 text-foreground/50">
+                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                         <span>Analyzing: {selectedDoc.title}</span>
+                       </div>
+                     </div>
+                   )}
                    {chatMessages.map((msg, i) => (
-                     <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-background' : 'bg-surface border border-border text-foreground-muted'}`}>
-                         {msg.role === 'user' ? <div className="whitespace-pre-wrap">{msg.content}</div> : <div className="prose dark:prose-invert prose-sm max-w-none">
-                          <Markdown>{msg.content}</Markdown>
-                        </div>}
+                     <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start animate-in fade-in slide-in-from-left-2 duration-300'}`}>
+                       <div className={`max-w-[85%] p-3 rounded-sm text-sm ${msg.role === 'user' ? 'bg-foreground text-background shadow-sm' : 'bg-surface border border-border text-foreground'}`}>
+                         {msg.role === 'user' ? (
+                           <div className="whitespace-pre-wrap">{msg.content}</div>
+                         ) : (
+                           <div className="prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-background prose-pre:border prose-pre:border-border">
+                             <Markdown>{msg.content}</Markdown>
+                           </div>
+                         )}
                        </div>
                        {msg.role === 'assistant' && !isAiLoading && i === chatMessages.length - 1 && (
-                         <button 
-                           onClick={() => replaceContent(msg.content)}
-                           className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted hover:text-foreground flex items-center space-x-1"
-                         >
-                           <RefreshCw size={10} /> <span>Apply to Document</span>
-                         </button>
+                         <div className="mt-2 flex items-center space-x-2">
+                           <button 
+                             onClick={() => replaceContent(msg.content)}
+                             className="text-[10px] font-bold uppercase tracking-widest text-muted hover:text-foreground hover:bg-surface px-2 py-1 rounded-sm border border-transparent hover:border-border transition-all flex items-center space-x-1.5 group"
+                           >
+                             <RefreshCw size={10} className="group-hover:rotate-180 transition-transform duration-500" />
+                             <span>Apply to Document</span>
+                           </button>
+                           <button 
+                             onClick={() => {
+                               const newContent = selectedDoc.content + "\n\n" + msg.content;
+                               replaceContent(newContent);
+                             }}
+                             className="text-[10px] font-bold uppercase tracking-widest text-muted hover:text-foreground hover:bg-surface px-2 py-1 rounded-sm border border-transparent hover:border-border transition-all flex items-center space-x-1.5"
+                           >
+                             <Plus size={10} />
+                             <span>Append</span>
+                           </button>
+                         </div>
                        )}
                      </div>
                    ))}
@@ -465,31 +511,42 @@ export function Documents() {
               <X size={18} />
             </button>
             <div className="p-6 border-b border-border">
-              <h2 className="text-xl font-semibold text-foreground">Insert Drive Link</h2>
-              <p className="text-muted text-sm mt-1">Select a recent file to insert into your document.</p>
+              <h2 className="text-xl font-semibold text-foreground">Link Drive File</h2>
+              <p className="text-muted text-sm mt-1 mb-4">Select a file to insert a markdown link into your document.</p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
+                <input 
+                  type="text"
+                  placeholder="Search your recent files..."
+                  value={driveSearch}
+                  onChange={(e) => setDriveSearch(e.target.value)}
+                  className="w-full bg-surface border border-border focus:border-border-strong rounded-sm pl-9 pr-4 py-2 text-sm outline-none transition-colors"
+                />
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col">
               {isDriveLoading ? (
                 <div className="flex-1 flex items-center justify-center text-muted">
                   <Loader2 className="animate-spin" size={24} />
                 </div>
-              ) : driveFiles.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-muted text-sm">
-                  No recent files found.
+              ) : filteredDriveFiles.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-muted text-sm py-8">
+                  {driveSearch ? "No files match your search." : "No recent files found."}
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {driveFiles.map(file => (
+                  {filteredDriveFiles.map(file => (
                     <div 
                       key={file.id}
                       onClick={() => handleInsertLink(file)}
-                      className="flex items-center space-x-3 p-3 hover:bg-surface rounded-sm cursor-pointer transition-colors border border-transparent hover:border-border"
+                      className="flex items-center space-x-3 p-3 hover:bg-surface rounded-sm cursor-pointer transition-colors border border-transparent hover:border-border group"
                     >
-                      <div className="text-muted shrink-0"><File size={16} /></div>
+                      <div className="text-muted shrink-0 w-8 h-8 bg-surface-hover flex items-center justify-center rounded-sm group-hover:bg-background"><File size={16} /></div>
                       <div className="flex-1 min-w-0">
                          <div className="text-sm font-medium text-foreground truncate">{file.name}</div>
+                         <div className="text-[10px] text-muted uppercase tracking-wider">Modified {new Date(file.modifiedTime).toLocaleDateString()}</div>
                       </div>
-                      <div className="text-muted shrink-0 opacity-0 group-hover:opacity-100">
+                      <div className="text-muted shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Plus size={16} />
                       </div>
                     </div>

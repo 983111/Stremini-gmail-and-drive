@@ -76,16 +76,16 @@ export function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background p-12 overflow-y-auto">
-      <div className="max-w-6xl w-full mx-auto space-y-12">
+    <div className="flex flex-col h-full bg-background p-4 md:p-8 lg:p-12 overflow-y-auto">
+      <div className="max-w-6xl w-full mx-auto space-y-8 md:space-y-12">
         
         {/* Header */}
-        <div className="flex justify-between items-end">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h1 className="text-4xl font-semibold text-foreground tracking-tight mb-2">Nexus Hub</h1>
-            <p className="text-muted">Your unified command center for today.</p>
+            <h1 className="text-2xl md:text-4xl font-semibold text-foreground tracking-tight mb-2">Nexus Hub</h1>
+            <p className="text-sm text-muted">Your unified command center for today.</p>
           </div>
-          <div className="text-[11px] font-medium text-muted uppercase tracking-widest">
+          <div className="text-[10px] md:text-[11px] font-medium text-muted uppercase tracking-widest">
             Updated just now
           </div>
         </div>
@@ -215,24 +215,24 @@ export function Dashboard() {
 
       {/* Meeting Intelligence Modal */}
       {isMeetingModalOpen && (
-        <div className="fixed inset-0 bg-[#00000010] backdrop-blur-sm z-50 flex items-center justify-center p-8">
-          <div className="bg-background border border-border shadow-xl w-full max-w-4xl min-h-[50vh] flex flex-col relative rounded-md">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="bg-background border border-border shadow-xl w-full max-w-4xl h-full md:h-auto md:min-h-[50vh] flex flex-col relative rounded-md overflow-hidden">
             <button 
               onClick={() => setIsMeetingModalOpen(false)}
-              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2"
+              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2 z-10"
             >
               <X size={18} />
             </button>
-            <div className="p-8 border-b border-border">
-              <h2 className="text-2xl font-semibold text-foreground">Meeting Intelligence Synthesis</h2>
-              <p className="text-muted mt-2">
+            <div className="p-6 md:p-8 border-b border-border">
+              <h2 className="text-xl md:text-2xl font-semibold text-foreground">Meeting Intelligence Synthesis</h2>
+              <p className="text-sm text-muted mt-2">
                 Scanning Workspace Drive and Mail for meeting context...
               </p>
             </div>
             
-            <div className="p-8 flex-1 flex flex-col bg-surface">
+            <div className="p-4 md:p-8 flex-1 flex flex-col bg-surface overflow-y-auto">
               {!meetingIntelligenceOutput && !isMeetingLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
                   <button 
                     onClick={runMeetingIntelligence}
                     className="bg-foreground text-background px-6 py-3 text-sm font-medium rounded-sm hover:bg-foreground-hover transition-colors"

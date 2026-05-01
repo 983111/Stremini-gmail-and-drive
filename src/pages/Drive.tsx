@@ -4,6 +4,7 @@ import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, delete
 import { Search, Loader2, File, ExternalLink, Sparkles, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
+import { cn } from '../lib/utils';
 
 export function Drive() {
   const { accessToken, signIn } = useAuth();
@@ -165,9 +166,9 @@ export function Drive() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="h-[64px] border-b border-border flex items-center justify-between px-8 bg-background">
-        <h1 className="text-xl font-semibold text-foreground">Drive Sync</h1>
-        <form onSubmit={handleSearch} className="relative w-80">
+      <div className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background">
+        <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">Drive Sync</h1>
+        <form onSubmit={handleSearch} className="relative w-40 sm:w-64 md:w-80">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
             <Search size={14} />
           </span>
@@ -175,18 +176,21 @@ export function Drive() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search drive files..." 
+            placeholder="Search..." 
             className="w-full bg-surface text-sm pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
           />
         </form>
       </div>
 
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex-1 overflow-hidden flex relative">
         {/* Drive List */}
-        <div className="w-[340px] border-r border-border bg-background flex flex-col shrink-0">
+        <div className={cn(
+          "w-full md:w-[340px] border-r border-border bg-background flex flex-col shrink-0 transition-transform duration-300",
+          selectedFile && "hidden md:flex"
+        )}>
           {/* Breadcrumbs */}
           <div className="px-4 py-2 border-b border-border flex items-center justify-between">
-            <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1">
+            <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1 no-scrollbar">
               {folderPath.map((folder, index) => (
                 <div key={folder.id} className="flex items-center space-x-1">
                   <button 
@@ -284,23 +288,32 @@ export function Drive() {
         </div>
 
         {/* Action Panel */}
-        <div className="flex-1 bg-background flex flex-col items-center">
+        <div className={cn(
+          "flex-1 bg-background flex flex-col items-center overflow-y-auto",
+          !selectedFile && "hidden md:flex"
+        )}>
           {selectedFile ? (
-             <div className="max-w-2xl w-full p-12 overflow-y-auto">
-               <div className="w-16 h-16 bg-surface rounded-sm flex items-center justify-center mb-6 text-foreground">
+             <div className="max-w-2xl w-full p-6 md:p-12">
+               <button 
+                 onClick={() => setSelectedFile(null)}
+                 className="flex items-center space-x-2 text-muted hover:text-foreground mb-8 md:hidden"
+               >
+                 <X size={16} /> <span>Back to List</span>
+               </button>
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-surface rounded-sm flex items-center justify-center mb-6 text-foreground">
                  <File size={24} />
                </div>
-               <h2 className="text-3xl font-semibold text-foreground mb-2 tracking-tight">{selectedFile.name}</h2>
-               <div className="text-xs font-semibold uppercase tracking-wider text-muted mb-8">
+               <h2 className="text-xl md:text-3xl font-semibold text-foreground mb-2 tracking-tight line-break">{selectedFile.name}</h2>
+               <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-muted mb-8">
                  Last modified: {new Date(selectedFile.modifiedTime).toLocaleString()}
                </div>
 
-               <div className="flex space-x-3 mb-12">
+               <div className="flex flex-col sm:flex-row gap-3 mb-8 md:mb-12">
                  <a 
                    href={selectedFile.webViewLink} 
                    target="_blank" 
                    rel="noopener noreferrer"
-                   className="flex items-center space-x-2 bg-background border border-border px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-surface transition-colors text-foreground"
+                   className="flex items-center justify-center space-x-2 bg-background border border-border px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-surface transition-colors text-foreground"
                  >
                    <ExternalLink size={14} />
                    <span>Open in Drive</span>
@@ -308,7 +321,7 @@ export function Drive() {
                  <button 
                   onClick={() => handleAnalze(selectedFile)}
                   disabled={isAiLoading}
-                  className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center space-x-2 disabled:opacity-50"
+                  className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
                  >
                    {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                    <span>Analyze with AI</span>

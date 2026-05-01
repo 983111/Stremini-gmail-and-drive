@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Database } from 'lucide-react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 export function Layout() {
   const { user, signOut } = useAuth();
+  const location = useLocation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
   const [emailAlerts, setEmailAlerts] = useState(localStorage.getItem('emailAlerts') || 'All events');
@@ -32,6 +29,11 @@ export function Layout() {
     }
   }, [theme]);
 
+  // Close sidebar on route change on mobile
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
   const saveSettings = () => {
     localStorage.setItem('theme', theme);
     setIsSettingsOpen(false);
@@ -46,11 +48,27 @@ export function Layout() {
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans antialiased">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-[260px] border-r border-border flex flex-col bg-background h-full flex-shrink-0 z-10">
-        <div className="p-6 pb-8">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Executive</h1>
-          <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Productivity</p>
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-[260px] border-r border-border flex flex-col bg-background h-full z-50 transition-transform duration-300 transform lg:relative lg:translate-x-0 shrink-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-6 pb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Executive</h1>
+            <p className="text-[10px] tracking-[0.2em] font-medium text-muted uppercase mt-1">Productivity</p>
+          </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-muted hover:text-foreground">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="px-6 mb-8">
@@ -115,36 +133,45 @@ export function Layout() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
         {/* Top Header */}
-        <header className="h-[64px] border-b border-border flex items-center justify-between px-8 bg-background flex-shrink-0">
-          <div className="flex items-center font-semibold text-foreground">
-            Workspace
+        <header className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background flex-shrink-0">
+          <div className="flex items-center">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 mr-2 text-muted hover:text-foreground lg:hidden"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="font-semibold text-foreground hidden xs:block">
+              Workspace
+            </div>
           </div>
           
-          <div className="flex-1 max-w-xl mx-8 relative">
+          <div className="flex-1 max-w-xl mx-2 md:mx-8 relative">
              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                <SearchIcon size={14} className="text-muted" />
              </div>
              <input 
                type="text" 
-               placeholder="Search across Workspace..." 
+               placeholder="Search..." 
                className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring placeholder-muted transition-all"
+               id="search-input"
              />
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
              <button 
                onClick={() => setIsNotificationsOpen(true)}
-               className="text-muted hover:text-foreground transition-colors"
+               className="p-2 text-muted hover:text-foreground transition-colors"
              >
                <Bell size={18} />
              </button>
              <button 
                onClick={() => setIsSettingsOpen(true)}
-               className="text-muted hover:text-foreground transition-colors"
+               className="p-2 text-muted hover:text-foreground transition-colors hidden sm:block"
              >
                <Settings size={18} />
              </button>
-             <div className="w-7 h-7 rounded-full bg-surface-hover overflow-hidden border border-border-strong">
+             <div className="w-7 h-7 rounded-full bg-surface-hover overflow-hidden border border-border-strong flex-shrink-0">
                 {user?.photoURL ? <img src={user.photoURL} alt="User" className="w-full h-full object-cover" /> : null}
              </div>
           </div>
