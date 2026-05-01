@@ -142,7 +142,7 @@ export function Mail() {
     setIsDrafting(true);
     try {
       const draft = await draftEmailWithAI(draftPrompt, composeBody);
-      setComposeBody(prev => (prev ? prev + '\n\n' + draft : draft));
+      setComposeBody(draft);
       setDraftPrompt('');
     } catch (e: any) {
       alert("Failed to draft with AI: " + e.message);

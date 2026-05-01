@@ -22,6 +22,7 @@ export function Drive() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     if (selectedFile && accessToken) {
@@ -121,15 +122,16 @@ export function Drive() {
     }
   };
 
-  const handleDeleteFile = async (fileId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (!accessToken || !window.confirm("Are you sure you want to delete this item? This action is irreversible.")) return;
+  const handleDeleteFile = async (fileId: string, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
+    if (!accessToken) return;
     setLoading(true);
     try {
       await deleteDriveFile(accessToken, fileId);
       if (selectedFile?.id === fileId) {
         setSelectedFile(null);
       }
+      setDeleteConfirm(null);
       loadFiles(query, currentFolderId);
     } catch (err: any) {
       setError(err.message);
@@ -276,7 +278,10 @@ export function Drive() {
                   </div>
                 </div>
                 <button 
-                  onClick={(e) => handleDeleteFile(file.id, e)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm({ id: file.id, name: file.name });
+                  }}
                   className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
                 >
                   <Trash2 size={14} />
@@ -365,6 +370,35 @@ export function Drive() {
           )}
         </div>
       </div>
+      
+      {/* Deletion Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border shadow-2xl max-w-sm w-full p-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+              <Trash2 size={24} />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Delete Item?</h3>
+            <p className="text-muted text-sm mb-8">
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteConfirm.name}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 bg-surface border border-border text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-surface-hover transition-colors text-foreground"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleDeleteFile(deleteConfirm.id)}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
