@@ -22,6 +22,17 @@ function stripThinking(text: string): string {
   out = out.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
   out = out.replace(/<reflection>[\s\S]*?<\/reflection>/gi, '');
   out = out.replace(/<analysis>[\s\S]*?<\/analysis>/gi, '');
+
+  // Remove preamble/meta-reasoning before structured markdown output.
+  const firstSection = out.search(/^##\s/m);
+  if (firstSection > 0) out = out.slice(firstSection);
+
+  // Drop common leaked instruction lines if they still appear.
+  out = out
+    .split('\n')
+    .filter(line => !/^\s*(the user wants|however we have no|thus we need|let'?s parse|given the constraints)/i.test(line))
+    .join('\n');
+
   return out.trim();
 }
 
