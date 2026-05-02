@@ -264,13 +264,6 @@ export function Databases() {
                   {isGenerating ? "Building..." : "Build System"}
                 </button>
               </div>
-              <div className="mt-3 flex items-center justify-between px-2">
-                <p className="text-[9px] text-muted uppercase tracking-[0.2em] font-medium">AI Database Synthesis Engine</p>
-                <div className="flex space-x-4">
-                   <span className="text-[9px] text-muted uppercase tracking-[0.2em]">Context: Global</span>
-                   <span className="text-[9px] text-muted uppercase tracking-[0.2em]">Model: Pro</span>
-                </div>
-              </div>
            </div>
         </div>
 

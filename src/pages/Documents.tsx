@@ -507,10 +507,6 @@ export function Documents() {
                      <Send size={16} />
                   </button>
                 </div>
-                <div className="flex justify-between items-center mt-3 px-1 text-xs text-muted">
-                  <span className="flex items-center space-x-1 tracking-widest uppercase text-[9px] font-semibold"><Cpu size={10} /> <span>Parameters</span></span>
-                  <span className="tracking-widest uppercase text-[9px] font-semibold">Engine Pro</span>
-                </div>
               </div>
 
             </div>
