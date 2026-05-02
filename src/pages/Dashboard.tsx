@@ -2,20 +2,22 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Cpu, Loader2, FileText, X, Activity, HardDrive,
-  AlertTriangle, Clock, TrendingUp, ChevronRight, RefreshCw, Sparkles,
+  AlertTriangle, Clock, TrendingUp, ChevronRight, RefreshCw, Sparkles, Zap,
 } from 'lucide-react';
 import { fetchRecentEmails, fetchRecentDriveFiles } from '../lib/googleApi';
 import { generateBriefing, generateMeetingIntelligence } from '../lib/gemini';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 
+// ─── Section parser ───────────────────────────────────────────────────────────
 interface Section { title: string; body: string; kind: SectionKind }
 type SectionKind = 'summary' | 'urgent' | 'followup' | 'financial' | 'other';
 
 function parseSections(md: string): Section[] {
   if (!md.trim()) return [];
-  const raw = md.split(/\n(?=##\s)/);
-  return raw
+  return md
+    .split(/\n(?=##\s)/)
     .map(chunk => chunk.trim())
     .filter(chunk => chunk.startsWith('##'))
     .map(chunk => {
@@ -33,51 +35,114 @@ function parseSections(md: string): Section[] {
     .filter(s => s.body.length > 0);
 }
 
+// ─── Section config ───────────────────────────────────────────────────────────
 const KINDS: Record<SectionKind, {
   icon: React.FC<{ size?: number; className?: string }>;
-  pill: string;
+  accent: string;
+  badge: string;
   border: string;
   bg: string;
   dot: string;
+  headerBg: string;
 }> = {
-  summary:   { icon: Sparkles,       pill: 'bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900',        border: 'border-zinc-200 dark:border-zinc-700',    bg: 'bg-zinc-50/60 dark:bg-zinc-900/40',       dot: 'bg-zinc-400' },
-  urgent:    { icon: AlertTriangle,  pill: 'bg-red-600 text-white',                                             border: 'border-red-200 dark:border-red-800',      bg: 'bg-red-50/60 dark:bg-red-950/30',         dot: 'bg-red-500'  },
-  followup:  { icon: Clock,          pill: 'bg-amber-500 text-white',                                           border: 'border-amber-200 dark:border-amber-700',  bg: 'bg-amber-50/60 dark:bg-amber-950/30',     dot: 'bg-amber-400'},
-  financial: { icon: TrendingUp,     pill: 'bg-emerald-600 text-white',                                         border: 'border-emerald-200 dark:border-emerald-700', bg: 'bg-emerald-50/60 dark:bg-emerald-950/30', dot: 'bg-emerald-500'},
-  other:     { icon: Activity,       pill: 'bg-blue-600 text-white',                                            border: 'border-blue-200 dark:border-blue-700',    bg: 'bg-blue-50/60 dark:bg-blue-950/30',       dot: 'bg-blue-400' },
+  summary: {
+    icon: Sparkles,
+    accent: 'text-zinc-600 dark:text-zinc-300',
+    badge: 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900',
+    border: 'border-zinc-200 dark:border-zinc-700',
+    bg: 'bg-white dark:bg-zinc-900/50',
+    dot: 'bg-zinc-400',
+    headerBg: 'bg-zinc-50 dark:bg-zinc-800/60',
+  },
+  urgent: {
+    icon: AlertTriangle,
+    accent: 'text-red-600 dark:text-red-400',
+    badge: 'bg-red-600 text-white',
+    border: 'border-red-200 dark:border-red-800/60',
+    bg: 'bg-red-50/40 dark:bg-red-950/20',
+    dot: 'bg-red-500',
+    headerBg: 'bg-red-50 dark:bg-red-950/40',
+  },
+  followup: {
+    icon: Clock,
+    accent: 'text-amber-600 dark:text-amber-400',
+    badge: 'bg-amber-500 text-white',
+    border: 'border-amber-200 dark:border-amber-700/60',
+    bg: 'bg-amber-50/40 dark:bg-amber-950/20',
+    dot: 'bg-amber-400',
+    headerBg: 'bg-amber-50 dark:bg-amber-950/40',
+  },
+  financial: {
+    icon: TrendingUp,
+    accent: 'text-emerald-600 dark:text-emerald-400',
+    badge: 'bg-emerald-600 text-white',
+    border: 'border-emerald-200 dark:border-emerald-700/60',
+    bg: 'bg-emerald-50/40 dark:bg-emerald-950/20',
+    dot: 'bg-emerald-500',
+    headerBg: 'bg-emerald-50 dark:bg-emerald-950/40',
+  },
+  other: {
+    icon: Activity,
+    accent: 'text-blue-600 dark:text-blue-400',
+    badge: 'bg-blue-600 text-white',
+    border: 'border-blue-200 dark:border-blue-700/60',
+    bg: 'bg-blue-50/40 dark:bg-blue-950/20',
+    dot: 'bg-blue-400',
+    headerBg: 'bg-blue-50 dark:bg-blue-950/40',
+  },
 };
 
+// ─── Section card ─────────────────────────────────────────────────────────────
 function SectionCard({ section }: { section: Section }) {
   const cfg = KINDS[section.kind];
   const Icon = cfg.icon;
   return (
-    <div className={`rounded-sm border ${cfg.border} ${cfg.bg} p-4 flex flex-col gap-3 break-inside-avoid`}>
-      <div className={`inline-flex items-center space-x-1.5 self-start px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cfg.pill}`}>
-        <Icon size={11} />
-        <span>{section.title}</span>
+    <div className={`rounded-sm border ${cfg.border} ${cfg.bg} overflow-hidden flex flex-col break-inside-avoid shadow-sm`}>
+      {/* Card header */}
+      <div className={`flex items-center gap-2 px-4 py-2.5 ${cfg.headerBg} border-b ${cfg.border}`}>
+        <Icon size={12} className={cfg.accent} />
+        <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${cfg.accent}`}>
+          {section.title}
+        </span>
       </div>
-      <div className="text-xs text-foreground-muted leading-relaxed prose dark:prose-invert prose-xs max-w-none
-        [&>ul]:pl-4 [&>ul]:space-y-1 [&>li]:text-xs [&>p]:text-xs [&>p]:my-1
-        [&_strong]:text-foreground [&_strong]:font-semibold">
-        <Markdown>{section.body}</Markdown>
+      {/* Card body */}
+      <div className="px-4 py-3">
+        <div
+          className="
+            text-xs text-foreground-muted leading-relaxed
+            [&>ul]:pl-4 [&>ul]:space-y-1.5 [&>ul]:mt-1
+            [&>li]:text-xs [&>li]:leading-relaxed
+            [&>p]:text-xs [&>p]:my-1
+            [&_strong]:text-foreground [&_strong]:font-semibold
+            [&_a]:text-blue-600 [&_a]:underline
+            [&>table]:w-full [&>table]:text-xs [&>table]:border-collapse [&>table]:mt-2
+            [&_th]:text-left [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b [&_th]:border-border [&_th]:pb-1.5 [&_th]:pt-1 [&_th]:px-2
+            [&_td]:py-1.5 [&_td]:px-2 [&_td]:border-b [&_td]:border-border/60
+            [&_tr:last-child_td]:border-0
+            [&_tr:hover_td]:bg-surface/60
+          "
+        >
+          <Markdown remarkPlugins={[remarkGfm]}>{section.body}</Markdown>
+        </div>
       </div>
     </div>
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 function BriefingSkeleton() {
   return (
-    <div className="space-y-3 animate-pulse">
-      {[40, 60, 48, 52].map((w, i) => (
-        <div key={i} className="h-3 rounded-full bg-surface-hover" style={{ width: `${w}%` }} />
-      ))}
-      <div className="grid grid-cols-2 gap-3 pt-2">
-        {[1, 2].map(i => (
-          <div key={i} className="rounded-sm border border-border p-4 space-y-2">
-            <div className="h-2.5 w-24 rounded-full bg-surface-hover" />
-            <div className="h-2 w-full rounded-full bg-surface-hover" />
-            <div className="h-2 w-4/5 rounded-full bg-surface-hover" />
-            <div className="h-2 w-3/5 rounded-full bg-surface-hover" />
+    <div className="space-y-4 animate-pulse">
+      <div className="h-2.5 rounded-full bg-surface-hover w-2/5" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[80, 65, 72, 58].map((w, i) => (
+          <div key={i} className="rounded-sm border border-border overflow-hidden">
+            <div className="h-8 bg-surface-hover" />
+            <div className="p-4 space-y-2">
+              <div className="h-2 rounded-full bg-surface-hover" style={{ width: `${w}%` }} />
+              <div className="h-2 rounded-full bg-surface-hover" style={{ width: `${w - 15}%` }} />
+              <div className="h-2 rounded-full bg-surface-hover" style={{ width: `${w - 8}%` }} />
+            </div>
           </div>
         ))}
       </div>
@@ -85,6 +150,32 @@ function BriefingSkeleton() {
   );
 }
 
+// ─── Meeting synthesis markdown ───────────────────────────────────────────────
+function MeetingMarkdown({ content }: { content: string }) {
+  return (
+    <div
+      className="
+        prose dark:prose-invert prose-sm max-w-none
+        prose-headings:text-foreground prose-headings:font-semibold prose-headings:tracking-tight
+        prose-h2:text-base prose-h2:mt-6 prose-h2:mb-3 prose-h2:pb-1.5 prose-h2:border-b prose-h2:border-border
+        prose-p:text-foreground-muted prose-p:leading-relaxed
+        prose-li:text-foreground-muted prose-li:my-0.5
+        prose-strong:text-foreground prose-strong:font-semibold
+        prose-blockquote:border-l-2 prose-blockquote:border-border-strong prose-blockquote:text-foreground-muted prose-blockquote:bg-surface prose-blockquote:px-4 prose-blockquote:py-3 prose-blockquote:rounded-r-sm prose-blockquote:not-italic
+        [&>table]:w-full [&>table]:text-xs [&>table]:border-collapse [&>table]:rounded-sm [&>table]:overflow-hidden
+        [&_thead]:bg-surface
+        [&_th]:text-left [&_th]:font-bold [&_th]:text-foreground [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-[10px] [&_th]:px-3 [&_th]:py-2.5 [&_th]:border [&_th]:border-border
+        [&_td]:px-3 [&_td]:py-2 [&_td]:text-xs [&_td]:text-foreground-muted [&_td]:border [&_td]:border-border
+        [&_tr:nth-child(even)_td]:bg-surface/50
+        [&_tr:hover_td]:bg-surface
+      "
+    >
+      <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
+    </div>
+  );
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 export function Dashboard() {
   const { accessToken } = useAuth();
   const [briefing, setBriefing]           = useState('');
@@ -141,7 +232,7 @@ export function Dashboard() {
     <div className="flex flex-col h-full bg-background overflow-y-auto">
       <div className="max-w-5xl w-full mx-auto px-4 md:px-8 lg:px-12 py-8 md:py-10 space-y-8">
 
-        {}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-muted mb-1">{today}</p>
@@ -156,16 +247,16 @@ export function Dashboard() {
           </span>
         </div>
 
-        {}
+        {/* Daily Synthesis */}
         <div className="border border-border rounded-sm overflow-hidden shadow-sm">
 
-          {}
+          {/* Panel header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-surface">
             <div className="flex items-center space-x-2">
-              <Cpu size={15} className="text-foreground" />
+              <Cpu size={14} className="text-foreground" />
               <span className="text-sm font-semibold text-foreground">Daily Synthesis</span>
               {briefingTime && (
-                <span className="text-[10px] text-muted font-medium">· {briefingTime}</span>
+                <span className="text-[10px] text-muted font-medium pl-1">· {briefingTime}</span>
               )}
             </div>
             <button
@@ -182,34 +273,34 @@ export function Dashboard() {
             </button>
           </div>
 
-          {}
+          {/* Panel body */}
           <div className="px-5 py-5 bg-background min-h-[140px]">
             {loadingBriefing ? (
               <BriefingSkeleton />
 
             ) : sections.length > 0 ? (
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {}
+              <div className="space-y-3">
+                {/* Summary spans full width */}
                 {sections.filter(s => s.kind === 'summary').map((s, i) => (
-                  <div key={i} className="md:col-span-2">
-                    <SectionCard section={s} />
-                  </div>
-                ))}
-                {sections.filter(s => s.kind !== 'summary').map((s, i) => (
                   <SectionCard key={i} section={s} />
                 ))}
+                {/* Rest in 2-col grid */}
+                {sections.filter(s => s.kind !== 'summary').length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {sections.filter(s => s.kind !== 'summary').map((s, i) => (
+                      <SectionCard key={i} section={s} />
+                    ))}
+                  </div>
+                )}
               </div>
 
             ) : briefing ? (
-              
               <div className="prose dark:prose-invert prose-sm max-w-none text-foreground-muted
                 prose-p:my-1.5 prose-li:my-0.5 prose-strong:text-foreground">
-                <Markdown>{briefing}</Markdown>
+                <Markdown remarkPlugins={[remarkGfm]}>{briefing}</Markdown>
               </div>
 
             ) : (
-              
               <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
                 <div className="w-11 h-11 rounded-sm border border-border bg-surface flex items-center justify-center">
                   <Cpu size={18} className="text-muted" />
@@ -223,10 +314,10 @@ export function Dashboard() {
           </div>
         </div>
 
-        {}
+        {/* Bottom grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          {}
+          {/* System Core */}
           <div className="border border-border rounded-sm p-5 bg-background">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-foreground">System Core</span>
@@ -249,7 +340,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {}
+          {/* Meeting Synthesis */}
           <div
             onClick={() => setMeetingOpen(true)}
             className="border border-border rounded-sm p-5 bg-background hover:bg-surface transition-colors cursor-pointer group flex flex-col"
@@ -262,14 +353,14 @@ export function Dashboard() {
             </div>
             <p className="text-sm font-semibold text-foreground mb-1.5">Meeting Synthesis</p>
             <p className="text-xs text-muted leading-relaxed flex-1">
-              Synthesize meeting notes and email threads into a clean structured brief.
+              Synthesize meeting notes and email threads into a clean structured brief with action tables.
             </p>
             <div className="mt-4 inline-flex items-center space-x-1 text-[10px] font-bold uppercase tracking-widest text-muted group-hover:text-foreground transition-colors">
               <span>Run</span><ChevronRight size={11} />
             </div>
           </div>
 
-          {}
+          {/* Recent Drive */}
           <div className="border border-border rounded-sm p-5 bg-background flex flex-col">
             <p className="text-sm font-semibold text-foreground mb-4">Recent Drive</p>
             <div className="flex-1 space-y-2.5">
@@ -298,7 +389,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {}
+        {/* Draft Document CTA */}
         <div
           onClick={() => navigate('/docs')}
           className="border border-border rounded-sm px-5 py-4 bg-background hover:bg-surface transition-colors cursor-pointer group flex items-center justify-between"
@@ -317,10 +408,11 @@ export function Dashboard() {
 
       </div>
 
-      {}
+      {/* Meeting Synthesis Modal */}
       {meetingOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8">
-          <div className="bg-background border border-border shadow-xl w-full max-w-3xl h-full md:h-auto md:max-h-[80vh] flex flex-col rounded-sm overflow-hidden">
+          <div className="bg-background border border-border shadow-xl w-full max-w-3xl h-full md:h-auto md:max-h-[85vh] flex flex-col rounded-sm overflow-hidden">
+
             <div className="flex items-start justify-between p-6 border-b border-border flex-shrink-0">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Meeting Synthesis</h2>
@@ -352,10 +444,7 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="bg-background border border-border rounded-sm p-6">
-                  <div className="prose dark:prose-invert prose-sm max-w-none text-foreground-muted
-                    prose-p:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground">
-                    <Markdown>{meetingOut}</Markdown>
-                  </div>
+                  <MeetingMarkdown content={meetingOut} />
                   <div className="mt-6 pt-5 border-t border-border flex justify-end space-x-4">
                     <button onClick={() => setMeetingOut('')} className="text-xs font-bold uppercase tracking-widest text-muted hover:text-foreground transition-colors">
                       Clear
