@@ -55,7 +55,6 @@ export function Documents() {
       </div>
     `;
     
-    // Quick style tweaks for the PDF
     const styles = document.createElement('style');
     styles.innerHTML = `
       h1, h2, h3 { color: #111; }
@@ -177,11 +176,9 @@ export function Documents() {
     setChatInput('');
     setIsAiLoading(true);
     
-    // Add user message
     setChatMessages(prev => [...prev, { role: 'user', content: question }]);
 
     try {
-      // Map history to Gemini format
       const geminiHistory = chatMessages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
@@ -231,7 +228,7 @@ export function Documents() {
 
   return (
     <div className="flex h-full bg-background relative">
-      {/* Sidebar list */}
+      {}
       <div className={cn(
         "w-full md:w-64 border-r border-border bg-background flex flex-col shrink-0 overflow-y-auto",
         selectedDoc && "hidden md:flex"
@@ -264,7 +261,7 @@ export function Documents() {
         </div>
       </div>
 
-      {/* Editor Main Content */}
+      {}
       <div className={cn(
         "flex-1 overflow-auto relative bg-background flex",
         !selectedDoc && "hidden md:flex"
@@ -352,13 +349,13 @@ export function Documents() {
               )}
             </div>
             
-            {/* Assistant Panel (Right Sidebar) */}
+            {}
             {isAssistantOpen && (
             <div className={cn(
               "fixed inset-y-0 right-0 w-full sm:w-[340px] md:relative bg-background border-l border-border flex flex-col shrink-0 z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.05)]",
               !isAssistantOpen && "hidden"
             )}>
-              {/* Header */}
+              {}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">
                   <Cpu size={16} className="text-foreground" />
@@ -378,10 +375,10 @@ export function Documents() {
                 </div>
               </div>
 
-              {/* Chat / Output Area */}
+              {}
               <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
                  
-                 {/* System context state */}
+                 {}
                  <div className="flex justify-center shrink-0">
                    <div className="bg-surface-hover text-muted text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-sm flex items-center space-x-1">
                      <FileText size={10} /> <span>Context Linked</span>
@@ -462,7 +459,7 @@ export function Documents() {
                  <div ref={chatEndRef} />
               </div>
 
-              {/* Chat Input */}
+              {}
               <div className="p-4 border-t border-border bg-background shrink-0">
                 <div className="relative">
                   <input 

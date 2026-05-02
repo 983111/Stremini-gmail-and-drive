@@ -195,7 +195,7 @@ export function Mail() {
       </div>
 
       <div className="flex-1 overflow-hidden flex relative">
-        {/* Email List */}
+        {}
         <div className={cn(
           "w-full md:w-[340px] border-r border-border bg-background overflow-auto flex flex-col shrink-0",
           (selectedEmail || isComposing) && "hidden md:flex"
@@ -231,7 +231,7 @@ export function Mail() {
           )}
         </div>
 
-        {/* Email Detail & Compose & AI */}
+        {}
         <div className={cn(
           "flex-1 bg-background flex flex-col items-center overflow-y-auto",
           (!selectedEmail && !isComposing) && "hidden md:flex"
