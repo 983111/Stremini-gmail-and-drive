@@ -21,6 +21,7 @@ export async function fetchRecentEmails(accessToken: string, query = '') {
   }
   if (!data.messages) return [];
   
+  // Fetch details for each message in batches to avoid 429 Too Many Requests
   const messages = [];
   for (let i = 0; i < data.messages.length; i += 10) {
     const batch = data.messages.slice(i, i + 10);
@@ -171,15 +172,41 @@ export async function fetchRecentDriveFiles(accessToken: string, query = '') {
   }
 }
 
-export async function sendEmail(accessToken: string, to: string, subject: string, body: string) {
-  const emailLines = [
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset="UTF-8"',
-    '',
-    body,
-  ];
+export async function sendEmail(accessToken: string, to: string, subject: string, body: string, attachments: {name: string, mimeType: string, content: string}[] = []) {
+  const boundary = 'foo_bar_baz_boundary_' + Math.random().toString(36).substring(2);
+  let emailLines: string[] = [];
+
+  emailLines.push(`To: ${to}`);
+  emailLines.push(`Subject: ${subject}`);
+  emailLines.push('MIME-Version: 1.0');
+
+  if (attachments && attachments.length > 0) {
+    emailLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+    emailLines.push('');
+    emailLines.push(`--${boundary}`);
+    emailLines.push('Content-Type: text/plain; charset="UTF-8"');
+    emailLines.push('');
+    emailLines.push(body);
+
+    for (const att of attachments) {
+      emailLines.push('');
+      emailLines.push(`--${boundary}`);
+      emailLines.push(`Content-Type: ${att.mimeType}; name="${att.name}"`);
+      emailLines.push('Content-Transfer-Encoding: base64');
+      emailLines.push(`Content-Disposition: attachment; filename="${att.name}"`);
+      emailLines.push('');
+      // Wrap base64 into 76 chars per line just in case, though Gmail might handle single line
+      const base64Str = att.content.match(/.{1,76}/g)?.join('\r\n') || att.content;
+      emailLines.push(base64Str);
+    }
+    emailLines.push('');
+    emailLines.push(`--${boundary}--`);
+  } else {
+    emailLines.push('Content-Type: text/plain; charset="UTF-8"');
+    emailLines.push('');
+    emailLines.push(body);
+  }
+
   const emailMessage = emailLines.join('\r\n');
   const encodedEmail = btoa(unescape(encodeURIComponent(emailMessage)))
      .replace(/\+/g, '-')
@@ -217,12 +244,14 @@ export async function fetchEmailBody(accessToken: string, messageId: string) {
         return b64DecodeUnicode(payload.body.data);
       }
       if (payload.parts) {
+        // Prefer html if available, otherwise plain text
         const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
         if (htmlPart && htmlPart.body?.data) return b64DecodeUnicode(htmlPart.body.data);
         
         const plainPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
         if (plainPart && plainPart.body?.data) return b64DecodeUnicode(plainPart.body.data);
 
+        // Check sub-parts recursively
         for (const part of payload.parts) {
           const body = getBody(part);
           if (body) return body;
@@ -241,7 +270,9 @@ export async function fetchEmailBody(accessToken: string, messageId: string) {
 }
 
 function b64DecodeUnicode(str: string) {
+  // Convert base64url to base64
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  // Decode base64
   return decodeURIComponent(atob(base64).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
   }).join(''));
@@ -250,13 +281,35 @@ function b64DecodeUnicode(str: string) {
 export async function fetchDriveFileContent(accessToken: string, fileId: string, mimeType: string) {
   let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   
+  // If it's a Google Doc, export it as text
   if (mimeType === 'application/vnd.google-apps.document') {
     url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`;
   } else if (mimeType.includes('pdf')) {
+    // We cannot easily parse PDF purely on client with just fetch unless we use PDF.js, 
+    // but we can try to extract text if it was converted, or just error for now.
     throw new Error('PDF extraction requires backend support or specialized libraries.');
   }
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) throw new Error('Failed to fetch file content');
   return await res.text();
+}
+
+export async function fetchDriveFileBlob(accessToken: string, fileId: string, mimeType: string): Promise<Blob> {
+  let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+  
+  if (mimeType.includes('application/vnd.google-apps.')) {
+     let exportMime = 'application/pdf';
+     if (mimeType === 'application/vnd.google-apps.document') exportMime = 'application/pdf';
+     else if (mimeType === 'application/vnd.google-apps.spreadsheet') exportMime = 'application/x-vnd.oasis.opendocument.spreadsheet';
+     else if (mimeType === 'application/vnd.google-apps.presentation') exportMime = 'application/pdf';
+     url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${exportMime}`;
+  }
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) {
+     const errorText = await res.text();
+     throw new Error(`Failed to fetch file blob: ${errorText}`);
+  }
+  return await res.blob();
 }

@@ -1,177 +1,153 @@
-const WORKER_URL = 'https://taskflow-backend.vishwajeetadkine705.workers.dev';
+import { GoogleGenAI } from '@google/genai';
 
-// ─── Think stripper (mirrors worker.js clean()) ───────────────────────────────
-function stripThinking(text: string): string {
-  if (!text) return '';
-  let o = text;
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  // 1. Remove all known XML reasoning wrappers
-  const WRAP_TAGS = ['think','thinking','thought','reasoning','reason',
-                     'reflection','reflect','analysis','scratchpad','cot'];
-  for (const t of WRAP_TAGS) {
-    o = o.replace(new RegExp(`<${t}>[\\s\\S]*?<\\/${t}>`, 'gi'), '');
-    const idx = o.search(new RegExp(`<${t}>`, 'i'));
-    if (idx !== -1) o = o.slice(0, idx);
-    o = o.replace(new RegExp(`<\\/${t}>`, 'gi'), '');
-  }
+export async function generateBriefing(emails: any[], driveFiles: any[]) {
+  const prompt = `
+    You are a professional assistant. Analyze the following unread emails and recent drive activity and generate a concise morning briefing.
+    Extract any urgent tasks, follow-ups, and financial alerts. Do not make up information that is not there.
+    Emails: ${JSON.stringify(emails)}
+    Drive Files: ${JSON.stringify(driveFiles)}
+  `;
 
-  // 2. Bare unclosed </think> — keep only what comes after
-  if (o.includes('</think>')) o = o.split('</think>').pop() ?? o;
-
-  // 3. Strip markdown-fenced reasoning blocks
-  o = o.replace(/```(?:think(?:ing)?|reason(?:ing)?|reflect(?:ion)?|analysis|scratchpad)[\s\S]*?```/gi, '');
-
-  // 4. Slice off untagged reasoning preambles
-  const ANSWER_START = [
-    /^##?\s+\w/,
-    /^(hi|hello|dear|hey|greetings)[,\s]/i,
-    /^\s*[{\[]/,
-    /^(thank(s| you)|please|following|as per|i hope)/i,
-    /^[-*]\s+\*{0,2}\w/,
-    /^\d+\.\s+\w/,
-  ];
-  const REASONING_LINE = [
-    /\bwe (must|need to|have to|should|can|cannot|could)\b/i,
-    /\bthe user (says|wants|asked|said|is asking)\b/i,
-    /\b(thus|so) (produce|we|the|a|an|start)\b/i,
-    /\b(given|based on) the (context|data|emails|above)\b/i,
-    /\b(possibly|likely|probably) (the|we|they|this)\b/i,
-    /\blet'?s (parse|examine|look|check|see|start|begin)\b/i,
-    /\b(now|next|first|second|third)[,]? (we|let|the|i)\b/i,
-    /\binfer\b/i,
-    /\bproduce (a|an|the|something|output)\b/i,
-  ];
-
-  const lines = o.split('\n');
-  let answerStart = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const isReasoning = REASONING_LINE.some(r => r.test(line));
-    const isAnswer    = ANSWER_START.some(r => r.test(line));
-    if (isAnswer && !isReasoning) { answerStart = i; break; }
-  }
-  if (answerStart > 0) o = lines.slice(answerStart).join('\n');
-
-  return o.trim();
-}
-
-// ─── Meeting synthesis normalizer ─────────────────────────────────────────────
-// Ensures all 4 required sections exist and tables render correctly.
-function normalizeMeetingSynthesis(text: string): string {
-  const cleaned = stripThinking(text);
-  if (!cleaned) return '';
-
-  const REQUIRED = ['Overview', 'Key Decisions', 'Action Items', 'Draft Follow-up Email'];
-
-  // Find where the first required section starts
-  const escaped = REQUIRED.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const headingPat = new RegExp(`^##\\s*(${escaped.join('|')})\\s*$`, 'im');
-  const firstIdx = cleaned.search(headingPat);
-  const source = firstIdx >= 0 ? cleaned.slice(firstIdx) : cleaned;
-
-  // Parse into section map — keep multi-line content including table rows
-  const sectionMap = new Map<string, string[]>();
-  let current: string | null = null;
-
-  for (const line of source.split('\n')) {
-    const m = line.match(/^##\s+(.+?)\s*$/);
-    if (m) {
-      const title = REQUIRED.find(s => s.toLowerCase() === m[1].trim().toLowerCase()) ?? null;
-      current = title;
-      if (current && !sectionMap.has(current)) sectionMap.set(current, []);
-      continue;
-    }
-    if (current) sectionMap.get(current)!.push(line);
-  }
-
-  // If we got nothing useful, return cleaned text as-is
-  if (sectionMap.size === 0) return cleaned;
-
-  // Build fallback table rows for missing sections
-  const fallbackTables: Record<string, string> = {
-    'Key Decisions': `| Decision | Owner | Status |\n|---|---|---|\n| No decisions recorded | — | — |`,
-    'Action Items':  `| Task | Owner | Due Date | Priority |\n|---|---|---|---|\n| No action items recorded | — | — | — |`,
-  };
-
-  return REQUIRED.map(section => {
-    const body = (sectionMap.get(section) ?? []).join('\n').trim();
-    const content = body.length > 0 ? body : (fallbackTables[section] ?? '*No data available.*');
-    return `## ${section}\n\n${content}`;
-  }).join('\n\n').trim();
-}
-
-// ─── HTTP helper ──────────────────────────────────────────────────────────────
-async function post<T>(endpoint: string, body: object): Promise<T> {
-  const res = await fetch(`${WORKER_URL}${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Worker error ${res.status}: ${text}`);
+
+  return response.text;
+}
+
+export async function summarizeThread(threadMessages: any[]) {
+  const prompt = `
+    Summarize this email thread. Provide:
+    1. A short summary
+    2. Key decisions
+    3. Action Items
+
+    Thread data: ${JSON.stringify(threadMessages)}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return response.text;
+}
+
+export async function summarizeDocumentContent(content: string) {
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: 'Summarize the following document and list action items / key takeaways:\n\n' + content,
+  });
+  return response.text;
+}
+
+export async function rewriteDocument(content: string, tone: 'formal' | 'casual' | 'persuasive' = 'formal') {
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: `Rewrite the following text to have a ${tone} tone:\n\n${content}`,
+  });
+  return response.text;
+}
+
+export async function askDocumentQuestion(content: string, question: string, history: {role: string, parts: {text: string}[]}[] = []) {
+  const chat = ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    history: [
+      {
+        role: 'user',
+        parts: [{ text: `You are an automated assistant helping a user with a document. Here is the document content for context:\n\n${content}` }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "Understood. I have read the document and am ready to answer any questions or follow instructions regarding it." }]
+      },
+      ...history
+    ]
+  });
+
+  const result = await chat.sendMessage({ message: question });
+  return result.text;
+}
+
+export async function draftEmailWithAI(prompt: string, context: string = '') {
+  const finalPrompt = `
+    You are an automated assistant helping a user write an email. 
+    ${context ? `Here is the context/previous thread:\n${context}` : ''}
+    
+    User prompt: ${prompt}
+    
+    Please draft a professional, concise email. Output only the email body text, no subject line or meta-commentary, just the content that should go into the email body.
+  `;
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: finalPrompt,
+  });
+  return response.text;
+}
+
+export async function generateDatabaseSchema(description: string) {
+  const prompt = `
+    You are a professional product manager and database architect.
+    Your goal is to design a fully structured, detailed database system in JSON format based on the user's prompt: "${description}".
+
+    STRICT GUIDELINES:
+    1. UNDERSTAND INTENT: Think like a human expert. For a "diet plan", include timings, meal types, and nutrition. For a "startup tracker", include task owners, priorities, and deadlines.
+    2. SMART DESIGN: Dynamically decide the best column structure for the specific use case.
+    3. DEPTH & DETAIL: Provide at least 15-20 rows of highly realistic, varied, and detailed data. No generic placeholders like "Item 1".
+    4. PREMIUM TONE: No emojis. Use professional, clean naming for columns (e.g., "Maturity Level" instead of "Growth").
+    5. LOGICAL CONSISTENCY: Ensure internal logic. If it's a schedule, ensure times follow a sensible sequence. If it's a tracker, ensure status and priorities make sense relative to each other.
+    6. NO EXPLANATIONS: Return ONLY the JSON object.
+
+    OUTPUT STRUCTURE:
+    {
+      "databaseTitle": "A professional title for the database",
+      "columns": [
+        { "key": "string", "name": "string", "type": "text | number | date | select | checkbox", "options": ["option1", "option2"] (only for select) }
+      ],
+      "rows": [
+        { "columnKey": "value", ... }
+      ]
+    }
+
+    Note: The first column should always be the primary "title" or "name" field.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    const data = JSON.parse(response.text || '{}');
+    return data;
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return { databaseTitle: "Error", columns: [], rows: [] };
   }
-  const json = await res.json();
-  if (json.error) throw new Error(json.error);
-  return json as T;
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
-export async function generateBriefing(emails: any[], driveFiles: any[]): Promise<string> {
-  const data = await post<{ briefing: string }>('/api/briefing', { emails, driveFiles });
-  return stripThinking(data.briefing ?? '');
-}
-
-export async function summarizeThread(threadMessages: any[]): Promise<string> {
-  const data = await post<{ summary: string }>('/api/summarise/thread', { threadMessages });
-  return stripThinking(data.summary ?? '');
-}
-
-export async function summarizeDocumentContent(content: string): Promise<string> {
-  const data = await post<{ summary: string }>('/api/summarise/doc', { content });
-  return stripThinking(data.summary ?? '');
-}
-
-export async function rewriteDocument(
-  content: string,
-  tone: 'formal' | 'casual' | 'persuasive' = 'formal'
-): Promise<string> {
-  const data = await post<{ rewritten: string }>('/api/rewrite/doc', { content, tone });
-  return stripThinking(data.rewritten ?? '');
-}
-
-export async function askDocumentQuestion(
-  content: string,
-  question: string,
-  history: { role: string; parts: { text: string }[] }[] = []
-): Promise<string> {
-  const data = await post<{ answer: string }>('/api/ask/doc', { content, question, history });
-  return stripThinking(data.answer ?? '');
-}
-
-export async function draftEmailWithAI(prompt: string, context: string = ''): Promise<string> {
-  const data = await post<{ draft: string }>('/api/draft/email', { prompt, context });
-  return stripThinking(data.draft ?? '');
-}
-
-export async function generateDatabaseSchema(description: string): Promise<{
-  databaseTitle: string;
-  columns: any[];
-  rows: any[];
-}> {
-  const data = await post<{ databaseTitle: string; columns: any[]; rows: any[] }>(
-    '/api/database/generate',
-    { description }
-  );
-  return {
-    databaseTitle: data.databaseTitle ?? 'Database',
-    columns:       data.columns       ?? [],
-    rows:          data.rows          ?? [],
-  };
-}
-
-export async function generateMeetingIntelligence(notes: any[], emails: any[]): Promise<string> {
-  const data = await post<{ synthesis: string }>('/api/meeting', { notes, emails });
-  return normalizeMeetingSynthesis(data.synthesis ?? '');
+export async function generateMeetingIntelligence(notes: any[], emails: any[]) {
+  const prompt = `You are a Meeting Synthesis assistant. You are given an array of Google Drive meeting notes and an array of Gmail threads potentially related to a meeting.
+  
+  Notes: ${JSON.stringify(notes)}
+  Emails: ${JSON.stringify(emails)}
+  
+  Based on this combined source, please generate:
+  1. A concise overview summary of what the meeting was about.
+  2. Identified Key Decisions.
+  3. Action Items (who needs to do what).
+  4. A draft follow-up email.
+  
+  Output the result using markdown, with clear sections (e.g. ## Summary, ## Key Decisions, ## Action Items, ## Draft Follow-up).`;
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return response.text;
 }

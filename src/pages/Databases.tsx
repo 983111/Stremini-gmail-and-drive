@@ -36,6 +36,7 @@ export function Databases() {
   const [prompt, setPrompt] = useState('');
   const [search, setSearch] = useState('');
 
+  // Load databases
   useEffect(() => {
     if (!auth.currentUser) return;
     const q = query(collection(db, `users/${auth.currentUser.uid}/databases`), orderBy('createdAt', 'desc'));
@@ -48,6 +49,7 @@ export function Databases() {
     return () => unsubscribe();
   }, []);
 
+  // Load records for selected database
   useEffect(() => {
     if (!auth.currentUser || !selectedDb) {
       setRecords([]);
@@ -71,6 +73,7 @@ export function Databases() {
       
       const batch = writeBatch(db);
       
+      // Create database
       const dbRef = doc(collection(db, `users/${auth.currentUser.uid}/databases`));
       const dbData = {
         name: result.databaseTitle || "New Database",
@@ -81,6 +84,7 @@ export function Databases() {
       };
       batch.set(dbRef, dbData);
 
+      // Create records
       (result.rows || []).forEach((row: any, index: number) => {
         const recordRef = doc(collection(db, `users/${auth.currentUser.uid}/databases/${dbRef.id}/records`));
         const firstColKey = result.columns?.[0]?.key || 'title';
@@ -127,6 +131,7 @@ export function Databases() {
       updatedAt: serverTimestamp()
     };
 
+    // If it's the title column, update the title field too
     const schema: DbSchema[] = JSON.parse(selectedDb.schema);
     if (schema[0]?.key === key) {
       updateData.title = String(value);
@@ -196,7 +201,7 @@ export function Databases() {
 
   return (
     <div className="flex h-full bg-background relative overflow-hidden font-sans">
-      {}
+      {/* Sidebar - Database List */}
       <div className={cn(
         "w-full md:w-64 border-r border-border bg-background flex flex-col shrink-0 overflow-y-auto z-20",
         selectedDb && "hidden md:flex"
@@ -234,9 +239,9 @@ export function Databases() {
         </div>
       </div>
 
-      {}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-background h-full h-full relative">
-        {}
+        {/* Prompt Input Header */}
         <div className="p-6 border-b border-border bg-background z-10 shrink-0">
            <div className="max-w-3xl mx-auto">
               <div className="relative group">
@@ -269,7 +274,7 @@ export function Databases() {
            </div>
         </div>
 
-        {}
+        {/* Database Table or Placeholder */}
         <div className="flex-1 overflow-auto bg-background p-6 md:p-10">
           {selectedDb ? (
             <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -297,7 +302,7 @@ export function Databases() {
                  </div>
                </div>
 
-               {}
+               {/* Professional Table Representation */}
                <div className="border border-border rounded-sm bg-background overflow-hidden shadow-sm">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -327,7 +332,7 @@ export function Databases() {
                     </table>
                   </div>
                   
-                  {}
+                  {/* Add Row Button at bottom of table */}
                   <div className="p-4 bg-background flex justify-start">
                      <button 
                         onClick={async () => {

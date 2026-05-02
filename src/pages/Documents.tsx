@@ -55,6 +55,7 @@ export function Documents() {
       </div>
     `;
     
+    // Quick style tweaks for the PDF
     const styles = document.createElement('style');
     styles.innerHTML = `
       h1, h2, h3 { color: #111; }
@@ -176,9 +177,11 @@ export function Documents() {
     setChatInput('');
     setIsAiLoading(true);
     
+    // Add user message
     setChatMessages(prev => [...prev, { role: 'user', content: question }]);
 
     try {
+      // Map history to Gemini format
       const geminiHistory = chatMessages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
@@ -228,7 +231,7 @@ export function Documents() {
 
   return (
     <div className="flex h-full bg-background relative">
-      {}
+      {/* Sidebar list */}
       <div className={cn(
         "w-full md:w-64 border-r border-border bg-background flex flex-col shrink-0 overflow-y-auto",
         selectedDoc && "hidden md:flex"
@@ -261,7 +264,7 @@ export function Documents() {
         </div>
       </div>
 
-      {}
+      {/* Editor Main Content */}
       <div className={cn(
         "flex-1 overflow-auto relative bg-background flex",
         !selectedDoc && "hidden md:flex"
@@ -269,7 +272,7 @@ export function Documents() {
         {selectedDoc ? (
           <>
             <div className="flex-1 p-6 md:p-16 overflow-y-auto max-w-4xl mx-auto flex flex-col">
-              <div className="flex flex-col sm:flex-row justify-between items-start mb-8 md:mb-12 group gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start mb-6 md:mb-8 gap-4">
                 <div className="flex items-center space-x-3 w-full">
                   <button onClick={() => setSelectedDoc(null)} className="md:hidden text-muted hover:text-foreground shrink-0">
                     <X size={20} />
@@ -282,11 +285,11 @@ export function Documents() {
                       setSelectedDoc({ ...selectedDoc, title: newTitle });
                       updateDocument(selectedDoc.id, newTitle, selectedDoc.content);
                     }}
-                    className="w-full text-2xl md:text-4xl font-semibold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tight"
+                    className="w-full text-2xl md:text-3xl font-semibold bg-transparent border-none focus:outline-none placeholder-muted text-foreground tracking-tight"
                     placeholder="Document Title"
                   />
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border transition-opacity shrink-0 self-end sm:self-auto">
+                <div className="flex items-center space-x-1 bg-surface p-1 rounded-sm border border-border shrink-0 self-end sm:self-auto">
                   <button 
                     onClick={() => setIsPreview(false)}
                     className={`p-1.5 rounded-sm transition-colors flex items-center justify-center ${!isPreview ? 'bg-background shadow-sm text-foreground' : 'text-muted hover:text-foreground'}`}
@@ -331,6 +334,28 @@ export function Documents() {
                 </div>
               </div>
 
+              <div className="bg-surface border border-border rounded-sm p-2 mb-4 flex flex-wrap gap-2 items-center">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-widest mx-2">AI Tools</span>
+                <div className="w-[1px] h-4 bg-border mx-1"></div>
+                <button onClick={() => { setIsAssistantOpen(true); handleRewrite('formal'); }} className="px-3 py-1.5 text-xs bg-background hover:bg-surface-hover border border-border rounded-sm transition-colors text-muted hover:text-foreground flex items-center space-x-1.5">
+                  <Cpu size={12} />
+                  <span>Formal</span>
+                </button>
+                <button onClick={() => { setIsAssistantOpen(true); handleRewrite('casual'); }} className="px-3 py-1.5 text-xs bg-background hover:bg-surface-hover border border-border rounded-sm transition-colors text-muted hover:text-foreground flex items-center space-x-1.5">
+                  <Cpu size={12} />
+                  <span>Casual</span>
+                </button>
+                <button onClick={() => { setIsAssistantOpen(true); handleRewrite('persuasive'); }} className="px-3 py-1.5 text-xs bg-background hover:bg-surface-hover border border-border rounded-sm transition-colors text-muted hover:text-foreground flex items-center space-x-1.5">
+                  <Cpu size={12} />
+                  <span>Persuasive</span>
+                </button>
+                <div className="w-[1px] h-4 bg-border mx-1"></div>
+                <button onClick={() => { setIsAssistantOpen(true); handleSummarize(); }} className="px-3 py-1.5 text-xs bg-background hover:bg-surface-hover border border-border rounded-sm transition-colors text-muted hover:text-foreground flex items-center space-x-1.5">
+                  <FileText size={12} />
+                  <span>Summarize</span>
+                </button>
+              </div>
+
               {!isPreview ? (
                 <textarea
                   value={selectedDoc.content}
@@ -349,13 +374,13 @@ export function Documents() {
               )}
             </div>
             
-            {}
+            {/* Assistant Panel (Right Sidebar) */}
             {isAssistantOpen && (
             <div className={cn(
               "fixed inset-y-0 right-0 w-full sm:w-[340px] md:relative bg-background border-l border-border flex flex-col shrink-0 z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.05)]",
               !isAssistantOpen && "hidden"
             )}>
-              {}
+              {/* Header */}
               <div className="h-14 px-4 border-b border-border flex items-center justify-between bg-background shrink-0">
                 <div className="flex items-center space-x-2">
                   <Cpu size={16} className="text-foreground" />
@@ -375,10 +400,10 @@ export function Documents() {
                 </div>
               </div>
 
-              {}
+              {/* Chat / Output Area */}
               <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
                  
-                 {}
+                 {/* System context state */}
                  <div className="flex justify-center shrink-0">
                    <div className="bg-surface-hover text-muted text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-sm flex items-center space-x-1">
                      <FileText size={10} /> <span>Context Linked</span>
@@ -390,15 +415,19 @@ export function Documents() {
                      <p className="text-sm text-foreground font-medium mb-3">How can I help you refine this?</p>
                      <div className="space-y-2">
                        <button onClick={() => handleRewrite('formal')} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
-                         <span>Make it authoritative</span>
+                         <span>Make it formal</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
                        <button onClick={() => handleRewrite('casual')} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
-                         <span>Simplify formatting</span>
+                         <span>Make it casual</span>
+                         <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                       </button>
+                       <button onClick={() => handleRewrite('persuasive')} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
+                         <span>Make it persuasive</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
                        <button onClick={handleSummarize} className="w-full text-left px-3 py-2 text-xs text-muted bg-surface hover:bg-surface-hover border border-transparent rounded-sm transition-colors flex justify-between items-center group">
-                         <span>Generate brief summary</span>
+                         <span>Generate summary</span>
                          <MoveRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                        </button>
                      </div>
@@ -459,7 +488,7 @@ export function Documents() {
                  <div ref={chatEndRef} />
               </div>
 
-              {}
+              {/* Chat Input */}
               <div className="p-4 border-t border-border bg-background shrink-0">
                 <div className="relative">
                   <input 

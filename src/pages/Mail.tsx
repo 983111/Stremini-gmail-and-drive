@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchRecentEmails, sendEmail, fetchEmailThread, fetchEmailBody } from '../lib/googleApi';
-import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Cpu, Mail as MailIcon, Edit3 } from 'lucide-react';
+import { fetchRecentEmails, sendEmail, fetchEmailThread, fetchEmailBody, fetchRecentDriveFiles, fetchDriveFileBlob } from '../lib/googleApi';
+import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Cpu, Mail as MailIcon, Edit3, Paperclip, File, Trash2, UploadCloud, Database } from 'lucide-react';
 import { summarizeThread, draftEmailWithAI } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
+
+interface AttachmentFile {
+  id?: string;
+  name: string;
+  mimeType: string;
+  blob?: Blob;
+  size?: number;
+}
 
 export function Mail() {
   const { accessToken, signIn } = useAuth();
@@ -26,6 +34,12 @@ export function Mail() {
   const [previewMode, setPreviewMode] = useState(false);
   const [draftPrompt, setDraftPrompt] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
+  
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [showDrivePicker, setShowDrivePicker] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<any[]>([]);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveQuery, setDriveQuery] = useState('');
 
   useEffect(() => {
     const draft = localStorage.getItem('stremini_mail_draft');
@@ -112,16 +126,101 @@ export function Mail() {
     }
   };
 
+  useEffect(() => {
+    if (showDrivePicker && accessToken) {
+      loadDriveFiles('');
+    }
+  }, [showDrivePicker, accessToken]);
+
+  const loadDriveFiles = async (q: string) => {
+    if (!accessToken) return;
+    setDriveLoading(true);
+    try {
+      const files = await fetchRecentDriveFiles(accessToken, q);
+      setDriveFiles(files);
+    } catch(e) { }
+    setDriveLoading(false);
+  };
+
+  const handleDriveSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadDriveFiles(driveQuery);
+  };
+
+  const selectDriveFile = (file: any) => {
+    setAttachments(prev => [...prev, {
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+    }]);
+    setShowDrivePicker(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+       const newFiles = Array.from(e.target.files).map(file => ({
+         name: file.name,
+         mimeType: file.type || 'application/octet-stream',
+         blob: file,
+         size: file.size
+       }));
+       setAttachments(prev => [...prev, ...newFiles]);
+    }
+    e.target.value = '';
+  };
+
   const handleSendEmail = async () => {
     if (!accessToken) return;
     setIsSending(true);
     try {
-      await sendEmail(accessToken, composeTo, composeSubject, composeBody);
+      const processedAttachments = await Promise.all(attachments.map(async (att) => {
+         let contentBlob = att.blob;
+         let mimeType = att.mimeType;
+         let name = att.name;
+
+         if (!contentBlob && att.id) {
+           contentBlob = await fetchDriveFileBlob(accessToken, att.id, att.mimeType);
+           if (att.mimeType.includes('vnd.google-apps.')) {
+             if (att.mimeType === 'application/vnd.google-apps.document') {
+               name += '.pdf';
+               mimeType = 'application/pdf';
+             } else if (att.mimeType === 'application/vnd.google-apps.spreadsheet') {
+               name += '.ods';
+               mimeType = 'application/x-vnd.oasis.opendocument.spreadsheet';
+             } else if (att.mimeType === 'application/vnd.google-apps.presentation') {
+               name += '.pdf';
+               mimeType = 'application/pdf';
+             }
+           }
+         }
+         
+         if (!contentBlob) throw new Error("Missing content for attachment: " + att.name);
+         
+         const base64Content = await new Promise<string>((resolve, reject) => {
+           const reader = new FileReader();
+           reader.onloadend = () => {
+             const result = reader.result as string;
+             const base64 = result.split(',')[1];
+             resolve(base64);
+           };
+           reader.onerror = reject;
+           reader.readAsDataURL(contentBlob);
+         });
+         
+         return {
+           name,
+           mimeType,
+           content: base64Content
+         };
+      }));
+
+      await sendEmail(accessToken, composeTo, composeSubject, composeBody, processedAttachments);
       localStorage.removeItem('stremini_mail_draft');
       setIsComposing(false);
       setComposeTo('');
       setComposeSubject('');
       setComposeBody('');
+      setAttachments([]);
       setPreviewMode(false);
       alert('Email sent successfully!');
     } catch (e: any) {
@@ -195,7 +294,7 @@ export function Mail() {
       </div>
 
       <div className="flex-1 overflow-hidden flex relative">
-        {}
+        {/* Email List */}
         <div className={cn(
           "w-full md:w-[340px] border-r border-border bg-background overflow-auto flex flex-col shrink-0",
           (selectedEmail || isComposing) && "hidden md:flex"
@@ -231,7 +330,7 @@ export function Mail() {
           )}
         </div>
 
-        {}
+        {/* Email Detail & Compose & AI */}
         <div className={cn(
           "flex-1 bg-background flex flex-col items-center overflow-y-auto",
           (!selectedEmail && !isComposing) && "hidden md:flex"
@@ -302,10 +401,37 @@ export function Mail() {
                         value={composeBody}
                         onChange={e => setComposeBody(e.target.value)}
                         placeholder="Write your email here..." 
-                        className="w-full flex-1 bg-transparent p-4 text-sm outline-none resize-none text-foreground leading-relaxed"
+                        className="w-full h-48 sm:h-auto flex-1 bg-transparent p-4 text-sm outline-none resize-none text-foreground leading-relaxed"
                       />
                     </div>
                   </div>
+
+                  <div className="flex flex-col space-y-2 mb-4">
+                    {attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {attachments.map((att, i) => (
+                           <div key={i} className="flex items-center space-x-2 bg-surface border border-border py-1.5 px-3 rounded-sm text-xs">
+                              <File size={14} className="text-muted" />
+                              <span className="truncate max-w-[150px] text-foreground">{att.name}</span>
+                              <button onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-muted hover:text-red-500 ml-2">
+                                <X size={14} />
+                              </button>
+                           </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                       <button onClick={() => setShowDrivePicker(true)} className="flex items-center space-x-2 text-xs font-semibold text-muted hover:text-foreground bg-surface border border-border px-3 py-1.5 rounded-sm transition-colors">
+                         <Database size={14} /> <span>From Drive</span>
+                       </button>
+                       
+                       <label className="flex items-center space-x-2 text-xs font-semibold text-muted hover:text-foreground bg-surface border border-border px-3 py-1.5 rounded-sm transition-colors cursor-pointer">
+                         <UploadCloud size={14} /> <span>Upload File</span>
+                         <input type="file" multiple className="hidden" onChange={handleFileUpload} />
+                       </label>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end pt-4 border-t border-border">
                     <button 
                       onClick={() => setPreviewMode(true)}
@@ -327,6 +453,19 @@ export function Mail() {
                     <div className="text-sm whitespace-pre-wrap text-foreground-muted leading-relaxed">
                       {composeBody}
                     </div>
+                    {attachments.length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-border">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Attachments ({attachments.length})</p>
+                        <div className="flex flex-col space-y-2">
+                          {attachments.map((att, i) => (
+                            <div key={i} className="flex items-center space-x-2 text-sm text-foreground">
+                              <Paperclip size={14} className="text-muted" />
+                              <span className="truncate">{att.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex space-x-4 justify-end pt-4 border-t border-border">
@@ -433,6 +572,48 @@ export function Mail() {
           )}
         </div>
       </div>
+      
+      {showDrivePicker && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface border border-border w-full max-w-2xl rounded-sm shadow-xl flex flex-col max-h-[80vh]">
+             <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+                <h3 className="text-lg font-semibold text-foreground flex items-center space-x-2">
+                  <Database size={18} className="text-muted" />
+                  <span>Select File from Drive</span>
+                </h3>
+                <button onClick={() => setShowDrivePicker(false)} className="text-muted hover:text-foreground"><X size={18}/></button>
+             </div>
+             <div className="p-4 border-b border-border">
+                <form onSubmit={handleDriveSearch} className="flex space-x-2">
+                   <input 
+                     type="text" 
+                     placeholder="Search drive..." 
+                     className="flex-1 bg-background border border-border px-3 py-2 text-sm outline-none focus:border-border-strong rounded-sm"
+                     value={driveQuery}
+                     onChange={e => setDriveQuery(e.target.value)}
+                   />
+                   <button type="submit" className="bg-foreground text-background px-4 py-2 font-medium text-sm rounded-sm hover:bg-foreground-hover transition-colors">Search</button>
+                </form>
+             </div>
+             <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-1 min-h-[300px]">
+               {driveLoading ? (
+                  <div className="flex-1 flex items-center justify-center text-muted"><Loader2 className="animate-spin" size={24} /></div>
+               ) : driveFiles.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-muted text-sm font-medium">No files found.</div>
+               ) : (
+                  driveFiles.map(f => (
+                     <div key={f.id} onClick={() => selectDriveFile(f)} className="flex items-center justify-between p-3 rounded-sm hover:bg-background border border-transparent hover:border-border cursor-pointer transition-colors group">
+                       <div className="flex items-center space-x-3 w-full min-w-0">
+                          <File size={16} className="text-muted shrink-0" />
+                          <span className="text-sm font-medium text-foreground truncate">{f.name}</span>
+                       </div>
+                     </div>
+                  ))
+               )}
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
