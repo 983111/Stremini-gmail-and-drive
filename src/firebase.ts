@@ -5,8 +5,19 @@ import { getFirestore } from 'firebase/firestore';
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
 const configuredAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim();
 
-const authDomain = configuredAuthDomain
-  ? configuredAuthDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+const normalizedAuthDomain = configuredAuthDomain
+  ? configuredAuthDomain
+      .replace(/^https?:\/\//, '')
+      .replace(/^\/+/, '')
+      .replace(/\/+$/, '')
+  : '';
+
+const isValidFirebaseAuthDomain =
+  normalizedAuthDomain.length > 0 &&
+  normalizedAuthDomain !== 'firebaseapp.com';
+
+const authDomain = isValidFirebaseAuthDomain
+  ? normalizedAuthDomain
   : projectId
     ? `${projectId}.firebaseapp.com`
     : '';
