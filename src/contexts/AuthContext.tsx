@@ -51,7 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
          const credential = GoogleAuthProvider.credentialFromResult(result);
          if (credential && credential.accessToken) {
            setAccessToken(credential.accessToken);
-           // Token usually expires in 1 hour (3600 seconds)
            localStorage.setItem('executive_access_token', JSON.stringify({
              token: credential.accessToken,
              expiresAt: Date.now() + 3500 * 1000 // 58 minutes buffer

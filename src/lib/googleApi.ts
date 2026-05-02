@@ -21,7 +21,6 @@ export async function fetchRecentEmails(accessToken: string, query = '') {
   }
   if (!data.messages) return [];
   
-  // Fetch details for each message in batches to avoid 429 Too Many Requests
   const messages = [];
   for (let i = 0; i < data.messages.length; i += 10) {
     const batch = data.messages.slice(i, i + 10);
@@ -218,14 +217,12 @@ export async function fetchEmailBody(accessToken: string, messageId: string) {
         return b64DecodeUnicode(payload.body.data);
       }
       if (payload.parts) {
-        // Prefer html if available, otherwise plain text
         const htmlPart = payload.parts.find((p: any) => p.mimeType === 'text/html');
         if (htmlPart && htmlPart.body?.data) return b64DecodeUnicode(htmlPart.body.data);
         
         const plainPart = payload.parts.find((p: any) => p.mimeType === 'text/plain');
         if (plainPart && plainPart.body?.data) return b64DecodeUnicode(plainPart.body.data);
 
-        // Check sub-parts recursively
         for (const part of payload.parts) {
           const body = getBody(part);
           if (body) return body;
@@ -244,9 +241,7 @@ export async function fetchEmailBody(accessToken: string, messageId: string) {
 }
 
 function b64DecodeUnicode(str: string) {
-  // Convert base64url to base64
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  // Decode base64
   return decodeURIComponent(atob(base64).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
   }).join(''));
@@ -255,12 +250,9 @@ function b64DecodeUnicode(str: string) {
 export async function fetchDriveFileContent(accessToken: string, fileId: string, mimeType: string) {
   let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   
-  // If it's a Google Doc, export it as text
   if (mimeType === 'application/vnd.google-apps.document') {
     url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`;
   } else if (mimeType.includes('pdf')) {
-    // We cannot easily parse PDF purely on client with just fetch unless we use PDF.js, 
-    // but we can try to extract text if it was converted, or just error for now.
     throw new Error('PDF extraction requires backend support or specialized libraries.');
   }
 

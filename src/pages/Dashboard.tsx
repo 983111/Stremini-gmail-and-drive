@@ -9,11 +9,9 @@ import { generateBriefing, generateMeetingIntelligence } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Section { title: string; body: string; kind: SectionKind }
 type SectionKind = 'summary' | 'urgent' | 'followup' | 'financial' | 'other';
 
-// ─── Parse markdown into labelled sections ────────────────────────────────────
 function parseSections(md: string): Section[] {
   if (!md.trim()) return [];
   const raw = md.split(/\n(?=##\s)/);
@@ -35,7 +33,6 @@ function parseSections(md: string): Section[] {
     .filter(s => s.body.length > 0);
 }
 
-// ─── Section visual config ────────────────────────────────────────────────────
 const KINDS: Record<SectionKind, {
   icon: React.FC<{ size?: number; className?: string }>;
   pill: string;
@@ -68,7 +65,6 @@ function SectionCard({ section }: { section: Section }) {
   );
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
 function BriefingSkeleton() {
   return (
     <div className="space-y-3 animate-pulse">
@@ -89,7 +85,6 @@ function BriefingSkeleton() {
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
 export function Dashboard() {
   const { accessToken } = useAuth();
   const [briefing, setBriefing]           = useState('');
@@ -146,7 +141,7 @@ export function Dashboard() {
     <div className="flex flex-col h-full bg-background overflow-y-auto">
       <div className="max-w-5xl w-full mx-auto px-4 md:px-8 lg:px-12 py-8 md:py-10 space-y-8">
 
-        {/* Header */}
+        {}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-muted mb-1">{today}</p>
@@ -161,10 +156,10 @@ export function Dashboard() {
           </span>
         </div>
 
-        {/* ── Daily Synthesis card ── */}
+        {}
         <div className="border border-border rounded-sm overflow-hidden shadow-sm">
 
-          {/* Card toolbar */}
+          {}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-surface">
             <div className="flex items-center space-x-2">
               <Cpu size={15} className="text-foreground" />
@@ -187,15 +182,15 @@ export function Dashboard() {
             </button>
           </div>
 
-          {/* Card body */}
+          {}
           <div className="px-5 py-5 bg-background min-h-[140px]">
             {loadingBriefing ? (
               <BriefingSkeleton />
 
             ) : sections.length > 0 ? (
-              /* ── Structured section cards ── */
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Today's Summary spans full width if it exists */}
+                {}
                 {sections.filter(s => s.kind === 'summary').map((s, i) => (
                   <div key={i} className="md:col-span-2">
                     <SectionCard section={s} />
@@ -207,14 +202,14 @@ export function Dashboard() {
               </div>
 
             ) : briefing ? (
-              /* ── Fallback: model didn't use ## headings, show clean prose ── */
+              
               <div className="prose dark:prose-invert prose-sm max-w-none text-foreground-muted
                 prose-p:my-1.5 prose-li:my-0.5 prose-strong:text-foreground">
                 <Markdown>{briefing}</Markdown>
               </div>
 
             ) : (
-              /* ── Empty state ── */
+              
               <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
                 <div className="w-11 h-11 rounded-sm border border-border bg-surface flex items-center justify-center">
                   <Cpu size={18} className="text-muted" />
@@ -228,10 +223,10 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* ── Bottom grid ── */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          {/* System Core */}
+          {}
           <div className="border border-border rounded-sm p-5 bg-background">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-foreground">System Core</span>
@@ -254,7 +249,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Meeting Synthesis */}
+          {}
           <div
             onClick={() => setMeetingOpen(true)}
             className="border border-border rounded-sm p-5 bg-background hover:bg-surface transition-colors cursor-pointer group flex flex-col"
@@ -274,7 +269,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Drive */}
+          {}
           <div className="border border-border rounded-sm p-5 bg-background flex flex-col">
             <p className="text-sm font-semibold text-foreground mb-4">Recent Drive</p>
             <div className="flex-1 space-y-2.5">
@@ -303,7 +298,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Draft Document row */}
+        {}
         <div
           onClick={() => navigate('/docs')}
           className="border border-border rounded-sm px-5 py-4 bg-background hover:bg-surface transition-colors cursor-pointer group flex items-center justify-between"
@@ -322,7 +317,7 @@ export function Dashboard() {
 
       </div>
 
-      {/* ── Meeting Modal ── */}
+      {}
       {meetingOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8">
           <div className="bg-background border border-border shadow-xl w-full max-w-3xl h-full md:h-auto md:max-h-[80vh] flex flex-col rounded-sm overflow-hidden">

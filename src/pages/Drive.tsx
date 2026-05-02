@@ -185,12 +185,12 @@ export function Drive() {
       </div>
 
       <div className="flex-1 overflow-hidden flex relative">
-        {/* Drive List */}
+        {}
         <div className={cn(
           "w-full md:w-[340px] border-r border-border bg-background flex flex-col shrink-0 transition-transform duration-300",
           selectedFile && "hidden md:flex"
         )}>
-          {/* Breadcrumbs */}
+          {}
           <div className="px-4 py-2 border-b border-border flex items-center justify-between">
             <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1 no-scrollbar">
               {folderPath.map((folder, index) => (
@@ -292,7 +292,7 @@ export function Drive() {
           </div>
         </div>
 
-        {/* Action Panel */}
+        {}
         <div className={cn(
           "flex-1 bg-background flex flex-col items-center overflow-y-auto",
           !selectedFile && "hidden md:flex"
@@ -371,7 +371,7 @@ export function Drive() {
         </div>
       </div>
       
-      {/* Deletion Confirmation Modal */}
+      {}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-background border border-border shadow-2xl max-w-sm w-full p-8 animate-in fade-in zoom-in-95 duration-200">

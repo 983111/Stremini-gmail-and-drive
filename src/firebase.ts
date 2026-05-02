@@ -18,10 +18,8 @@ export const auth = getAuth(app);
 export const db = getFirestore(app, firestoreDatabaseId);
 
 setPersistence(auth, browserLocalPersistence).catch(() => {
-  // Fallback silently if persistence setup fails.
 });
 
-// Provide scopes for Gmail and Drive API if the user logs in
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');

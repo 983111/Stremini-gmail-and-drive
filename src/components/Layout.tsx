@@ -29,7 +29,6 @@ export function Layout() {
     }
   }, [theme]);
 
-  // Close sidebar on route change on mobile
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
@@ -48,7 +47,7 @@ export function Layout() {
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans antialiased">
-      {/* Mobile Sidebar Overlay */}
+      {}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
@@ -56,7 +55,7 @@ export function Layout() {
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside className={cn(
         "fixed inset-y-0 left-0 w-[260px] border-r border-border flex flex-col bg-background h-full z-50 transition-transform duration-300 transform lg:relative lg:translate-x-0 shrink-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -138,9 +137,9 @@ export function Layout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
-        {/* Top Header */}
+        {}
         <header className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background flex-shrink-0">
           <div className="flex items-center">
             <button 
@@ -185,13 +184,13 @@ export function Layout() {
           </div>
         </header>
 
-        {/* Scrollable Page Content */}
+        {}
         <div className="flex-1 overflow-auto relative">
           <Outlet />
         </div>
       </main>
 
-      {/* Modals */}
+      {}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 backdrop-blur-sm p-4">
           <div className="bg-background rounded-md w-full max-w-md shadow-xl border border-border">
