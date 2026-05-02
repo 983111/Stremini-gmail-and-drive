@@ -1,16 +1,25 @@
 // ============================================================================
-//  src/lib/ai.ts
+//  src/lib/gemini.ts
 //  AI client — calls the deployed Cloudflare Worker backend.
 //
 //  After deploying worker-stremini.js with `wrangler deploy`, replace the
 //  placeholder below with your real Worker URL.
-//
 //  Example: https://stremini-workspace.YOUR-SUBDOMAIN.workers.dev
 // ============================================================================
 
-// ▼▼▼  REPLACE THIS with your deployed Worker URL after running `wrangler deploy`  ▼▼▼
+// ▼▼▼  REPLACE THIS with your deployed Worker URL after `wrangler deploy`  ▼▼▼
 const WORKER_URL = 'https://taskflow-backend.vishwajeetadkine705.workers.dev';
-// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+// ─── Safety net: strip K2 <think>…</think> reasoning if it leaks through ─────
+function stripThinking(text: string): string {
+  if (!text) return '';
+  // Remove full <think>...</think> blocks (possibly multiline)
+  let out = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  // If <think> opened but never closed, drop everything from it onward
+  out = out.replace(/<think>[\s\S]*/gi, '');
+  return out.trim();
+}
 
 async function post<T>(endpoint: string, body: object): Promise<T> {
   const res = await fetch(`${WORKER_URL}${endpoint}`, {
@@ -32,19 +41,19 @@ async function post<T>(endpoint: string, body: object): Promise<T> {
 // ─── Briefing ─────────────────────────────────────────────────────────────────
 export async function generateBriefing(emails: any[], driveFiles: any[]): Promise<string> {
   const data = await post<{ briefing: string }>('/api/briefing', { emails, driveFiles });
-  return data.briefing ?? '';
+  return stripThinking(data.briefing ?? '');
 }
 
 // ─── Email thread summary ─────────────────────────────────────────────────────
 export async function summarizeThread(threadMessages: any[]): Promise<string> {
   const data = await post<{ summary: string }>('/api/summarise/thread', { threadMessages });
-  return data.summary ?? '';
+  return stripThinking(data.summary ?? '');
 }
 
 // ─── Document summary ─────────────────────────────────────────────────────────
 export async function summarizeDocumentContent(content: string): Promise<string> {
   const data = await post<{ summary: string }>('/api/summarise/doc', { content });
-  return data.summary ?? '';
+  return stripThinking(data.summary ?? '');
 }
 
 // ─── Document rewrite ─────────────────────────────────────────────────────────
@@ -53,7 +62,7 @@ export async function rewriteDocument(
   tone: 'formal' | 'casual' | 'persuasive' = 'formal'
 ): Promise<string> {
   const data = await post<{ rewritten: string }>('/api/rewrite/doc', { content, tone });
-  return data.rewritten ?? '';
+  return stripThinking(data.rewritten ?? '');
 }
 
 // ─── Document Q&A ─────────────────────────────────────────────────────────────
@@ -63,13 +72,13 @@ export async function askDocumentQuestion(
   history: { role: string; parts: { text: string }[] }[] = []
 ): Promise<string> {
   const data = await post<{ answer: string }>('/api/ask/doc', { content, question, history });
-  return data.answer ?? '';
+  return stripThinking(data.answer ?? '');
 }
 
 // ─── Email drafting ───────────────────────────────────────────────────────────
 export async function draftEmailWithAI(prompt: string, context: string = ''): Promise<string> {
   const data = await post<{ draft: string }>('/api/draft/email', { prompt, context });
-  return data.draft ?? '';
+  return stripThinking(data.draft ?? '');
 }
 
 // ─── Database schema generation ───────────────────────────────────────────────
@@ -92,5 +101,5 @@ export async function generateDatabaseSchema(description: string): Promise<{
 // ─── Meeting intelligence ─────────────────────────────────────────────────────
 export async function generateMeetingIntelligence(notes: any[], emails: any[]): Promise<string> {
   const data = await post<{ synthesis: string }>('/api/meeting', { notes, emails });
-  return data.synthesis ?? '';
+  return stripThinking(data.synthesis ?? '');
 }
