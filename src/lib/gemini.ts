@@ -1,33 +1,19 @@
-// ============================================================================
-//  src/lib/gemini.ts  — AI client calling the Cloudflare Worker backend
-//
-//  Replace WORKER_URL after running: wrangler deploy
-//  e.g. https://stremini-workspace.YOUR-SUBDOMAIN.workers.dev
-// ============================================================================
 
-// ▼▼▼  REPLACE after `wrangler deploy`  ▼▼▼
 const WORKER_URL = 'https://taskflow-backend.vishwajeetadkine705.workers.dev';
-// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-// ─── Client-side safety: strip any leaked K2 reasoning ────────────────────────
 function stripThinking(text: string): string {
   if (!text) return '';
-  // Remove fully closed blocks
   let out = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
-  // Remove everything from an unclosed <think> onward
   const idx = out.search(/<think>/i);
   if (idx !== -1) out = out.slice(0, idx);
-  // Remove stray closing tags and other wrappers
   out = out.replace(/<\/think>/gi, '');
   out = out.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
   out = out.replace(/<reflection>[\s\S]*?<\/reflection>/gi, '');
   out = out.replace(/<analysis>[\s\S]*?<\/analysis>/gi, '');
 
-  // Remove preamble/meta-reasoning before structured markdown output.
   const firstSection = out.search(/^##\s/m);
   if (firstSection > 0) out = out.slice(firstSection);
 
-  // Drop common leaked instruction lines if they still appear.
   out = out
     .split('\n')
     .filter(line => !/^\s*(the user wants|however we have no|thus we need|let'?s parse|given the constraints)/i.test(line))
@@ -35,7 +21,6 @@ function stripThinking(text: string): string {
 
   return out.trim();
 }
-
 
 function normalizeMeetingSynthesis(text: string): string {
   const cleaned = stripThinking(text);
