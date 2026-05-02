@@ -1,72 +1,107 @@
-
 const WORKER_URL = 'https://taskflow-backend.vishwajeetadkine705.workers.dev';
 
+// ─── Think stripper (mirrors worker.js clean()) ───────────────────────────────
 function stripThinking(text: string): string {
   if (!text) return '';
-  let out = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
-  const idx = out.search(/<think>/i);
-  if (idx !== -1) out = out.slice(0, idx);
-  out = out.replace(/<\/think>/gi, '');
-  out = out.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
-  out = out.replace(/<reflection>[\s\S]*?<\/reflection>/gi, '');
-  out = out.replace(/<analysis>[\s\S]*?<\/analysis>/gi, '');
+  let o = text;
 
-  const firstSection = out.search(/^##\s/m);
-  if (firstSection > 0) out = out.slice(firstSection);
+  // 1. Remove all known XML reasoning wrappers
+  const WRAP_TAGS = ['think','thinking','thought','reasoning','reason',
+                     'reflection','reflect','analysis','scratchpad','cot'];
+  for (const t of WRAP_TAGS) {
+    o = o.replace(new RegExp(`<${t}>[\\s\\S]*?<\\/${t}>`, 'gi'), '');
+    const idx = o.search(new RegExp(`<${t}>`, 'i'));
+    if (idx !== -1) o = o.slice(0, idx);
+    o = o.replace(new RegExp(`<\\/${t}>`, 'gi'), '');
+  }
 
-  out = out
-    .split('\n')
-    .filter(line => !/^\s*(the user wants|however we have no|thus we need|let'?s parse|given the constraints)/i.test(line))
-    .join('\n');
+  // 2. Bare unclosed </think> — keep only what comes after
+  if (o.includes('</think>')) o = o.split('</think>').pop() ?? o;
 
-  return out.trim();
+  // 3. Strip markdown-fenced reasoning blocks
+  o = o.replace(/```(?:think(?:ing)?|reason(?:ing)?|reflect(?:ion)?|analysis|scratchpad)[\s\S]*?```/gi, '');
+
+  // 4. Slice off untagged reasoning preambles
+  const ANSWER_START = [
+    /^##?\s+\w/,
+    /^(hi|hello|dear|hey|greetings)[,\s]/i,
+    /^\s*[{\[]/,
+    /^(thank(s| you)|please|following|as per|i hope)/i,
+    /^[-*]\s+\*{0,2}\w/,
+    /^\d+\.\s+\w/,
+  ];
+  const REASONING_LINE = [
+    /\bwe (must|need to|have to|should|can|cannot|could)\b/i,
+    /\bthe user (says|wants|asked|said|is asking)\b/i,
+    /\b(thus|so) (produce|we|the|a|an|start)\b/i,
+    /\b(given|based on) the (context|data|emails|above)\b/i,
+    /\b(possibly|likely|probably) (the|we|they|this)\b/i,
+    /\blet'?s (parse|examine|look|check|see|start|begin)\b/i,
+    /\b(now|next|first|second|third)[,]? (we|let|the|i)\b/i,
+    /\binfer\b/i,
+    /\bproduce (a|an|the|something|output)\b/i,
+  ];
+
+  const lines = o.split('\n');
+  let answerStart = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const isReasoning = REASONING_LINE.some(r => r.test(line));
+    const isAnswer    = ANSWER_START.some(r => r.test(line));
+    if (isAnswer && !isReasoning) { answerStart = i; break; }
+  }
+  if (answerStart > 0) o = lines.slice(answerStart).join('\n');
+
+  return o.trim();
 }
 
+// ─── Meeting synthesis normalizer ─────────────────────────────────────────────
+// Ensures all 4 required sections exist and tables render correctly.
 function normalizeMeetingSynthesis(text: string): string {
   const cleaned = stripThinking(text);
   if (!cleaned) return '';
 
-  const requiredSections = [
-    'Overview',
-    'Key Decisions',
-    'Action Items',
-    'Draft Follow-up Email',
-  ];
+  const REQUIRED = ['Overview', 'Key Decisions', 'Action Items', 'Draft Follow-up Email'];
 
-  const escaped = requiredSections
-    .map(title => title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const headingPattern = new RegExp(`^##\\s*(${escaped.join('|')})\\s*$`, 'im');
-  const firstRequired = cleaned.search(headingPattern);
-  const source = firstRequired >= 0 ? cleaned.slice(firstRequired) : cleaned;
+  // Find where the first required section starts
+  const escaped = REQUIRED.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const headingPat = new RegExp(`^##\\s*(${escaped.join('|')})\\s*$`, 'im');
+  const firstIdx = cleaned.search(headingPat);
+  const source = firstIdx >= 0 ? cleaned.slice(firstIdx) : cleaned;
 
-  const lines = source.split('\n');
+  // Parse into section map — keep multi-line content including table rows
   const sectionMap = new Map<string, string[]>();
   let current: string | null = null;
 
-  for (const line of lines) {
-    const match = line.match(/^##\s*(.+?)\s*$/);
-    if (match) {
-      const title = match[1].trim();
-      current = requiredSections.find(s => s.toLowerCase() === title.toLowerCase()) ?? null;
+  for (const line of source.split('\n')) {
+    const m = line.match(/^##\s+(.+?)\s*$/);
+    if (m) {
+      const title = REQUIRED.find(s => s.toLowerCase() === m[1].trim().toLowerCase()) ?? null;
+      current = title;
       if (current && !sectionMap.has(current)) sectionMap.set(current, []);
       continue;
     }
-    if (current) {
-      sectionMap.get(current)!.push(line);
-    }
+    if (current) sectionMap.get(current)!.push(line);
   }
 
+  // If we got nothing useful, return cleaned text as-is
   if (sectionMap.size === 0) return cleaned;
 
-  return requiredSections
-    .map(section => {
-      const body = (sectionMap.get(section) ?? []).join('\n').trim();
-      return `## ${section}\n${body}`.trimEnd();
-    })
-    .join('\n\n')
-    .trim();
+  // Build fallback table rows for missing sections
+  const fallbackTables: Record<string, string> = {
+    'Key Decisions': `| Decision | Owner | Status |\n|---|---|---|\n| No decisions recorded | — | — |`,
+    'Action Items':  `| Task | Owner | Due Date | Priority |\n|---|---|---|---|\n| No action items recorded | — | — | — |`,
+  };
+
+  return REQUIRED.map(section => {
+    const body = (sectionMap.get(section) ?? []).join('\n').trim();
+    const content = body.length > 0 ? body : (fallbackTables[section] ?? '*No data available.*');
+    return `## ${section}\n\n${content}`;
+  }).join('\n\n').trim();
 }
 
+// ─── HTTP helper ──────────────────────────────────────────────────────────────
 async function post<T>(endpoint: string, body: object): Promise<T> {
   const res = await fetch(`${WORKER_URL}${endpoint}`, {
     method: 'POST',
@@ -82,6 +117,7 @@ async function post<T>(endpoint: string, body: object): Promise<T> {
   return json as T;
 }
 
+// ─── Public API ───────────────────────────────────────────────────────────────
 export async function generateBriefing(emails: any[], driveFiles: any[]): Promise<string> {
   const data = await post<{ briefing: string }>('/api/briefing', { emails, driveFiles });
   return stripThinking(data.briefing ?? '');
