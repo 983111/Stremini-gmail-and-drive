@@ -5,26 +5,100 @@ type WorkerRequest = {
   payload: Record<string, unknown>;
 };
 
+const ENDPOINT_SUFFIXES = ['', '/api/ai', '/api/gemini', '/ai', '/gemini'];
+
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
+function buildCandidateUrls(baseUrl: string): string[] {
+  const normalizedBase = normalizeBaseUrl(baseUrl);
+  const candidates = new Set<string>();
+
+  for (const suffix of ENDPOINT_SUFFIXES) {
+    if (!suffix) {
+      candidates.add(normalizedBase);
+      continue;
+    }
+
+    if (normalizedBase.endsWith(suffix)) {
+      candidates.add(normalizedBase);
+    } else {
+      candidates.add(`${normalizedBase}${suffix}`);
+    }
+  }
+
+  return [...candidates];
+}
+
+async function postWorkerRequest<T>(url: string, task: string, payload: Record<string, unknown>): Promise<T> {
+  const requestVariants = [
+    { task, payload } satisfies WorkerRequest,
+    { action: task, payload },
+    { task, ...payload },
+    { action: task, ...payload },
+  ];
+
+  let lastNon404Error = '';
+
+  for (const body of requestVariants) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 404) {
+      continue;
+    }
+
+    const responseText = await res.text();
+
+    if (!res.ok) {
+      lastNon404Error = responseText || `HTTP ${res.status}`;
+      continue;
+    }
+
+    let data: any = null;
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        return responseText as T;
+      }
+    }
+
+    if (data?.error) {
+      throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
+    }
+
+    return (data?.result ?? data?.data ?? data) as T;
+  }
+
+  if (lastNon404Error) {
+    throw new Error(lastNon404Error);
+  }
+
+  throw new Error('Not found.');
+}
+
 async function callWorker<T = any>(task: string, payload: Record<string, unknown>): Promise<T> {
   if (!WORKER_URL) {
     throw new Error('Missing VITE_WORKER_URL environment variable.');
   }
 
-  const res = await fetch(WORKER_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ task, payload } satisfies WorkerRequest),
-  });
+  const urls = buildCandidateUrls(WORKER_URL);
+  const errors: string[] = [];
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`AI worker request failed (${res.status}): ${errorText}`);
+  for (const url of urls) {
+    try {
+      return await postWorkerRequest<T>(url, task, payload);
+    } catch (error: any) {
+      errors.push(`${url}: ${error?.message || String(error)}`);
+    }
   }
 
-  const data = await res.json();
-  return (data?.result ?? data) as T;
+  throw new Error(`AI worker request failed. Tried endpoints: ${errors.join(' | ')}`);
 }
 
 export async function generateBriefing(emails: any[], driveFiles: any[]) {
@@ -43,7 +117,7 @@ export async function rewriteDocument(content: string, tone: 'formal' | 'casual'
   return callWorker<string>('rewriteDocument', { content, tone });
 }
 
-export async function askDocumentQuestion(content: string, question: string, history: {role: string, parts: {text: string}[]}[] = []) {
+export async function askDocumentQuestion(content: string, question: string, history: { role: string, parts: { text: string }[] }[] = []) {
   return callWorker<string>('askDocumentQuestion', { content, question, history });
 }
 
