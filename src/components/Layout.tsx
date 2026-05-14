@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu, Database } from 'lucide-react';
+import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu, Database, ClipboardList, Presentation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 
@@ -115,6 +115,22 @@ export function Layout() {
               <>
                 <Database size={16} className={isActive ? "text-foreground" : "text-muted"} />
                 <span>Databases</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/forms" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
+            {({ isActive }) => (
+              <>
+                <ClipboardList size={16} className={isActive ? "text-foreground" : "text-muted"} />
+                <span>Forms</span>
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/slides" className={({ isActive }) => cn("flex items-center space-x-3 px-3 py-2.5 text-sm rounded-sm transition-colors", isActive ? "bg-surface font-semibold text-foreground" : "text-muted hover:bg-surface")}>
+            {({ isActive }) => (
+              <>
+                <Presentation size={16} className={isActive ? "text-foreground" : "text-muted"} />
+                <span>Slides</span>
               </>
             )}
           </NavLink>

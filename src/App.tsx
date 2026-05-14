@@ -13,6 +13,8 @@ import { Documents } from './pages/Documents';
 import { Mail } from './pages/Mail';
 import { Drive } from './pages/Drive';
 import { Databases } from './pages/Databases';
+import { Forms } from './pages/Forms';
+import { Slides } from './pages/Slides';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -53,6 +55,8 @@ export default function App() {
             <Route path="mail/*" element={<Mail />} />
             <Route path="drive/*" element={<Drive />} />
             <Route path="databases/*" element={<Databases />} />
+            <Route path="forms/*" element={<Forms />} />
+            <Route path="slides/*" element={<Slides />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

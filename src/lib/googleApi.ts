@@ -149,9 +149,9 @@ export async function deleteDriveFile(accessToken: string, fileId: string) {
   }
 }
 
-export async function fetchRecentDriveFiles(accessToken: string, query = '') {
+export async function fetchRecentDriveFiles(accessToken: string, query = '', orderBy = 'modifiedTime desc') {
   const qStr = query ? `&q=${encodeURIComponent(query)}` : '';
-  const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=modifiedTime desc&fields=files(id,name,mimeType,modifiedTime,webViewLink)${qStr}`;
+  const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=${encodeURIComponent(orderBy)}&fields=files(id,name,mimeType,modifiedTime,createdTime,webViewLink)${qStr}`;
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!res.ok) {
@@ -312,4 +312,153 @@ export async function fetchDriveFileBlob(accessToken: string, fileId: string, mi
      throw new Error(`Failed to fetch file blob: ${errorText}`);
   }
   return await res.blob();
+}
+
+export async function fetchGoogleForm(accessToken: string, formId: string) {
+  const url = `https://forms.googleapis.com/v1/forms/${formId}`;
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to fetch form: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    if (e.message === 'Failed to fetch') {
+      throw new Error('Network error or CORS issue. If you are in a preview iframe, try opening the app in a new tab.');
+    }
+    throw e;
+  }
+}
+
+export async function uploadBase64ImageToDrive(accessToken: string, base64Data: string, fileName: string) {
+  // Extract the actual base64 content
+  const base64Content = base64Data.split(',')[1] || base64Data;
+  const mimeType = base64Data.split(',')[0].split(':')[1]?.split(';')[0] || 'image/png';
+  
+  // Convert base64 to binary
+  const binaryString = atob(base64Content);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+  const blob = new Blob([bytes], { type: mimeType });
+  const file = new File([blob], fileName, { type: mimeType });
+
+  // Upload to Drive
+  const uploadResult = await uploadDriveFile(accessToken, file);
+  const fileId = uploadResult.id;
+
+  // Set permissions to anyone with link (needed for Slides fetch)
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      role: 'reader',
+      type: 'anyone'
+    })
+  });
+
+  // Get the webContentLink
+  const fileInfoRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=webContentLink`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  const fileInfo = await fileInfoRes.json();
+  
+  // Return direct download link for Drive files
+  return `https://drive.google.com/uc?export=download&id=${fileId}`;
+}
+
+export async function createGooglePresentation(accessToken: string, title: string) {
+  const url = 'https://slides.googleapis.com/v1/presentations';
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to create presentation: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    throw e;
+  }
+}
+
+export async function updatePresentationBatch(accessToken: string, presentationId: string, requests: any[]) {
+  const url = `https://slides.googleapis.com/v1/presentations/${presentationId}:batchUpdate`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to update presentation: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    throw e;
+  }
+}
+export async function createGoogleForm(accessToken: string, title: string) {
+  const url = 'https://forms.googleapis.com/v1/forms';
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ info: { title } })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to create form: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    if (e.message === 'Failed to fetch') {
+      throw new Error('Network error or CORS issue. If you are in a preview iframe, try opening the app in a new tab.');
+    }
+    throw e;
+  }
+}
+
+export async function updateFormBatch(accessToken: string, formId: string, requests: any[]) {
+  const url = `https://forms.googleapis.com/v1/forms/${formId}:batchUpdate`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to update form: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    if (e.message === 'Failed to fetch') {
+      throw new Error('Network error or CORS issue. If you are in a preview iframe, try opening the app in a new tab.');
+    }
+    throw e;
+  }
 }
