@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LayoutGrid } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -15,17 +16,15 @@ import { Databases } from './pages/Databases';
 import { Forms } from './pages/Forms';
 import { Slides } from './pages/Slides';
 import { LandingPage } from './pages/LandingPage';
+import { Blog } from './pages/Blog';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfConditions } from './pages/TermsOfConditions';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="h-screen w-full flex items-center justify-center text-gray-500">Loading...</div>;
-  if (!user) return <Login />;
+  if (!user) return <LandingPage />;
   return <>{children}</>;
-}
-
-function Login() {
-  const { signIn } = useAuth();
-  return <LandingPage onGetStarted={signIn} />;
 }
 
 export default function App() {
@@ -33,6 +32,12 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfConditions />} />
+
+          {/* Protected workspace routes */}
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
             <Route index element={<Dashboard />} />
             <Route path="docs/*" element={<Documents />} />
@@ -48,3 +53,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+
