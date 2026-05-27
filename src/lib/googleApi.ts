@@ -151,7 +151,7 @@ export async function deleteDriveFile(accessToken: string, fileId: string) {
 
 export async function fetchRecentDriveFiles(accessToken: string, query = '', orderBy = 'modifiedTime desc') {
   const qStr = query ? `&q=${encodeURIComponent(query)}` : '';
-  const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=${encodeURIComponent(orderBy)}&fields=files(id,name,mimeType,modifiedTime,createdTime,webViewLink)${qStr}`;
+  const url = `https://www.googleapis.com/drive/v3/files?pageSize=100&orderBy=${encodeURIComponent(orderBy)}&fields=files(id,name,mimeType,modifiedTime,createdTime,webViewLink,owners,size)${qStr}`;
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!res.ok) {
@@ -279,15 +279,15 @@ function b64DecodeUnicode(str: string) {
 }
 
 export async function fetchDriveFileContent(accessToken: string, fileId: string, mimeType: string) {
+  if (mimeType.includes('pdf')) {
+    return '[PDF Document - Raw binary view is suppressed. Click the "Analyze" button below to perform an interactive document summarization, key takeaways extraction, and action item mapping powered by Gemini AI.]';
+  }
+
   let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   
   // If it's a Google Doc, export it as text
   if (mimeType === 'application/vnd.google-apps.document') {
     url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`;
-  } else if (mimeType.includes('pdf')) {
-    // We cannot easily parse PDF purely on client with just fetch unless we use PDF.js, 
-    // but we can try to extract text if it was converted, or just error for now.
-    throw new Error('PDF extraction requires backend support or specialized libraries.');
   }
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -453,6 +453,28 @@ export async function updateFormBatch(accessToken: string, formId: string, reque
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`Failed to update form: ${res.status} ${text}`);
+    }
+    return await res.json();
+  } catch (e: any) {
+    if (e.message === 'Failed to fetch') {
+      throw new Error('Network error or CORS issue. If you are in a preview iframe, try opening the app in a new tab.');
+    }
+    throw e;
+  }
+}
+
+export async function fetchGoogleFormResponses(accessToken: string, formId: string) {
+  const url = `https://forms.googleapis.com/v1/forms/${formId}/responses`;
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      if (res.status === 404) {
+        return { responses: [] };
+      }
+      throw new Error(`Failed to fetch form responses: ${res.status} ${text}`);
     }
     return await res.json();
   } catch (e: any) {

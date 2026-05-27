@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Mail, ArrowLeft, LayoutGrid, Clock, ShieldAlert } from 'lucide-react';
+import { Scale, Mail, ArrowLeft, LayoutGrid, AlertTriangle } from 'lucide-react';
 
-export function PrivacyPolicy() {
+export function TermsOfConditions() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-[#111111] font-sans selection:bg-[#E5E5E5] flex flex-col justify-between">
       {/* Header */}
@@ -31,100 +31,98 @@ export function PrivacyPolicy() {
             <span>Back to Homepage</span>
           </Link>
 
-          <div className="flex items-center space-x-2.5 text-emerald-700 pt-2">
-            <ShieldCheck size={20} />
-            <span className="text-xs font-bold uppercase tracking-widest font-mono">Data Security Principles</span>
+          <div className="flex items-center space-x-2.5 text-[#111111] pt-2">
+            <Scale size={20} className="text-neutral-700" />
+            <span className="text-xs font-bold uppercase tracking-widest font-mono">WORKSPACE TERMS OF CONDITIONS</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#111111] leading-tight mt-1">
-            PRIVACY POLICY
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#111111] leading-tight mt-1 uppercase">
+            Terms of Use
           </h1>
 
           <div className="text-xs text-[#666666] font-mono flex items-center gap-4 border-b border-[#EEEEEE] pb-6">
-            <span>Effective Date: May 27, 2026</span>
+            <span>Last Updated: May 27, 2026</span>
             <span>•</span>
-            <span>Version: 2.5 (Pure Non-Custodial)</span>
+            <span>Binding Service Standards</span>
           </div>
         </div>
 
         {/* Policy Body */}
         <div className="space-y-8 text-sm text-[#333333] leading-relaxed">
           
-          {/* Summary Callout banner */}
-          <div className="p-5 bg-indigo-50/50 border border-indigo-100 rounded text-xs text-indigo-950 space-y-2">
+          {/* Urgent Liability Reminder */}
+          <div className="p-5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-950 space-y-2">
             <div className="font-bold flex items-center gap-1.5 uppercase tracking-wider">
-              <ShieldAlert size={14} className="text-indigo-700" />
-              <span>Core Privacy Guarantee: Zero User Storage Context</span>
+              <AlertTriangle size={14} className="text-amber-800" />
+              <span>CRITICAL DISCLAIMER FOR COMPLIANT WORKFLOWS</span>
             </div>
             <p className="leading-relaxed">
-              Stremini operates under a **purely non-custodial** environment. This means that your email queues, documents, databases, drive files, and response forms are analyzed entirely in-memory within your local browser layout. Our services **do NOT cache, persist, or collect** your raw files or datasets on any cloud infrastructure owned by Stremini. All API transit tokens reside exclusively in your local session space.
+              **PLEASE READ THIS AGREEMENT CAREFULLY.** BY AUTHORIZING STREMINI AND INTEGRATING YOUR WORKSPACE CREDENTIALS, YOU EXPLICITLY AGREE TO COMPLY WITH AND BE BOUND BY THESE LEGAL PARAMETERS. THESE TERMS LIMIT YOUR RECOURSE AND EXCLUDE GENERAL WARRANTIES CONCERNING ACCURACY, DATA TRANSIT, AND CONTINUOUS SYSTEM UPTIME.
             </p>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              1. Information We Access and How it is Handled
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              1. Non-Custodial Nature & User Responsibility
             </h2>
             <p>
-              When navigating Stremini Workspace, the application requests local OAuth synchronization access to standard Google Workspace API endpoints. Here is exactly what is accessed and why:
+              Stremini Workspace is a client-side visual orchestrator. By linking your Google OAuth token parameters, you authorize the application to process inputs inside your local context.
             </p>
-            <ul className="list-disc pl-5 space-y-3 text-xs text-[#555555]">
-              <li>
-                <strong>Gmail API (Gmail Scopes - Read, Send, Metadata):</strong> Used exclusively to populate your Mail queue list, compose custom replies, compile thread summaries, or draft message contexts.
-              </li>
-              <li>
-                <strong>Google Drive & Google Docs API (Drive Scopes):</strong> Used to search, preview, and categorize files across your authorized drives, generating summary metadata.
-              </li>
-              <li>
-                <strong>Google Forms API (Form Scopes):</strong> Used to query live spreadsheets, structure, and aggregates of submissions, rendering local statistical indicators and insights.
-              </li>
-              <li>
-                <strong>Firebase Firestore Context:</strong> For teams utilizing manual databases and workspace rules configured inside Firestore, variables are written either to your own user-configured Firebase bucket or protected local session storage. We do not operate a general database for tracking your entries.
-              </li>
+            <p className="text-xs text-[#555555]">
+              You bear full responsibility for all activities, API command requests, and document formatting updates that execute under your authenticated Google account credentials. In compliance with data safety standards, ensure your system environments are secure.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              2. Absolute "As-Is" Warranty Exclusion
+            </h2>
+            <p className="font-semibold text-neutral-900 uppercase text-xs">
+              TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE JURISDICTIONAL LAWS:
+            </p>
+            <p className="bg-white border border-neutral-200 p-4 rounded text-xs leading-relaxed text-[#444444] font-mono shadow-sm">
+              STREMINI DISTRIBUTES SERVICES ON AN "AS IS" AND "AS AVAILABLE" STRUCTURAL STANDARDS BASIS. WE EXPLICITLY DISCLAIM ALL WARRANTIES OF ANY CATEGORY, EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO INTELLECTUAL FITNESS FOR GOALS, ACCURACY, ABSENCE OF CORRUPTION, LACK OF BUGS, OR SECURE CONTINUITY OF API TRANSIT. YOU OPERATE THE INTELLIGENCE DASHBOARD SOLELY AT YOUR OWN RISK.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              3. Limitation of Liability Shield
+            </h2>
+            <p>
+              Under no scenarios shall the developers, partners, authors, or team members of Stremini be liable for any collateral, accidental, punitive, special, or consequential damages whatsoever (including, without limitation, direct loss of data assets, disruption of database columns, email delivery errors, spreadsheet data corruption, or business interruption scenarios) stemming from the operation inside Google APIs, even if advised ahead of time.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              4. Affiliation and Patent Disclosures
+            </h2>
+            <p>
+              Stremini Workspace behaves strictly as an independent, third-party interface.
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-xs text-[#555555]">
+              <li>We are not sponsored, aligned, or officially partnered with Google LLC or parent Alphabet Inc.</li>
+              <li>"Google Workspace", "Gmail", "Google Drive", "Forms", and "Slides" are registered trademarks of Google LLC.</li>
+              <li>You must comply with individual Google Terms of Service guidelines when connecting account profiles.</li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              2. Google OAuth Verification and API Scopes Disclosure
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              5. Governing Law and Arbitrage
             </h2>
             <p>
-              In strict accordance with the Google API Services User Data Policy, our application's use and transfer to any other app of information received from Google APIs will adhere to the **Google API Services User Data Policy**, including the Limited Use requirements.
-            </p>
-            <p className="text-xs bg-neutral-100 p-4 border border-neutral-200 rounded font-mono text-neutral-700">
-              STRICT LIMITED USE DIRECTIVE: We do not transfer, compile, sell, or disclose user data to any third-party aggregators, advertising networks, or model brokers. Your data is used exclusively to display your workspace inside your personal active browser dashboard.
+              These terms of use shall be governed and interpreted in complete alignment with local operational jurisdictions. Any formal legal contentions or disputes must be filed under binding local arbitrage parameters before pursuing courtroom proceedings.
             </p>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              3. Processing with Cognitive Language Models (Gemini API)
+            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-150 pb-1">
+              6. Communication and Legal Queries
             </h2>
             <p>
-              To offer summaries of active email queues, documents, and form feedback responses, Stremini interfaces with the Google Gemini API.
-            </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-[#555555]">
-              <li>Your API calls execute directly from the server or client context securely.</li>
-              <li>No personal information processed through the Gemini model endpoints is cached or utilized for foundational model retraining.</li>
-              <li>Under no conditions does Stremini sell your cognitive queries or summary histories.</li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              4. Cookies and Web Analytics
-            </h2>
-            <p>
-              This application utilizes standard local variables to remember user choices, such as active styles (dark or light parameters). We do not load invasive marketing track cookies, pixel campaigns, or third-party advertising modules.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              5. Support and Compliance Requests
-            </h2>
-            <p>
-              We welcome complete transparency regarding data handling. If you have regulatory inquiries, wish to verify the non-custodial operations of our code, or have concerns regarding OAuth privileges, please contact our support desk:
+              For legal compliance audits, contract interpretations, partnership alignments, or operational notices, reach out to our legal department at:
             </p>
             <a 
               href="mailto:streminiai@gmail.com"
@@ -141,8 +139,8 @@ export function PrivacyPolicy() {
       <footer className="bg-white border-t border-[#EEEEEE] py-12 text-[#888888] text-xs">
         <div className="max-w-4xl w-full mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-6 font-mono text-[11px]">
           <div>
-            <p className="font-bold text-[#111111]">Stremini Workspace Trust Operations</p>
-            <p>© 2026 Stremini. Pure non-custodial integrity.</p>
+            <p className="font-bold text-[#111111]">Stremini Legal Counsel Operations</p>
+            <p>© 2026 Stremini. All rights guarded.</p>
           </div>
           <a href="mailto:streminiai@gmail.com" className="text-indigo-600 hover:text-indigo-800 transition-colors">streminiai@gmail.com</a>
         </div>

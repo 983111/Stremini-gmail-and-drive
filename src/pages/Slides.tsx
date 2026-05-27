@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Plus,
-  Search,
-  Loader2,
-  Trash2,
-  Clock,
-  Presentation,
-  ArrowRight,
+import React, { useState, useEffect } from 'react';
+import { 
+  Plus, 
+  Search, 
+  Loader2, 
+  Trash2, 
+  Clock, 
+  LayoutGrid, 
+  Presentation, 
+  ArrowRight, 
   ExternalLink,
   CheckCircle2,
   GripVertical,
@@ -15,814 +16,84 @@ import {
   EyeOff,
   SortAsc,
   SortDesc,
+  ArrowUpDown,
   Send,
   X,
-  Upload,
+  Sparkles,
+  Image as ImageIcon,
   MessageSquare,
   FileText,
-  LayoutGrid,
-  ChevronRight,
-  ChevronDown,
-  Monitor,
-  AlignLeft,
-  BarChart2,
-  Minus,
-  Columns,
-  Quote,
-  BookOpen,
-  Flag,
+  Upload,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  fetchRecentDriveFiles,
-  deleteDriveFile,
-  createGooglePresentation,
+import { 
+  fetchRecentDriveFiles, 
+  deleteDriveFile, 
+  createGooglePresentation, 
   updatePresentationBatch,
-  uploadBase64ImageToDrive,
+  uploadBase64ImageToDrive
 } from '../lib/googleApi';
-import {
-  generatePresentationStructure,
+import { 
+  generatePresentationStructure, 
   editPresentationStructureWithAI,
   summarizePresentation,
-  askPresentationQuestion,
+  askPresentationQuestion
 } from '../lib/gemini';
 import { cn } from '../lib/utils';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface SlideTheme {
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  textColor: string;
-  bgColor: string;
-}
-
-interface Slide {
-  id: string;
-  title: string;
-  subtitle?: string;
-  content: string[];
-  layout: string;
-  notes?: string;
-  imagePrompt?: string;
-  image?: string;
-}
-
-interface GeneratedDeck {
-  title: string;
-  subtitle?: string;
-  theme: SlideTheme;
-  slides: Slide[];
-}
-
-// ─── Layout Icons ─────────────────────────────────────────────────────────────
-
-const LAYOUT_META: Record<string, { label: string; Icon: React.FC<any> }> = {
-  COVER:          { label: 'Cover',          Icon: Monitor },
-  AGENDA:         { label: 'Agenda',         Icon: BookOpen },
-  SECTION_BREAK:  { label: 'Section Break',  Icon: Minus },
-  CONTENT:        { label: 'Content',        Icon: AlignLeft },
-  TWO_COLUMN:     { label: 'Two Column',     Icon: Columns },
-  QUOTE:          { label: 'Quote',          Icon: Quote },
-  DATA_CALLOUT:   { label: 'Data Callout',   Icon: BarChart2 },
-  CLOSING:        { label: 'Closing',        Icon: Flag },
-};
-
-// ─── Slide Preview Renderer ───────────────────────────────────────────────────
-
-function SlidePreview({ slide, theme, index, total }: {
-  slide: Slide;
-  theme: SlideTheme;
-  index: number;
-  total: number;
-}) {
-  const primary   = theme.primaryColor   || '#1a365d';
-  const accent    = theme.accentColor    || '#c9a84c';
-  const textColor = theme.textColor      || '#1a1a2e';
-  const bg        = theme.bgColor        || '#f8f9fa';
-
-  const isCover   = slide.layout === 'COVER';
-  const isSection = slide.layout === 'SECTION_BREAK';
-  const isQuote   = slide.layout === 'QUOTE';
-  const isData    = slide.layout === 'DATA_CALLOUT';
-  const isTwo     = slide.layout === 'TWO_COLUMN';
-  const isClosing = slide.layout === 'CLOSING';
-
-  return (
-    <div
-      className="relative w-full aspect-video rounded overflow-hidden select-none"
-      style={{ background: bg, fontFamily: "'Georgia', serif" }}
-    >
-      {/* Left accent bar */}
-      <div
-        className="absolute left-0 top-0 bottom-0 w-1.5"
-        style={{ background: primary }}
-      />
-
-      {/* Slide number */}
-      <div
-        className="absolute bottom-3 right-4 text-[9px] font-mono tracking-widest"
-        style={{ color: `${textColor}55` }}
-      >
-        {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-      </div>
-
-      {/* Accent line top-right */}
-      <div
-        className="absolute top-0 right-0 h-0.5 w-24"
-        style={{ background: accent }}
-      />
-
-      {isCover && (
-        <div className="flex flex-col justify-center h-full px-10 py-8">
-          <div
-            className="text-[9px] font-bold tracking-[0.25em] uppercase mb-3"
-            style={{ color: accent }}
-          >
-            Confidential
-          </div>
-          <h1
-            className="text-[22px] font-bold leading-tight mb-3"
-            style={{ color: primary, fontFamily: "'Georgia', serif" }}
-          >
-            {slide.title}
-          </h1>
-          {slide.subtitle && (
-            <p className="text-[11px] leading-relaxed" style={{ color: `${textColor}99` }}>
-              {slide.subtitle}
-            </p>
-          )}
-          <div
-            className="mt-6 h-px w-16"
-            style={{ background: accent }}
-          />
-        </div>
-      )}
-
-      {isSection && (
-        <div
-          className="flex flex-col justify-center h-full px-10 py-8"
-          style={{ background: primary }}
-        >
-          <div
-            className="text-[8px] font-bold tracking-[0.3em] uppercase mb-3 opacity-60"
-            style={{ color: accent }}
-          >
-            Section
-          </div>
-          <h2
-            className="text-[18px] font-bold leading-tight"
-            style={{ color: '#ffffff', fontFamily: "'Georgia', serif" }}
-          >
-            {slide.title}
-          </h2>
-          {slide.content?.[0] && (
-            <p className="text-[10px] mt-3 leading-relaxed opacity-70" style={{ color: '#ffffff' }}>
-              {slide.content[0]}
-            </p>
-          )}
-        </div>
-      )}
-
-      {isQuote && (
-        <div className="flex flex-col justify-center h-full px-12 py-8">
-          <div
-            className="text-[28px] leading-none mb-4 opacity-20"
-            style={{ color: primary, fontFamily: 'serif' }}
-          >
-            "
-          </div>
-          <p
-            className="text-[12px] italic leading-relaxed"
-            style={{ color: textColor, fontFamily: "'Georgia', serif" }}
-          >
-            {slide.content?.[0] || slide.title}
-          </p>
-          {slide.subtitle && (
-            <div
-              className="mt-4 text-[9px] font-bold tracking-widest uppercase"
-              style={{ color: accent }}
-            >
-              — {slide.subtitle}
-            </div>
-          )}
-        </div>
-      )}
-
-      {isData && (
-        <div className="flex flex-col h-full px-8 py-6">
-          <div className="mb-4">
-            <h2
-              className="text-[14px] font-bold leading-tight"
-              style={{ color: primary, fontFamily: "'Georgia', serif" }}
-            >
-              {slide.title}
-            </h2>
-            <div className="mt-1 h-px w-8" style={{ background: accent }} />
-          </div>
-          <div className="grid grid-cols-2 gap-2 flex-1">
-            {(slide.content || []).slice(0, 4).map((point, i) => (
-              <div
-                key={i}
-                className="p-2 rounded"
-                style={{ background: `${primary}08`, borderLeft: `2px solid ${accent}` }}
-              >
-                <p className="text-[8px] leading-relaxed" style={{ color: textColor }}>
-                  {point}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isTwo && (
-        <div className="flex flex-col h-full px-8 py-6">
-          <h2
-            className="text-[13px] font-bold mb-4 leading-tight"
-            style={{ color: primary, fontFamily: "'Georgia', serif" }}
-          >
-            {slide.title}
-          </h2>
-          <div className="grid grid-cols-2 gap-4 flex-1">
-            {(slide.content || []).map((point, i) => {
-              const parts = point.split(' || ');
-              return (
-                <div key={i} className="flex items-start gap-1.5">
-                  <div
-                    className="w-1 h-1 rounded-full mt-1.5 shrink-0"
-                    style={{ background: accent }}
-                  />
-                  <p className="text-[8px] leading-relaxed" style={{ color: textColor }}>
-                    {parts[i % 2] || point}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {isClosing && (
-        <div
-          className="flex flex-col justify-center h-full px-10 py-8"
-          style={{ background: `${primary}f0` }}
-        >
-          <h2
-            className="text-[18px] font-bold leading-tight mb-4"
-            style={{ color: '#ffffff', fontFamily: "'Georgia', serif" }}
-          >
-            {slide.title}
-          </h2>
-          <div className="space-y-2">
-            {(slide.content || []).map((point, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div
-                  className="text-[9px] font-bold w-4 shrink-0 mt-0.5"
-                  style={{ color: accent }}
-                >
-                  {String(i + 1).padStart(2, '0')}.
-                </div>
-                <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {point}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Default CONTENT / AGENDA */}
-      {!isCover && !isSection && !isQuote && !isData && !isTwo && !isClosing && (
-        <div className="flex flex-col h-full px-8 py-5">
-          <div className="mb-3">
-            <h2
-              className="text-[13px] font-bold leading-tight"
-              style={{ color: primary, fontFamily: "'Georgia', serif" }}
-            >
-              {slide.title}
-            </h2>
-            {slide.subtitle && (
-              <p className="text-[8px] mt-1" style={{ color: `${textColor}80` }}>
-                {slide.subtitle}
-              </p>
-            )}
-            <div className="mt-1.5 h-px w-8" style={{ background: accent }} />
-          </div>
-          <div className="space-y-1.5 flex-1 overflow-hidden">
-            {(slide.content || []).slice(0, 5).map((point, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div
-                  className="w-1 h-1 rounded-full mt-1.5 shrink-0"
-                  style={{ background: accent }}
-                />
-                <p className="text-[8.5px] leading-relaxed line-clamp-2" style={{ color: textColor }}>
-                  {point}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Slide Editor Card ────────────────────────────────────────────────────────
-
-function SlideEditorCard({
-  slide,
-  theme,
-  index,
-  total,
-  onUpdate,
-  onRemove,
-  onImageUpload,
-  onImageRemove,
-}: {
-  slide: Slide;
-  theme: SlideTheme;
-  index: number;
-  total: number;
-  onUpdate: (id: string, updates: Partial<Slide>) => void;
-  onRemove: (id: string) => void;
-  onImageUpload: (id: string, e: React.ChangeEvent<HTMLInputElement>) => void;
-  onImageRemove: (id: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(index === 0);
-  const meta = LAYOUT_META[slide.layout] || LAYOUT_META['CONTENT'];
-  const LayoutIcon = meta.Icon;
-
-  return (
-    <Reorder.Item
-      key={slide.id}
-      value={slide}
-      className="bg-background border border-border rounded-sm overflow-hidden"
-    >
-      {/* Header row */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none hover:bg-surface transition-colors group"
-        onClick={() => setExpanded(v => !v)}
-      >
-        <div className="cursor-grab active:cursor-grabbing text-muted p-0.5">
-          <GripVertical size={14} />
-        </div>
-
-        <div
-          className="w-5 h-5 rounded-sm flex items-center justify-center shrink-0"
-          style={{ background: `${theme.primaryColor}18`, color: theme.primaryColor }}
-        >
-          <LayoutIcon size={11} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-muted tracking-widest uppercase w-5 text-right shrink-0">
-              {String(index + 1).padStart(2, '0')}
-            </span>
-            <span className="text-sm font-medium text-foreground truncate">
-              {slide.title || 'Untitled Slide'}
-            </span>
-          </div>
-          <span className="text-[10px] text-muted ml-7">{meta.label}</span>
-        </div>
-
-        {/* Thumbnail */}
-        <div className="hidden sm:block w-20 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
-          <SlidePreview slide={slide} theme={theme} index={index} total={total} />
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={e => { e.stopPropagation(); onRemove(slide.id); }}
-            className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-sm hover:bg-red-50"
-          >
-            <Trash2 size={13} />
-          </button>
-          <div className="text-muted">
-            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </div>
-        </div>
-      </div>
-
-      {/* Expanded edit panel */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-border p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left: fields */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={slide.title}
-                    onChange={e => onUpdate(slide.id, { title: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-foreground outline-none focus:border-border-strong transition-colors"
-                    placeholder="Slide title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Subtitle / Context
-                  </label>
-                  <input
-                    type="text"
-                    value={slide.subtitle || ''}
-                    onChange={e => onUpdate(slide.id, { subtitle: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-foreground outline-none focus:border-border-strong transition-colors"
-                    placeholder="Optional subtitle"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Layout
-                  </label>
-                  <select
-                    value={slide.layout}
-                    onChange={e => onUpdate(slide.id, { layout: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-foreground outline-none focus:border-border-strong transition-colors"
-                  >
-                    {Object.entries(LAYOUT_META).map(([key, meta]) => (
-                      <option key={key} value={key}>{meta.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Bullet Points <span className="normal-case font-normal">(one per line)</span>
-                  </label>
-                  <textarea
-                    value={Array.isArray(slide.content) ? slide.content.join('\n') : (slide.content || '')}
-                    onChange={e => onUpdate(slide.id, { content: e.target.value.split('\n') })}
-                    className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-foreground outline-none focus:border-border-strong transition-colors resize-none min-h-[100px]"
-                    placeholder="Each line becomes a bullet point"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Speaker Notes
-                  </label>
-                  <textarea
-                    value={slide.notes || ''}
-                    onChange={e => onUpdate(slide.id, { notes: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-sm px-3 py-2 text-sm text-foreground outline-none focus:border-border-strong transition-colors resize-none min-h-[60px] font-mono"
-                    placeholder="Speaker notes for this slide"
-                  />
-                </div>
-              </div>
-
-              {/* Right: preview + image */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-2">
-                    Live Preview
-                  </label>
-                  <SlidePreview slide={slide} theme={theme} index={index} total={total} />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
-                    Image
-                  </label>
-                  {slide.image ? (
-                    <div className="relative group rounded-sm overflow-hidden border border-border">
-                      <img src={slide.image} alt="Slide" className="w-full h-24 object-cover" />
-                      <button
-                        onClick={() => onImageRemove(slide.id)}
-                        className="absolute top-2 right-2 bg-background border border-border p-1 rounded-sm text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex items-center gap-2 p-3 border border-dashed border-border rounded-sm text-muted hover:text-foreground hover:border-border-strong transition-colors cursor-pointer">
-                      <Upload size={13} />
-                      <span className="text-xs">Upload image for this slide</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => onImageUpload(slide.id, e)}
-                      />
-                    </label>
-                  )}
-                  {slide.imagePrompt && !slide.image && (
-                    <p className="text-[10px] text-muted mt-1.5 italic leading-relaxed">
-                      AI suggestion: {slide.imagePrompt}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Reorder.Item>
-  );
-}
-
-// ─── Insight Panel ────────────────────────────────────────────────────────────
-
-function InsightPanel({
-  slides,
-  onClose,
-}: {
-  slides: Slide[];
-  onClose: () => void;
-}) {
-  const [messages, setMessages] = useState<{ role: 'user' | 'model'; content: string }[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const summarize = async () => {
-    setLoading(true);
-    try {
-      const summary = await summarizePresentation(slides);
-      setMessages(prev => [...prev, { role: 'model', content: summary }]);
-    } catch (e: any) {
-      setMessages(prev => [...prev, { role: 'model', content: 'Error: ' + e.message }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
-    const q = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: q }]);
-    setLoading(true);
-    try {
-      const answer = await askPresentationQuestion(
-        slides,
-        q,
-        messages.map(m => ({ role: m.role, parts: [{ text: m.content }] }))
-      );
-      setMessages(prev => [...prev, { role: 'model', content: answer }]);
-    } catch (e: any) {
-      setMessages(prev => [...prev, { role: 'model', content: 'Error: ' + e.message }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/20 z-40"
-      />
-      <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-border z-50 flex flex-col shadow-2xl"
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <div>
-            <h3 className="font-semibold text-foreground text-sm">Deck Intelligence</h3>
-            <p className="text-[11px] text-muted mt-0.5">Analyse and query this presentation</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-muted hover:text-foreground rounded-sm hover:bg-surface transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.length === 0 && (
-            <div className="text-center py-8">
-              <div className="w-10 h-10 bg-surface rounded-sm flex items-center justify-center mx-auto mb-3">
-                <FileText size={18} className="text-muted" />
-              </div>
-              <p className="text-sm font-medium text-foreground mb-1">Start with a summary</p>
-              <p className="text-xs text-muted mb-5 max-w-[200px] mx-auto leading-relaxed">
-                Get a structured briefing of this deck, or ask any question about its content.
-              </p>
-              <button
-                onClick={summarize}
-                disabled={loading}
-                className="px-4 py-2 bg-foreground text-background text-xs font-semibold rounded-sm hover:bg-foreground-hover transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
-              >
-                {loading ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
-                Summarise Deck
-              </button>
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={cn(
-                'max-w-[90%] p-3 rounded-sm text-xs leading-relaxed',
-                msg.role === 'user'
-                  ? 'bg-foreground text-background ml-auto'
-                  : 'bg-surface border border-border text-foreground mr-auto'
-              )}
-            >
-              {msg.content}
-            </div>
-          ))}
-
-          {loading && (
-            <div className="flex items-center gap-2 text-muted bg-surface border border-border p-3 rounded-sm w-fit">
-              <Loader2 size={13} className="animate-spin" />
-              <span className="text-xs">Analysing...</span>
-            </div>
-          )}
-          <div ref={endRef} />
-        </div>
-
-        <div className="p-4 border-t border-border shrink-0">
-          <form onSubmit={sendMessage} className="relative">
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Ask about this deck..."
-              className="w-full bg-surface border border-border rounded-sm px-3 py-2.5 pr-10 text-sm outline-none focus:border-border-strong transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || loading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-            >
-              <Send size={14} />
-            </button>
-          </form>
-        </div>
-      </motion.div>
-    </>
-  );
-}
-
-// ─── Full-screen Presentation Preview ────────────────────────────────────────
-
-function FullPreview({
-  deck,
-  onClose,
-}: {
-  deck: GeneratedDeck;
-  onClose: () => void;
-}) {
-  const [current, setCurrent] = useState(0);
-  const total = deck.slides.length;
-
-  const go = (dir: number) => {
-    setCurrent(c => Math.min(Math.max(c + dir, 0), total - 1));
-  };
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  const slide = deck.slides[current];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black z-[60] flex flex-col"
-    >
-      {/* Controls */}
-      <div className="flex items-center justify-between px-6 py-3 bg-black/80 shrink-0">
-        <span className="text-white/60 text-xs font-mono tracking-widest">
-          {deck.title}
-        </span>
-        <div className="flex items-center gap-4">
-          <span className="text-white/50 text-xs font-mono">
-            {current + 1} / {total}
-          </span>
-          <button onClick={onClose} className="p-1.5 text-white/60 hover:text-white transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Slide */}
-      <div className="flex-1 flex items-center justify-center px-8 py-4">
-        <div className="w-full max-w-5xl aspect-video shadow-2xl rounded-sm overflow-hidden">
-          <SlidePreview slide={slide} theme={deck.theme} index={current} total={total} />
-        </div>
-      </div>
-
-      {/* Nav */}
-      <div className="flex items-center justify-center gap-4 py-4 shrink-0">
-        <button
-          onClick={() => go(-1)}
-          disabled={current === 0}
-          className="p-2 text-white/60 hover:text-white disabled:opacity-20 transition-colors"
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        <div className="flex gap-1.5">
-          {deck.slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={cn(
-                'h-1 rounded-full transition-all duration-200',
-                i === current ? 'w-6 bg-white' : 'w-1.5 bg-white/30'
-              )}
-            />
-          ))}
-        </div>
-
-        <button
-          onClick={() => go(1)}
-          disabled={current === total - 1}
-          className="p-2 text-white/60 hover:text-white disabled:opacity-20 transition-colors"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
-
-      {/* Notes */}
-      {slide.notes && (
-        <div className="px-8 py-3 bg-black/60 border-t border-white/10 shrink-0">
-          <p className="text-white/50 text-xs leading-relaxed max-w-3xl mx-auto">
-            <span className="font-bold text-white/40 uppercase tracking-widest text-[10px] mr-2">Notes</span>
-            {slide.notes}
-          </p>
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export function Slides() {
   const { accessToken, signIn } = useAuth();
-
+  
+  // Tabs
   const [activeTab, setActiveTab] = useState<'builder' | 'management'>('builder');
+
+  // Preview Mode
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Builder/Editor State
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [deck, setDeck] = useState<GeneratedDeck | null>(null);
+  const [generatedSlides, setGeneratedSlides] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [createdSlidesUrl, setCreatedSlidesUrl] = useState<string | null>(null);
 
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditingWithAI, setIsEditingWithAI] = useState(false);
+  const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isInsightOpen, setIsInsightOpen] = useState(false);
+  // AI Analysis & Insights
+  const [isInsightPanelOpen, setIsInsightPanelOpen] = useState(false);
+  const [analysisMessages, setAnalysisMessages] = useState<{ role: 'user' | 'model', content: string }[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [chatInput, setChatInput] = useState('');
 
+  // Management State
   const [userSlides, setUserSlides] = useState<any[]>([]);
   const [isLoadingSlides, setIsLoadingSlides] = useState(false);
-  const [slidesSearch, setSlidesSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'modifiedTime'>('modifiedTime');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [slidesSearchQuery, setSlidesSearchQuery] = useState('');
+  const [slidesSortBy, setSlidesSortBy] = useState<'name' | 'modifiedTime' | 'createdTime'>('modifiedTime');
+  const [slidesSortOrder, setSlidesSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Fetch when switching to management tab
   useEffect(() => {
     if (activeTab === 'management' && accessToken) {
       loadUserSlides();
     }
-  }, [activeTab, accessToken, sortBy, sortOrder]);
+  }, [activeTab, accessToken, slidesSortBy, slidesSortOrder]);
 
   const loadUserSlides = async () => {
     setIsLoadingSlides(true);
     try {
       const slides = await fetchRecentDriveFiles(
-        accessToken!,
+        accessToken!, 
         "mimeType = 'application/vnd.google-apps.presentation' and trashed = false",
-        `${sortBy} ${sortOrder}`
+        `${slidesSortBy} ${slidesSortOrder}`
       );
       setUserSlides(slides);
     } catch (error) {
-      console.error('Error loading slides:', error);
+      console.error("Error loading slides:", error);
     } finally {
       setIsLoadingSlides(false);
     }
@@ -831,20 +102,23 @@ export function Slides() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
+
     setIsGenerating(true);
-    setCreatedUrl(null);
+    setCreatedSlidesUrl(null);
     try {
       const structure = await generatePresentationStructure(prompt);
-      const withIds: GeneratedDeck = {
+      // Unique IDs for reordering
+      const structureWithIds = {
         ...structure,
-        slides: (structure.slides || []).map((s: any) => ({
-          ...s,
-          id: s.id || Math.random().toString(36).substring(7),
-        })),
+        slides: structure.slides.map((slide: any) => ({
+          ...slide,
+          id: Math.random().toString(36).substring(7)
+        }))
       };
-      setDeck(withIds);
-    } catch (error: any) {
-      alert('Failed to generate presentation: ' + error.message);
+      setGeneratedSlides(structureWithIds);
+    } catch (error) {
+      console.error("Error generating slides:", error);
+      alert("Failed to generate presentation structure. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -852,71 +126,46 @@ export function Slides() {
 
   const handleEditWithAI = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editPrompt.trim() || !deck) return;
+    if (!editPrompt.trim() || !generatedSlides) return;
+
     setIsEditingWithAI(true);
     try {
-      const updated = await editPresentationStructureWithAI(deck, editPrompt);
-      setDeck({
-        ...updated,
-        slides: (updated.slides || []).map((s: any) => ({
-          ...s,
-          id: s.id || Math.random().toString(36).substring(7),
-        })),
-      });
+      const updatedStructure = await editPresentationStructureWithAI(generatedSlides, editPrompt);
+      const structureWithIds = {
+        ...updatedStructure,
+        slides: updatedStructure.slides.map((slide: any) => ({
+          ...slide,
+          id: slide.id || Math.random().toString(36).substring(7)
+        }))
+      };
+      setGeneratedSlides(structureWithIds);
       setEditPrompt('');
-    } catch (error: any) {
-      alert('Failed to edit presentation: ' + error.message);
+    } catch (error) {
+      console.error("Error editing slides:", error);
+      alert("Failed to edit presentation. Please try again.");
     } finally {
       setIsEditingWithAI(false);
     }
   };
 
-  const updateSlide = (id: string, updates: Partial<Slide>) => {
-    setDeck(prev =>
-      prev ? { ...prev, slides: prev.slides.map(s => s.id === id ? { ...s, ...updates } : s) } : prev
-    );
-  };
+  const handleCreateOnGoogle = async () => {
+    if (!accessToken || !generatedSlides) return;
 
-  const removeSlide = (id: string) => {
-    setDeck(prev =>
-      prev ? { ...prev, slides: prev.slides.filter(s => s.id !== id) } : prev
-    );
-  };
-
-  const handleImageUpload = (slideId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => updateSlide(slideId, { image: ev.target?.result as string });
-    reader.readAsDataURL(file);
-  };
-
-  const addSlide = () => {
-    const newSlide: Slide = {
-      id: Math.random().toString(36).substring(7),
-      title: 'New Slide',
-      content: [],
-      layout: 'CONTENT',
-    };
-    setDeck(prev => prev ? { ...prev, slides: [...prev.slides, newSlide] } : prev);
-  };
-
-  const handlePublish = async () => {
-    if (!accessToken || !deck) return;
     setIsCreating(true);
     try {
-      const presentation = await createGooglePresentation(accessToken, deck.title);
+      // 1. Create presentation shell
+      const presentation = await createGooglePresentation(accessToken, generatedSlides.title);
       const presentationId = presentation.presentationId;
-      const requests: any[] = [];
 
-      const theme = deck.theme || {
-        primaryColor: '#1a365d',
-        secondaryColor: '#2b6cb0',
-        accentColor: '#c9a84c',
-        textColor: '#1a1a2e',
-        bgColor: '#f8f9fa',
+      // 2. Prepare slides requests
+      const requests: any[] = [];
+      const theme = generatedSlides.theme || {
+        primaryColor: "#1a365d",
+        secondaryColor: "#2b6cb0",
+        accentColor: "#ed8936"
       };
 
+      // Helper to convert hex to RGB for Slides API (0-1 range)
       const hexToRgb = (hex: string) => {
         const r = parseInt(hex.slice(1, 3), 16) / 255;
         const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -925,632 +174,903 @@ export function Slides() {
       };
 
       const primaryRgb = hexToRgb(theme.primaryColor);
-      const accentRgb  = hexToRgb(theme.accentColor);
-      const textRgb    = hexToRgb(theme.textColor || '#1a1a2e');
 
-      for (let index = 0; index < deck.slides.length; index++) {
-        const slide = deck.slides[index];
-        const slideId  = `slide_${index}_${Math.random().toString(36).substring(7)}`;
-        const titleId  = `title_${index}_${Math.random().toString(36).substring(7)}`;
-        const bodyId   = `body_${index}_${Math.random().toString(36).substring(7)}`;
-        const barId    = `bar_${index}_${Math.random().toString(36).substring(7)}`;
-        const footId   = `foot_${index}_${Math.random().toString(36).substring(7)}`;
-        const accentId = `acc_${index}_${Math.random().toString(36).substring(7)}`;
+      for (let index = 0; index < generatedSlides.slides.length; index++) {
+        const slide = generatedSlides.slides[index];
+        const isTitleSlide = index === 0 || slide.layout === 'TITLE';
+        const isMarketAnalysis = slide.layout === 'MARKET_ANALYSIS';
+        const hasImage = !!slide.image;
 
-        const isCover   = slide.layout === 'COVER';
-        const isSection = slide.layout === 'SECTION_BREAK';
-        const isClosing = slide.layout === 'CLOSING';
-
-        // Create blank slide
+        const slideId = `slide_${index}_${Math.random().toString(36).substring(7)}`;
+        const titleId = `title_${index}_${Math.random().toString(36).substring(7)}`;
+        const bodyId = `body_${index}_${Math.random().toString(36).substring(7)}`;
+        const dividerId = `divider_${index}_${Math.random().toString(36).substring(7)}`;
+        const bgShapeId = `bg_${index}_${Math.random().toString(36).substring(7)}`;
+        const footerId = `footer_${index}_${Math.random().toString(36).substring(7)}`;
+        
+        // Create the slide (BLANK layout)
         requests.push({
           createSlide: {
             objectId: slideId,
             insertionIndex: index,
-            slideLayoutReference: { predefinedLayout: 'BLANK' },
-          },
+            slideLayoutReference: { predefinedLayout: 'BLANK' }
+          }
         });
 
-        // Set background
-        const bgRgb = isCover || isSection || isClosing
-          ? hexToRgb(theme.primaryColor)
-          : hexToRgb(theme.bgColor || '#f8f9fa');
-
+        // Add a vertical brand bar on the left for a premium look
         requests.push({
-          updatePageProperties: {
-            objectId: slideId,
-            pageProperties: {
-              pageBackgroundFill: { solidFill: { color: { rgbColor: bgRgb } } },
+          createShape: {
+            objectId: bgShapeId,
+            shapeType: 'RECTANGLE',
+            elementProperties: {
+              pageObjectId: slideId,
+              size: { width: { magnitude: 15, unit: 'PT' }, height: { magnitude: 405, unit: 'PT' } },
+              transform: { scaleX: 1, scaleY: 1, translateX: 0, translateY: 0, unit: 'PT' }
+            }
+          }
+        });
+        requests.push({
+          updateShapeProperties: {
+            objectId: bgShapeId,
+            shapeProperties: {
+              shapeBackgroundFill: { solidFill: { color: { rgbColor: primaryRgb } } },
+              outline: { outlineFill: { solidFill: { color: { rgbColor: primaryRgb } } } }
             },
-            fields: 'pageBackgroundFill',
-          },
+            fields: 'shapeBackgroundFill,outline'
+          }
         });
 
-        // Left accent bar (not on dark slides)
-        if (!isCover && !isSection && !isClosing) {
+        // Add Divider (Not for Title Slide)
+        if (!isTitleSlide) {
           requests.push({
             createShape: {
-              objectId: barId,
+              objectId: dividerId,
               shapeType: 'RECTANGLE',
               elementProperties: {
                 pageObjectId: slideId,
-                size: { width: { magnitude: 8, unit: 'PT' }, height: { magnitude: 405, unit: 'PT' } },
-                transform: { scaleX: 1, scaleY: 1, translateX: 0, translateY: 0, unit: 'PT' },
-              },
-            },
+                size: { width: { magnitude: 600, unit: 'PT' }, height: { magnitude: 2, unit: 'PT' } },
+                transform: { scaleX: 1, scaleY: 1, translateX: 60, translateY: 95, unit: 'PT' }
+              }
+            }
           });
           requests.push({
             updateShapeProperties: {
-              objectId: barId,
+              objectId: dividerId,
               shapeProperties: {
-                shapeBackgroundFill: { solidFill: { color: { rgbColor: primaryRgb } } },
-                outline: { outlineFill: { solidFill: { color: { rgbColor: primaryRgb } } } },
+                shapeBackgroundFill: { solidFill: { color: { rgbColor: { red: 0.9, green: 0.9, blue: 0.9 } } } },
+                outline: { outlineFill: { solidFill: { color: { rgbColor: { red: 0.9, green: 0.9, blue: 0.9 } } } } }
               },
-              fields: 'shapeBackgroundFill,outline',
-            },
-          });
-
-          // Accent top-right line
-          requests.push({
-            createShape: {
-              objectId: accentId,
-              shapeType: 'RECTANGLE',
-              elementProperties: {
-                pageObjectId: slideId,
-                size: { width: { magnitude: 90, unit: 'PT' }, height: { magnitude: 2, unit: 'PT' } },
-                transform: { scaleX: 1, scaleY: 1, translateX: 630, translateY: 0, unit: 'PT' },
-              },
-            },
-          });
-          requests.push({
-            updateShapeProperties: {
-              objectId: accentId,
-              shapeProperties: {
-                shapeBackgroundFill: { solidFill: { color: { rgbColor: accentRgb } } },
-                outline: { outlineFill: { solidFill: { color: { rgbColor: accentRgb } } } },
-              },
-              fields: 'shapeBackgroundFill,outline',
-            },
+              fields: 'shapeBackgroundFill,outline'
+            }
           });
         }
 
-        // Title
-        const titleX       = isCover || isSection || isClosing ? 50 : 26;
-        const titleY       = isCover ? 130 : isSection || isClosing ? 120 : 36;
-        const titleW       = 600;
-        const titleH       = isCover ? 100 : 60;
-        const titleSize    = isCover ? 40 : isSection || isClosing ? 32 : 24;
-        const titleColor   = isCover || isSection || isClosing ? { red: 1, green: 1, blue: 1 } : primaryRgb;
-
+        // Add Title Shape
         requests.push({
           createShape: {
             objectId: titleId,
             shapeType: 'TEXT_BOX',
             elementProperties: {
               pageObjectId: slideId,
-              size: { width: { magnitude: titleW, unit: 'PT' }, height: { magnitude: titleH, unit: 'PT' } },
-              transform: { scaleX: 1, scaleY: 1, translateX: titleX, translateY: titleY, unit: 'PT' },
-            },
-          },
+              size: { 
+                width: { magnitude: 600, unit: 'PT' }, 
+                height: { magnitude: isTitleSlide ? 120 : 60, unit: 'PT' } 
+              },
+              transform: { 
+                scaleX: 1, scaleY: 1, 
+                translateX: 60, 
+                translateY: isTitleSlide ? 120 : 40, 
+                unit: 'PT' 
+              }
+            }
+          }
         });
-        requests.push({ insertText: { objectId: titleId, text: slide.title, insertionIndex: 0 } });
+        requests.push({
+          insertText: { objectId: titleId, text: slide.title, insertionIndex: 0 }
+        });
         requests.push({
           updateTextStyle: {
             objectId: titleId,
             style: {
-              fontSize: { magnitude: titleSize, unit: 'PT' },
+              fontSize: { magnitude: isTitleSlide ? 44 : 28, unit: 'PT' },
               bold: true,
-              fontFamily: 'Georgia',
-              foregroundColor: { opaqueColor: { rgbColor: titleColor } },
+              fontFamily: 'Arial',
+              foregroundColor: { opaqueColor: { rgbColor: primaryRgb } }
             },
-            fields: 'fontSize,bold,fontFamily,foregroundColor',
-          },
+            fields: 'fontSize,bold,fontFamily,foregroundColor'
+          }
         });
 
-        // Body content
-        const hasContent = Array.isArray(slide.content) && slide.content.length > 0;
-        if (hasContent && !isCover) {
-          const bodyX = isSection || isClosing ? 50 : 26;
-          const bodyY = isSection || isClosing ? 200 : 110;
-          const bodyW = 600;
-          const bodyColor = isSection || isClosing
-            ? { red: 1, green: 1, blue: 0.7 }
-            : textRgb;
+        // Add Footer
+        requests.push({
+          createShape: {
+            objectId: footerId,
+            shapeType: 'TEXT_BOX',
+            elementProperties: {
+              pageObjectId: slideId,
+              size: { width: { magnitude: 600, unit: 'PT' }, height: { magnitude: 20, unit: 'PT' } },
+              transform: { scaleX: 1, scaleY: 1, translateX: 60, translateY: 380, unit: 'PT' }
+            }
+          }
+        });
+        requests.push({
+          insertText: { objectId: footerId, text: `${generatedSlides.title.toUpperCase()} | © ${new Date().getFullYear()} Strategic Intelligence`, insertionIndex: 0 }
+        });
+        requests.push({
+          updateTextStyle: {
+            objectId: footerId,
+            style: {
+              fontSize: { magnitude: 8, unit: 'PT' },
+              fontFamily: 'Arial',
+              foregroundColor: { opaqueColor: { rgbColor: { red: 0.6, green: 0.6, blue: 0.6 } } },
+              bold: true
+            },
+            fields: 'fontSize,fontFamily,foregroundColor,bold'
+          }
+        });
 
-          const contentText = slide.content.join('\n');
+        // Add Body Shape (Not for Title Slide if no content)
+        if (!isTitleSlide || (Array.isArray(slide.content) && slide.content.length > 0)) {
           requests.push({
             createShape: {
               objectId: bodyId,
               shapeType: 'TEXT_BOX',
               elementProperties: {
                 pageObjectId: slideId,
-                size: { width: { magnitude: bodyW, unit: 'PT' }, height: { magnitude: 240, unit: 'PT' } },
-                transform: { scaleX: 1, scaleY: 1, translateX: bodyX, translateY: bodyY, unit: 'PT' },
-              },
-            },
+                size: { 
+                  width: { magnitude: (isMarketAnalysis || hasImage) ? 320 : 600, unit: 'PT' }, 
+                  height: { magnitude: 260, unit: 'PT' } 
+                },
+                transform: { 
+                  scaleX: 1, scaleY: 1, 
+                  translateX: 60, 
+                  translateY: isTitleSlide ? 240 : 120, 
+                  unit: 'PT' 
+                }
+              }
+            }
           });
-          requests.push({ insertText: { objectId: bodyId, text: contentText, insertionIndex: 0 } });
+
+          const contentText = Array.isArray(slide.content) ? slide.content.join('\n\n') : slide.content;
+          requests.push({
+            insertText: { objectId: bodyId, text: contentText, insertionIndex: 0 }
+          });
           requests.push({
             updateTextStyle: {
               objectId: bodyId,
               style: {
-                fontSize: { magnitude: isSection || isClosing ? 14 : 12, unit: 'PT' },
-                fontFamily: 'Georgia',
-                foregroundColor: { opaqueColor: { rgbColor: bodyColor } },
-              },
-              fields: 'fontSize,fontFamily,foregroundColor',
-            },
-          });
-        }
-
-        // Footer (light slides only)
-        if (!isCover && !isSection && !isClosing) {
-          const footText = `${deck.title.toUpperCase()}  |  CONFIDENTIAL`;
-          requests.push({
-            createShape: {
-              objectId: footId,
-              shapeType: 'TEXT_BOX',
-              elementProperties: {
-                pageObjectId: slideId,
-                size: { width: { magnitude: 580, unit: 'PT' }, height: { magnitude: 16, unit: 'PT' } },
-                transform: { scaleX: 1, scaleY: 1, translateX: 26, translateY: 385, unit: 'PT' },
-              },
-            },
-          });
-          requests.push({ insertText: { objectId: footId, text: footText, insertionIndex: 0 } });
-          requests.push({
-            updateTextStyle: {
-              objectId: footId,
-              style: {
-                fontSize: { magnitude: 7, unit: 'PT' },
+                fontSize: { magnitude: isTitleSlide ? 16 : 13, unit: 'PT' },
                 fontFamily: 'Arial',
-                bold: true,
-                foregroundColor: { opaqueColor: { rgbColor: { red: 0.65, green: 0.65, blue: 0.65 } } },
+                foregroundColor: { opaqueColor: { rgbColor: { red: 0.2, green: 0.2, blue: 0.2 } } }
               },
-              fields: 'fontSize,fontFamily,bold,foregroundColor',
-            },
+              fields: 'fontSize,fontFamily,foregroundColor'
+            }
           });
         }
 
-        // Image handling
-        if (slide.image) {
+        // Handle Images
+        if (hasImage) {
           try {
-            const driveUrl = await uploadBase64ImageToDrive(accessToken!, slide.image, `slide_img_${index}.png`);
+            const driveUrl = await uploadBase64ImageToDrive(accessToken, slide.image, `slide_image_${index}.png`);
             if (driveUrl) {
               requests.push({
                 createImage: {
                   url: driveUrl,
                   elementProperties: {
                     pageObjectId: slideId,
-                    size: { width: { magnitude: 220, unit: 'PT' }, height: { magnitude: 180, unit: 'PT' } },
-                    transform: { scaleX: 1, scaleY: 1, translateX: 420, translateY: 110, unit: 'PT' },
-                  },
-                },
+                    size: { width: { magnitude: 240, unit: 'PT' }, height: { magnitude: 240, unit: 'PT' } },
+                    transform: { scaleX: 1, scaleY: 1, translateX: 420, translateY: 120, unit: 'PT' }
+                  }
+                }
               });
             }
-          } catch (imgErr) {
-            console.error('Image upload failed for slide', index, imgErr);
+          } catch (imgError) {
+            console.error("Failed to process image for slide:", index, imgError);
           }
+        } else if (isMarketAnalysis) {
+          const calloutId = `callout_${index}_${Math.random().toString(36).substring(7)}`;
+          const calloutTextId = `calloutText_${index}_${Math.random().toString(36).substring(7)}`;
+          
+          requests.push({
+            createShape: {
+              objectId: calloutId,
+              shapeType: 'ROUND_RECTANGLE',
+              elementProperties: {
+                pageObjectId: slideId,
+                size: { width: { magnitude: 240, unit: 'PT' }, height: { magnitude: 240, unit: 'PT' } },
+                transform: { scaleX: 1, scaleY: 1, translateX: 420, translateY: 120, unit: 'PT' }
+              }
+            }
+          });
+          
+          requests.push({
+            updateShapeProperties: {
+              objectId: calloutId,
+              shapeProperties: {
+                shapeBackgroundFill: { solidFill: { color: { rgbColor: { red: 0.97, green: 0.98, blue: 0.99 } } } },
+                outline: { dashStyle: 'SOLID', weight: { magnitude: 2, unit: 'PT' }, outlineFill: { solidFill: { color: { rgbColor: primaryRgb } } } }
+              },
+              fields: 'shapeBackgroundFill,outline'
+            }
+          });
+
+          // Callout Title
+          requests.push({
+            createShape: {
+              objectId: calloutTextId,
+              shapeType: 'TEXT_BOX',
+              elementProperties: {
+                pageObjectId: slideId,
+                size: { width: { magnitude: 200, unit: 'PT' }, height: { magnitude: 100, unit: 'PT' } },
+                transform: { scaleX: 1, scaleY: 1, translateX: 440, translateY: 140, unit: 'PT' }
+              }
+            }
+          });
+          requests.push({
+            insertText: { objectId: calloutTextId, text: "KEY MARKET METRICS\n\nStrategic insights based on AI analysis of current trends and project data.", insertionIndex: 0 }
+          });
+          requests.push({
+            updateTextStyle: {
+              objectId: calloutTextId,
+              style: {
+                fontSize: { magnitude: 12, unit: 'PT' },
+                fontFamily: 'Arial',
+                foregroundColor: { opaqueColor: { rgbColor: primaryRgb } },
+                bold: true
+              },
+              fields: 'fontSize,fontFamily,foregroundColor,bold'
+            }
+          });
         }
       }
 
-      await updatePresentationBatch(accessToken!, presentationId, requests);
-      setCreatedUrl(`https://docs.google.com/presentation/d/${presentationId}/edit`);
-      setDeck(null);
+      await updatePresentationBatch(accessToken, presentationId, requests);
+
+      setCreatedSlidesUrl(`https://docs.google.com/presentation/d/${presentationId}/edit`);
+      setGeneratedSlides(null);
       setPrompt('');
-    } catch (error: any) {
-      console.error('Error creating presentation:', error);
-      alert('Failed to create presentation: ' + error.message);
+    } catch (error) {
+      console.error("Error creating Google Presentation:", error);
+      alert("Failed to create presentation on Google. Check console for details.");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleDeleteSlide = async (fileId: string) => {
+  const handleDeleteSlides = async (fileId: string) => {
     if (!window.confirm('Delete this presentation?')) return;
     try {
       await deleteDriveFile(accessToken!, fileId);
       setUserSlides(prev => prev.filter(s => s.id !== fileId));
-    } catch (error: any) {
-      alert('Failed to delete: ' + error.message);
+    } catch (error) {
+      console.error("Error deleting presentation:", error);
     }
   };
 
-  const filtered = userSlides.filter(s =>
-    s.name.toLowerCase().includes(slidesSearch.toLowerCase())
+  const updateSlide = (id: string, updates: any) => {
+    setGeneratedSlides((prev: any) => ({
+      ...prev,
+      slides: prev.slides.map((s: any) => s.id === id ? { ...s, ...updates } : s)
+    }));
+  };
+
+  const removeSlide = (id: string) => {
+    setGeneratedSlides((prev: any) => ({
+      ...prev,
+      slides: prev.slides.filter((s: any) => s.id !== id)
+    }));
+  };
+
+  const handleGenerateImage = async (slideId: string, prompt: string) => {
+    setGeneratingImageId(slideId);
+    try {
+      // Logic for AI generation could be added here
+      alert(`AI is imagining: ${prompt}\n(In this preview, we show the prompt. In production, this would generate a custom asset.)`);
+    } finally {
+      setGeneratingImageId(null);
+    }
+  };
+
+  const handleImageUpload = (slideId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      updateSlide(slideId, { image: event.target?.result as string, imagePrompt: `Uploaded: ${file.name}` });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (slideId: string) => {
+    updateSlide(slideId, { image: undefined, imagePrompt: undefined });
+  };
+
+  const handleSummarize = async () => {
+    if (!generatedSlides) return;
+    setIsAnalyzing(true);
+    try {
+      const summary = await summarizePresentation(generatedSlides.slides);
+      setAnalysisMessages(prev => [...prev, { role: 'model', content: summary }]);
+    } catch (error) {
+      console.error("Error summarizing:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !generatedSlides) return;
+
+    const userMsg = chatInput;
+    setChatInput('');
+    setAnalysisMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setIsAnalyzing(true);
+
+    try {
+      const response = await askPresentationQuestion(
+        generatedSlides.slides,
+        userMsg,
+        analysisMessages.map(m => ({ role: m.role, parts: [{ text: m.content }] }))
+      );
+      setAnalysisMessages(prev => [...prev, { role: 'model', content: response }]);
+    } catch (error) {
+      console.error("Error in Q&A:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const reorderSlides = (newSlides: any[]) => {
+    setGeneratedSlides((prev: any) => ({
+      ...prev,
+      slides: newSlides
+    }));
+  };
+
+  const filteredSlides = userSlides.filter(s => 
+    s.name.toLowerCase().includes(slidesSearchQuery.toLowerCase())
   );
 
-  if (!accessToken) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
-        <div className="w-14 h-14 bg-surface border border-border rounded-sm flex items-center justify-center mb-6">
-          <Presentation size={24} className="text-muted" />
-        </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">Connect Google Account</h2>
-        <p className="text-sm text-muted mb-8 max-w-xs leading-relaxed">
-          Sign in with Google to generate and manage your presentation decks.
-        </p>
-        <button
-          onClick={signIn}
-          className="px-6 py-2.5 bg-foreground text-background text-sm font-medium rounded-sm hover:bg-foreground-hover transition-colors"
-        >
-          Sign in with Google
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full bg-background overflow-y-auto">
-      <div className="max-w-5xl w-full mx-auto px-6 py-8 space-y-8">
-
-        {/* Page header */}
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">Presentations</h1>
-            <p className="text-sm text-muted mt-1">Generate and manage Google Slides decks with AI.</p>
+    <div className="max-w-6xl mx-auto px-4 py-8 font-sans">
+      <header className="mb-8">
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+            <Presentation size={24} />
           </div>
+          <h1 className="text-3xl font-bold text-foreground">Google Slides Intelligence</h1>
         </div>
+        <p className="text-muted text-lg">Generate professional presentations with AI and manage your slides.</p>
+      </header>
 
-        {/* Tabs */}
-        <div className="flex border-b border-border">
-          {(['builder', 'management'] as const).map(tab => (
+      {!accessToken ? (
+        <div className="bg-surface border border-border rounded-2xl p-12 text-center shadow-sm">
+          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Presentation size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Connect Google Account</h2>
+          <p className="text-muted mb-8 max-w-md mx-auto">
+            To generate and manage Google Slides, you need to sign in with your Google account.
+          </p>
+          <button 
+            onClick={() => signIn()}
+            className="bg-foreground text-background px-8 py-3 rounded-lg font-bold hover:opacity-90 transition-all flex items-center space-x-2 mx-auto"
+          >
+            <span>Sign in with Google</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <div className="flex space-x-1 bg-surface p-1 rounded-xl w-fit border border-border shadow-sm">
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab('builder')}
               className={cn(
-                'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
-                activeTab === tab
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-muted hover:text-foreground'
+                "px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center space-x-2",
+                activeTab === 'builder' ? "bg-background text-foreground shadow-sm" : "text-muted hover:text-foreground"
               )}
             >
-              {tab === 'builder' ? 'AI Builder' : 'My Slides'}
+              <LayoutGrid size={18} />
+              <span>Presentation Builder</span>
             </button>
-          ))}
-        </div>
+            <button
+              onClick={() => setActiveTab('management')}
+              className={cn(
+                "px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center space-x-2",
+                activeTab === 'management' ? "bg-background text-foreground shadow-sm" : "text-muted hover:text-foreground"
+              )}
+            >
+              <Clock size={18} />
+              <span>My Slides</span>
+            </button>
+          </div>
 
-        {/* ── BUILDER TAB ── */}
-        {activeTab === 'builder' && (
-          <div className="space-y-6">
-
-            {/* Prompt input */}
-            <AnimatePresence mode="popLayout">
-              {!deck && !createdUrl && (
-                <motion.div
-                  key="prompt"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                >
-                  <form onSubmit={handleGenerate}>
-                    <div className="border border-border rounded-sm bg-surface overflow-hidden">
+          {activeTab === 'builder' ? (
+            <>
+              <section className="mb-8 max-w-4xl relative z-10">
+                <AnimatePresence mode="popLayout">
+                  {!generatedSlides && (
+                    <motion.form 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                      onSubmit={handleGenerate} 
+                      className="relative bg-surface border border-border/60 hover:border-border rounded-2xl shadow-sm hover:shadow-md transition-all p-2"
+                    >
                       <textarea
                         value={prompt}
-                        onChange={e => setPrompt(e.target.value)}
-                        placeholder="Describe your presentation... e.g. A 12-slide pitch deck for a Series A SaaS startup targeting enterprise HR teams, including market sizing, product overview, and financial projections."
-                        className="w-full h-32 p-4 bg-transparent text-sm outline-none resize-none placeholder:text-muted text-foreground"
-                        disabled={isGenerating}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="e.g., A 10-slide pitch deck for a sustainable fashion startup including market analysis and growth strategy..."
+                        className="w-full h-32 p-4 bg-transparent border-none text-lg outline-none resize-none placeholder:text-muted/50"
+                        disabled={isGenerating || isCreating}
                       />
-                      <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-background">
-                        <p className="text-xs text-muted">
-                          AI will generate 10-14 slides with speaker notes and visual suggestions.
-                        </p>
-                        <button
-                          type="submit"
+                      <div className="flex justify-between items-center px-4 pb-2">
+                        <span className="text-xs font-medium text-muted/60">AI will generate a visual presentation for you</span>
+                        <button 
                           disabled={isGenerating || !prompt.trim()}
-                          className="flex items-center gap-2 px-4 py-2 bg-foreground text-background text-xs font-semibold rounded-sm hover:bg-foreground-hover transition-colors disabled:opacity-40"
+                          className="flex items-center space-x-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-50 shadow-sm active:scale-95"
                         >
                           {isGenerating ? (
-                            <><Loader2 size={13} className="animate-spin" /> Generating...</>
+                            <>
+                              <Loader2 size={18} className="animate-spin" />
+                              <span>Generating...</span>
+                            </>
                           ) : (
-                            <>Generate Deck</>
+                            <>
+                              <Sparkles size={18} />
+                              <span>Generate Deck</span>
+                            </>
                           )}
                         </button>
                       </div>
-                    </div>
-                  </form>
+                    </motion.form>
+                  )}
+                </AnimatePresence>
+              </section>
 
-                  {/* Example prompts */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {[
-                      'Series A pitch deck for a B2B SaaS startup',
-                      'Quarterly business review for Q3 2025',
-                      'Go-to-market strategy for a new product launch',
-                      'Market entry analysis for Southeast Asia',
-                    ].map(ex => (
-                      <button
-                        key={ex}
-                        onClick={() => setPrompt(ex)}
-                        className="px-3 py-1.5 text-xs text-muted border border-border rounded-sm hover:bg-surface hover:text-foreground transition-colors"
-                      >
-                        {ex}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <div className="mb-12 max-w-4xl">
+                <AnimatePresence>
+                  {generatedSlides && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.98, y: -20 }}
+                      className="bg-surface border border-border/80 rounded-2xl shadow-xl overflow-hidden ring-1 ring-border/50"
+                    >
+                      {/* AI Edit Bar */}
+                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-border p-4 flex flex-col md:flex-row gap-4 items-center">
+                        <div className="flex items-center space-x-2 text-orange-700 font-medium whitespace-nowrap">
+                          <Sparkles size={18} className="text-orange-500" />
+                          <span className="text-sm">Edit with AI</span>
+                        </div>
+                        <form onSubmit={handleEditWithAI} className="flex-1 flex items-center space-x-2 w-full">
+                          <input
+                            type="text"
+                            value={editPrompt}
+                            onChange={(e) => setEditPrompt(e.target.value)}
+                            placeholder="e.g., Add a slide about competitor analysis..."
+                            className="flex-1 bg-white border border-orange-100 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 transition-all shadow-sm"
+                            disabled={isEditingWithAI}
+                          />
+                          <button
+                            type="submit"
+                            disabled={isEditingWithAI || !editPrompt.trim()}
+                            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition-all disabled:opacity-50 flex items-center space-x-2 shadow-sm active:scale-95"
+                          >
+                             {isEditingWithAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                             <span>Update</span>
+                          </button>
+                        </form>
+                      </div>
 
-            {/* Success state */}
-            {createdUrl && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="border border-border rounded-sm p-8 text-center bg-background"
-              >
-                <div className="w-12 h-12 bg-surface border border-border rounded-sm flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 size={20} className="text-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">Presentation Created</h3>
-                <p className="text-sm text-muted mb-6 max-w-sm mx-auto leading-relaxed">
-                  Your Google Slides deck has been published and is ready to edit, present, or share.
-                </p>
-                <div className="flex items-center gap-3 justify-center">
-                  <a
-                    href={createdUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background text-sm font-medium rounded-sm hover:bg-foreground-hover transition-colors"
-                  >
-                    Open in Google Slides
-                    <ExternalLink size={14} />
-                  </a>
-                  <button
-                    onClick={() => { setCreatedUrl(null); setPrompt(''); }}
-                    className="px-5 py-2.5 border border-border text-sm font-medium rounded-sm hover:bg-surface transition-colors text-foreground"
-                  >
-                    New Deck
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Deck editor */}
-            {deck && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                {/* Deck meta + actions bar */}
-                <div className="border border-border rounded-sm bg-background overflow-hidden">
-                  {/* AI edit bar */}
-                  <div className="px-4 py-3 border-b border-border bg-surface">
-                    <form onSubmit={handleEditWithAI} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={editPrompt}
-                        onChange={e => setEditPrompt(e.target.value)}
-                        placeholder="Edit with AI — e.g. Add a competitor analysis slide, change theme to navy blue..."
-                        className="flex-1 bg-background border border-border rounded-sm px-3 py-2 text-sm outline-none focus:border-border-strong transition-colors text-foreground placeholder:text-muted"
-                        disabled={isEditingWithAI}
-                      />
-                      <button
-                        type="submit"
-                        disabled={isEditingWithAI || !editPrompt.trim()}
-                        className="px-4 py-2 bg-foreground text-background text-xs font-semibold rounded-sm hover:bg-foreground-hover transition-colors disabled:opacity-40 flex items-center gap-1.5 shrink-0"
-                      >
-                        {isEditingWithAI ? <Loader2 size={13} className="animate-spin" /> : null}
-                        Apply
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Deck title + actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 p-4">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={deck.title}
-                        onChange={e => setDeck(prev => prev ? { ...prev, title: e.target.value } : prev)}
-                        className="text-xl font-semibold text-foreground bg-transparent border-none outline-none w-full placeholder:text-muted"
-                        placeholder="Presentation Title"
-                      />
-                      {deck.subtitle && (
-                        <p className="text-sm text-muted mt-0.5">{deck.subtitle}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-muted">
-                          {deck.slides.length} slides
-                        </span>
-                        <span className="text-border">|</span>
-                        <div className="flex items-center gap-1.5">
-                          {['primaryColor', 'accentColor', 'secondaryColor'].map(k => (
-                            <div
-                              key={k}
-                              className="w-3 h-3 rounded-full border border-border"
-                              style={{ background: (deck.theme as any)[k] }}
+                      <div className="p-8 border-b border-border bg-background/50">
+                        <div className="flex justify-between items-start flex-col gap-6 md:flex-row mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-3">
+                              <span className="text-[10px] px-2.5 py-1 rounded-full font-bold bg-orange-100 text-orange-700 ring-1 ring-orange-200 uppercase tracking-widest">
+                                AI Deck Draft
+                              </span>
+                            </div>
+                            <input 
+                              type="text"
+                              value={generatedSlides.title}
+                              onChange={(e) => setGeneratedSlides({ ...generatedSlides, title: e.target.value })}
+                              className="text-3xl font-extrabold tracking-tight text-foreground mb-2 bg-transparent border-none outline-none focus:ring-0 w-full placeholder:text-muted/40"
+                              placeholder="Presentation Title"
                             />
-                          ))}
+                          </div>
+                          <div className="flex flex-row md:flex-col gap-2 shrink-0 w-full md:w-auto">
+                            <button
+                              onClick={() => setIsInsightPanelOpen(true)}
+                              className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-orange-100 border border-orange-200 text-orange-700 px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm active:scale-95 hover:bg-orange-200/50"
+                            >
+                              <MessageSquare size={18} />
+                              <span>AI Insights</span>
+                            </button>
+                            <button
+                              onClick={handleCreateOnGoogle}
+                              disabled={isCreating}
+                              className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-foreground text-background px-6 py-2.5 rounded-xl font-bold hover:bg-foreground-hover transition-all shadow-md active:scale-95 disabled:opacity-50"
+                            >
+                              {isCreating ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                              <span>Publish to Slides</span>
+                            </button>
+                            <button
+                              onClick={() => setIsPreviewMode(!isPreviewMode)}
+                              className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-surface hover:bg-surface-hover border border-border/80 text-foreground px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm active:scale-95"
+                            >
+                              {isPreviewMode ? <EyeOff size={18} /> : <Eye size={18} />}
+                              <span>{isPreviewMode ? 'Exit Preview' : 'Interactive Preview'}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-wrap gap-2 shrink-0">
-                      <button
-                        onClick={() => setIsPreviewOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 border border-border text-xs font-medium rounded-sm hover:bg-surface transition-colors text-foreground"
-                      >
-                        <Monitor size={13} />
-                        Present
-                      </button>
-                      <button
-                        onClick={() => setIsInsightOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 border border-border text-xs font-medium rounded-sm hover:bg-surface transition-colors text-foreground"
-                      >
-                        <MessageSquare size={13} />
-                        Insights
-                      </button>
-                      <button
-                        onClick={handlePublish}
-                        disabled={isCreating}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-foreground text-background text-xs font-semibold rounded-sm hover:bg-foreground-hover transition-colors disabled:opacity-40"
-                      >
-                        {isCreating ? (
-                          <><Loader2 size={13} className="animate-spin" /> Publishing...</>
+                      <div className="p-4 md:p-8 bg-zinc-50/50">
+                        {isPreviewMode ? (
+                          <div className="space-y-8 max-w-4xl mx-auto font-sans">
+                            {generatedSlides.slides.map((slide: any, idx: number) => (
+                              <div key={slide.id} className="aspect-video bg-white border border-border/60 rounded-xl p-8 md:p-12 shadow-md flex flex-col relative overflow-hidden">
+                                {slide.layout === 'MARKET_ANALYSIS' ? (
+                                  <div className="h-full flex flex-col">
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-6 border-b border-orange-100 pb-4 tracking-tight flex items-center gap-2">
+                                      <LayoutGrid className="text-orange-500" size={24} />
+                                      {slide.title}
+                                    </h2>
+                                    <div className="grid grid-cols-2 gap-6 flex-1">
+                                      <div className="space-y-4">
+                                        <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                          <p className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-1">Market Insights</p>
+                                          <div className="space-y-3">
+                                            {Array.isArray(slide.content) ? slide.content.map((point: string, i: number) => (
+                                              <div key={i} className="flex items-start space-x-2 text-gray-700 text-sm">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 shrink-0" />
+                                                <p className="leading-tight">{point}</p>
+                                              </div>
+                                            )) : <p className="text-gray-700 text-sm leading-relaxed">{slide.content}</p>}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="relative rounded-xl overflow-hidden bg-zinc-50 border border-border/40 flex items-center justify-center p-4">
+                                        {slide.image ? (
+                                          <img src={slide.image} alt="Slide Visual" className="w-full h-full object-contain" />
+                                        ) : (
+                                          <div className="text-center">
+                                            <ImageIcon size={48} className="text-zinc-200 mx-auto mb-2" />
+                                            <p className="text-[10px] text-zinc-400 font-medium px-4">{slide.imagePrompt}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-zinc-50 flex justify-between items-center text-[10px] text-muted font-bold uppercase tracking-wider">
+                                       <span className="flex items-center gap-1"><AlertCircle size={10}/> Strategic Analysis</span>
+                                       <span>Slide {idx + 1}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {(slide.imagePrompt || slide.image) && (
+                                      <div className="absolute top-0 right-0 w-1/3 h-full bg-zinc-50 border-l border-border/50 flex items-center justify-center p-4">
+                                         {slide.image ? (
+                                           <img src={slide.image} alt="Slide Visual" className="w-full h-full object-contain" />
+                                         ) : (
+                                           <div className="text-center">
+                                             <ImageIcon size={32} className="text-zinc-300 mx-auto mb-2" />
+                                             <p className="text-[10px] text-zinc-400 italic">Visual: {slide.imagePrompt}</p>
+                                           </div>
+                                         )}
+                                      </div>
+                                    )}
+                                    <div className={(slide.imagePrompt || slide.image) ? "w-2/3 pr-8 flex flex-col h-full" : "w-full flex flex-col h-full"}>
+                                      <h2 className="text-3xl font-bold text-gray-900 mb-8 border-b border-orange-100 pb-4 tracking-tight">{slide.title}</h2>
+                                      <div className="space-y-4">
+                                        {Array.isArray(slide.content) ? slide.content.map((point: string, i: number) => (
+                                          <div key={i} className="flex items-start space-x-3 text-gray-700 text-lg">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2.5 shrink-0" />
+                                            <p className="leading-tight">{point}</p>
+                                          </div>
+                                        )) : <p className="text-gray-700 text-lg leading-relaxed">{slide.content}</p>}
+                                      </div>
+                                      <div className="mt-auto pt-8 flex justify-between items-center text-[10px] text-muted font-bold uppercase tracking-wider">
+                                        <span>{generatedSlides.title}</span>
+                                        <span>Slide {idx + 1}</span>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         ) : (
-                          <><Send size={13} /> Publish to Google</>
+                          <Reorder.Group axis="y" values={generatedSlides.slides} onReorder={reorderSlides} className="space-y-4">
+                            {generatedSlides.slides.map((slide: any) => (
+                              <Reorder.Item 
+                                key={slide.id} 
+                                value={slide} 
+                                className="group relative p-6 bg-white border border-border/60 hover:border-border rounded-xl shadow-sm hover:shadow-md transition-all"
+                              >
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-muted p-1">
+                                  <GripVertical size={20} />
+                                </div>
+                                <div className="ml-6">
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex-1">
+                                      <input 
+                                         type="text"
+                                         value={slide.title}
+                                         onChange={(e) => updateSlide(slide.id, { title: e.target.value })}
+                                         className="font-bold text-xl text-foreground bg-transparent border-none outline-none focus:ring-0 w-full mb-1"
+                                         placeholder="Slide Title"
+                                      />
+                                      <div className="flex items-center space-x-4">
+                                        <div className="flex items-center space-x-1 text-[10px] font-bold text-muted/60 uppercase tracking-wider">
+                                          <LayoutGrid size={10} />
+                                          <select 
+                                            value={slide.layout}
+                                            onChange={(e) => updateSlide(slide.id, { layout: e.target.value })}
+                                            className="bg-transparent border-none focus:ring-0 p-0 text-[10px] uppercase font-bold"
+                                          >
+                                            <option value="TITLE">Title Only</option>
+                                            <option value="TITLE_AND_BODY">Title & Body</option>
+                                            <option value="MAIN_POINT">Impact Slide</option>
+                                            <option value="MARKET_ANALYSIS">Market Analysis</option>
+                                          </select>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <label className="flex items-center space-x-2 text-[10px] font-bold text-blue-600/60 uppercase tracking-wider cursor-pointer hover:text-blue-600 transition-colors bg-blue-50/50 px-2 py-1 rounded">
+                                            <Upload size={10} />
+                                            <span>{slide.image ? 'Replace' : 'Upload'}</span>
+                                            <input 
+                                              type="file" 
+                                              accept="image/*" 
+                                              className="hidden" 
+                                              onChange={(e) => handleImageUpload(slide.id, e)}
+                                            />
+                                          </label>
+                                          {slide.image && (
+                                            <button 
+                                              onClick={() => handleRemoveImage(slide.id)}
+                                              className="flex items-center space-x-1 text-[10px] font-bold text-red-600/60 uppercase tracking-wider hover:text-red-600 transition-colors bg-red-50/50 px-2 py-1 rounded"
+                                            >
+                                              <Trash2 size={10} />
+                                              <span>Remove</span>
+                                            </button>
+                                          )}
+                                          {slide.imagePrompt && !slide.image && (
+                                            <div className="flex items-center space-x-1 text-[10px] font-bold text-orange-600/60 uppercase tracking-wider">
+                                              <ImageIcon size={10} />
+                                              <span>AI Suggestion</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <button onClick={() => removeSlide(slide.id)} className="p-2 text-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
+                                  <textarea 
+                                    value={Array.isArray(slide.content) ? slide.content.join('\n') : slide.content}
+                                    onChange={(e) => updateSlide(slide.id, { content: e.target.value.split('\n') })}
+                                    className="w-full bg-transparent border-none focus:ring-0 text-muted text-sm min-h-[100px] resize-none"
+                                    placeholder="Slide content (points)..."
+                                  />
+                                  {slide.imagePrompt && (
+                                    <div className="mt-4 p-3 bg-orange-50/50 rounded-lg border border-orange-100 flex items-center justify-between gap-4">
+                                      <div className="flex-1">
+                                        <label className="block text-[10px] font-bold text-orange-700 uppercase tracking-widest mb-1">Image Prompt</label>
+                                        <input 
+                                          type="text"
+                                          value={slide.imagePrompt}
+                                          onChange={(e) => updateSlide(slide.id, { imagePrompt: e.target.value })}
+                                          className="w-full bg-transparent border-none focus:ring-0 text-xs text-orange-800"
+                                        />
+                                      </div>
+                                      <button 
+                                        onClick={() => handleGenerateImage(slide.id, slide.imagePrompt)}
+                                        disabled={generatingImageId === slide.id}
+                                        className="p-2 bg-orange-200/50 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors shrink-0"
+                                        title="Visualize with AI"
+                                      >
+                                        {generatingImageId === slide.id ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
                         )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* Slide cards */}
-                <Reorder.Group
-                  axis="y"
-                  values={deck.slides}
-                  onReorder={slides => setDeck(prev => prev ? { ...prev, slides } : prev)}
-                  className="space-y-2"
-                >
-                  {deck.slides.map((slide, i) => (
-                    <SlideEditorCard
-                      key={slide.id}
-                      slide={slide}
-                      theme={deck.theme}
-                      index={i}
-                      total={deck.slides.length}
-                      onUpdate={updateSlide}
-                      onRemove={removeSlide}
-                      onImageUpload={handleImageUpload}
-                      onImageRemove={id => updateSlide(id, { image: undefined })}
-                    />
+                {/* Insight Panel Overlay */}
+                <AnimatePresence>
+                  {isInsightPanelOpen && (
+                    <>
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsInsightPanelOpen(false)}
+                        className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
+                      />
+                      <motion.div
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-surface border-l border-border shadow-2xl z-50 flex flex-col"
+                      >
+                        <div className="p-6 border-b border-border flex items-center justify-between bg-orange-50/50">
+                          <div>
+                            <h3 className="font-bold text-foreground flex items-center gap-2">
+                              <Sparkles className="text-orange-500" size={18} />
+                              AI Presentation Insight
+                            </h3>
+                            <p className="text-xs text-muted">Analyze, summarize, and ask about your deck.</p>
+                          </div>
+                          <button onClick={() => setIsInsightPanelOpen(false)} className="p-2 hover:bg-white rounded-lg transition-colors">
+                            <X size={18} />
+                          </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                          {analysisMessages.length === 0 && (
+                            <div className="text-center py-12">
+                              <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FileText size={24} />
+                              </div>
+                              <h4 className="font-bold text-foreground mb-2">Get Started</h4>
+                              <p className="text-sm text-muted mb-6">Ask me to summarize your slides or answer specific industrial questions based on the content.</p>
+                              <button 
+                                onClick={handleSummarize}
+                                disabled={isAnalyzing}
+                                className="bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 transition-all flex items-center space-x-2 mx-auto"
+                              >
+                                {isAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                <span>Summarize Entire Deck</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {analysisMessages.map((msg, i) => (
+                            <div key={i} className={cn(
+                              "max-w-[85%] p-4 rounded-2xl text-sm shadow-sm",
+                              msg.role === 'user' 
+                                ? "bg-foreground text-background ml-auto rounded-tr-none" 
+                                : "bg-white border border-border text-foreground mr-auto rounded-tl-none prose prose-sm prose-orange"
+                            )}>
+                              {msg.content}
+                            </div>
+                          ))}
+                          {isAnalyzing && (
+                            <div className="bg-white border border-border p-4 rounded-2xl mr-auto rounded-tl-none animate-pulse flex items-center space-x-2">
+                              <div className="flex space-x-1">
+                                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" />
+                              </div>
+                              <span className="text-xs text-muted font-medium italic">Analyzing content...</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-4 bg-background border-t border-border">
+                          <form onSubmit={handleSendMessage} className="relative">
+                            <input
+                              type="text"
+                              value={chatInput}
+                              onChange={(e) => setChatInput(e.target.value)}
+                              placeholder="Ask about your market analysis..."
+                              className="w-full bg-surface border border-border rounded-xl px-4 py-3 pr-12 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
+                            />
+                            <button
+                              type="submit"
+                              disabled={!chatInput.trim() || isAnalyzing}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all disabled:opacity-50"
+                            >
+                              <Send size={16} />
+                            </button>
+                          </form>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+
+                {createdSlidesUrl && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 bg-orange-50 border border-orange-200 p-8 rounded-2xl text-center">
+                    <CheckCircle2 size={48} className="text-orange-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-orange-900 mb-2">Presentation Created!</h3>
+                    <p className="text-orange-700 mb-6">Your Google Slides deck is ready to use.</p>
+                    <a href={createdSlidesUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 transition-all">
+                      <span>Open in Google Slides</span>
+                      <ExternalLink size={20} />
+                    </a>
+                  </motion.div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                  <input 
+                    type="text"
+                    placeholder="Search presentations..."
+                    value={slidesSearchQuery}
+                    onChange={(e) => setSlidesSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg outline-none focus:border-border-strong text-sm"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                   <select 
+                    value={slidesSortBy} 
+                    onChange={(e) => setSlidesSortBy(e.target.value as any)}
+                    className="text-xs bg-surface border border-border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500"
+                   >
+                     <option value="name">Sort by Name</option>
+                     <option value="modifiedTime">Sort by Date</option>
+                   </select>
+                   <button 
+                    onClick={() => setSlidesSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                    className="p-2 bg-surface border border-border rounded-lg text-muted hover:text-foreground"
+                   >
+                     {slidesSortOrder === 'asc' ? <SortAsc size={18} /> : <SortDesc size={18} />}
+                   </button>
+                   <button onClick={loadUserSlides} className="p-2 bg-surface border border-border rounded-lg text-muted hover:text-foreground">
+                     <Clock size={18} className={isLoadingSlides ? "animate-spin" : ""} />
+                   </button>
+                </div>
+              </div>
+
+              {isLoadingSlides ? (
+                <div className="flex flex-col items-center py-24 text-muted">
+                  <Loader2 className="animate-spin mb-4" size={32} />
+                  <p>Loading your presentations...</p>
+                </div>
+              ) : filteredSlides.length === 0 ? (
+                <div className="text-center py-24 bg-surface/30 border border-dashed border-border rounded-2xl">
+                  <Presentation size={48} className="text-muted mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground">No slides found</h3>
+                  <p className="text-muted">Try a different search or create a new deck.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredSlides.map((slide) => (
+                    <div key={slide.id} className="group bg-surface border border-border rounded-2xl p-6 hover:shadow-lg transition-all hover:border-orange-200">
+                      <div className="aspect-video bg-orange-50 rounded-lg mb-4 flex items-center justify-center overflow-hidden border border-orange-100">
+                        {slide.thumbnailLink ? (
+                          <img src={slide.thumbnailLink} alt={slide.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <Presentation size={48} className="text-orange-200" />
+                        )}
+                      </div>
+                      <h3 className="font-bold text-foreground mb-1 truncate">{slide.name}</h3>
+                      <p className="text-xs text-muted mb-6">Last modified {new Date(slide.modifiedTime).toLocaleDateString()}</p>
+                      
+                      <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => handleDeleteSlides(slide.id)} className="p-2 text-muted hover:text-red-600 hover:bg-red-50 rounded-lg">
+                          <Trash2 size={16} />
+                        </button>
+                        <a href={slide.webViewLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-wider text-orange-600 hover:text-orange-700 flex items-center space-x-1">
+                          <span>Open Slides</span>
+                          <ArrowRight size={14} />
+                        </a>
+                      </div>
+                    </div>
                   ))}
-                </Reorder.Group>
-
-                {/* Add slide */}
-                <button
-                  onClick={addSlide}
-                  className="w-full py-3 border border-dashed border-border rounded-sm text-sm text-muted hover:text-foreground hover:border-border-strong transition-colors flex items-center justify-center gap-2"
-                >
-                  <Plus size={15} />
-                  Add Slide
-                </button>
-              </motion.div>
-            )}
-          </div>
-        )}
-
-        {/* ── MANAGEMENT TAB ── */}
-        {activeTab === 'management' && (
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-              <div className="relative flex-1 max-w-xs">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  placeholder="Search presentations..."
-                  value={slidesSearch}
-                  onChange={e => setSlidesSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-surface border border-border rounded-sm text-sm outline-none focus:border-border-strong transition-colors"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center border border-border rounded-sm overflow-hidden">
-                  <button
-                    onClick={() => setSortBy('name')}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium transition-colors',
-                      sortBy === 'name' ? 'bg-foreground text-background' : 'text-muted hover:text-foreground bg-background'
-                    )}
-                  >
-                    Name
-                  </button>
-                  <button
-                    onClick={() => setSortBy('modifiedTime')}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium transition-colors border-l border-border',
-                      sortBy === 'modifiedTime' ? 'bg-foreground text-background' : 'text-muted hover:text-foreground bg-background'
-                    )}
-                  >
-                    Date
-                  </button>
                 </div>
-                <button
-                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                  className="p-2 border border-border rounded-sm text-muted hover:text-foreground bg-background transition-colors"
-                >
-                  {sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />}
-                </button>
-                <button
-                  onClick={loadUserSlides}
-                  disabled={isLoadingSlides}
-                  className="p-2 border border-border rounded-sm text-muted hover:text-foreground bg-background transition-colors"
-                >
-                  <Clock size={14} className={isLoadingSlides ? 'animate-spin' : ''} />
-                </button>
-              </div>
+              )}
             </div>
-
-            {isLoadingSlides ? (
-              <div className="flex items-center justify-center py-20 text-muted gap-2">
-                <Loader2 size={18} className="animate-spin" />
-                <span className="text-sm">Loading presentations...</span>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-border rounded-sm">
-                <div className="w-12 h-12 bg-surface rounded-sm flex items-center justify-center mx-auto mb-4">
-                  <Presentation size={20} className="text-muted" />
-                </div>
-                <p className="text-sm font-medium text-foreground">No presentations found</p>
-                <p className="text-xs text-muted mt-1">
-                  {slidesSearch ? 'No results match your search.' : 'Create your first deck in the AI Builder tab.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filtered.map(slide => (
-                  <div
-                    key={slide.id}
-                    className="flex items-center gap-4 p-4 border border-border rounded-sm hover:bg-surface transition-colors group bg-background"
-                  >
-                    <div className="w-10 h-10 bg-surface border border-border rounded-sm flex items-center justify-center shrink-0">
-                      <Presentation size={16} className="text-muted" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{slide.name}</p>
-                      <p className="text-xs text-muted mt-0.5">
-                        Modified {new Date(slide.modifiedTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleDeleteSlide(slide.id)}
-                        className="p-1.5 text-muted hover:text-red-500 rounded-sm hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <a
-                        href={slide.webViewLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-sm text-xs font-medium text-foreground hover:bg-surface transition-colors"
-                      >
-                        Open
-                        <ArrowRight size={12} />
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Overlays */}
-      <AnimatePresence>
-        {isInsightOpen && deck && (
-          <InsightPanel slides={deck.slides} onClose={() => setIsInsightOpen(false)} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isPreviewOpen && deck && (
-          <FullPreview deck={deck} onClose={() => setIsPreviewOpen(false)} />
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      )}
     </div>
   );
 }

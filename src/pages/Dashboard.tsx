@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Cpu, Loader2, FileText, Mail, X, Activity, HardDrive, Clock, Lock } from 'lucide-react';
+import { Cpu, Loader2, FileText, Mail, X, Activity, HardDrive, Clock, Lock, Sparkles, HelpCircle, ShieldCheck, Info } from 'lucide-react';
 import { fetchRecentEmails, fetchRecentDriveFiles } from '../lib/googleApi';
 import { generateBriefing, generateMeetingIntelligence } from '../lib/gemini';
 import Markdown from 'react-markdown';
@@ -16,7 +16,22 @@ export function Dashboard() {
   const [isMeetingLoading, setIsMeetingLoading] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
+  const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is visiting Nexus Hub for the first time
+    const seenIntro = localStorage.getItem('nexus_hub_intro_seen');
+    if (!seenIntro) {
+      setIsIntroModalOpen(true);
+    }
+  }, []);
+
+  const handleDismissIntro = () => {
+    localStorage.setItem('nexus_hub_intro_seen', 'true');
+    setIsIntroModalOpen(false);
+  };
 
   useEffect(() => {
     if (accessToken) {
@@ -80,9 +95,19 @@ export function Dashboard() {
       <div className="max-w-6xl w-full mx-auto space-y-8 md:space-y-12">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
           <div>
-            <h1 className="text-2xl md:text-4xl font-semibold text-foreground tracking-tight mb-2">Nexus Hub</h1>
+            <div className="flex items-center space-x-3 mb-2">
+              <h1 className="text-2xl md:text-4xl font-semibold text-foreground tracking-tight">Nexus Hub</h1>
+              <button
+                onClick={() => setIsIntroModalOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-surface hover:bg-surface-hover text-[10px] font-bold text-foreground-muted hover:text-foreground uppercase tracking-wider border border-border rounded-sm transition-all focus:outline-none"
+                title="View onboarding guide"
+              >
+                <HelpCircle size={12} className="text-indigo-600" />
+                <span>Guide</span>
+              </button>
+            </div>
             <p className="text-sm text-muted">Your unified command center for today.</p>
           </div>
           <div className="text-[10px] md:text-[11px] font-medium text-muted uppercase tracking-widest">
@@ -269,6 +294,103 @@ export function Dashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Intro Modal */}
+      {isIntroModalOpen && (
+        <div className="fixed inset-0 bg-background/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border shadow-2xl w-full max-w-xl flex flex-col relative rounded-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Top Close button */}
+            <button 
+              onClick={handleDismissIntro}
+              className="absolute top-4 right-4 text-muted hover:text-foreground transition-colors p-2 z-10"
+              title="Close guide"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Content Container */}
+            <div className="p-6 md:p-8 space-y-6">
+              {/* Icon branding banner */}
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-sm bg-[#111111] dark:bg-[#FAFAFA] flex items-center justify-center shrink-0">
+                  <Sparkles size={18} className="text-[#FAFAFA] dark:text-[#111111]" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase font-mono block">Welcome Onboard</span>
+                  <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground leading-none">Nexus Hub Initiative</h2>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted leading-relaxed">
+                Welcome to <strong className="font-semibold text-foreground">Stremini Nexus Hub</strong>—your unified, secure operating matrix. Everything you build here is handled locally and direct-to-destination.
+              </p>
+
+              {/* Feature grid/rows */}
+              <div className="space-y-4 pt-1">
+                {/* Feature 1 */}
+                <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                    <Cpu size={14} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-bold text-foreground font-sans uppercase tracking-wider">Daily Cognitive Synthesis</h4>
+                    <p className="text-[11px] text-muted leading-normal">
+                      Scan and summarize your unread emails and recent Drive files into a highly action-oriented briefing, directly powered by Google Gemini safely.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 2 */}
+                <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                    <FileText size={14} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-bold text-foreground font-sans uppercase tracking-wider">Meeting Intelligence Synthesis</h4>
+                    <p className="text-[11px] text-muted leading-normal">
+                      Instantly aggregate conversation records, draft notes, and follow-ups relative to your schedules inside dynamic offline workspace formats.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                    <HardDrive size={14} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="text-xs font-bold text-foreground font-sans uppercase tracking-wider">Live Storage Previews</h4>
+                    <p className="text-[11px] text-muted leading-normal">
+                      Sync relational manual databases, format files, analyze Forms feedback, and preview recent folders within seconds.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy protection panel */}
+              <div className="p-4 bg-indigo-50/40 border border-indigo-100 rounded-sm flex items-start gap-3">
+                <ShieldCheck size={18} className="text-indigo-650 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-indigo-950 uppercase tracking-wider block">Pure Non-Custodial Security</span>
+                  <p className="text-[10px] leading-relaxed text-indigo-900/95 font-medium">
+                    All access tokens communicate directly with official Google API servers. Stremini never caches, reads, or receives your personal emails or databases. Closing the app purges all active session variables completely.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Trigger footer */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={handleDismissIntro}
+                  className="bg-foreground hover:bg-neutral-800 text-background dark:bg-foreground dark:hover:bg-neutral-100 font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-sm transition-all text-center w-full"
+                >
+                  Confirm & Initialize Hub
+                </button>
+              </div>
             </div>
           </div>
         </div>

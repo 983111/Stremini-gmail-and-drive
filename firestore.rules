@@ -80,5 +80,13 @@ service cloud.firestore {
         }
       }
     }
+
+    match /newsletter_subscribers/{subId} {
+      allow create: if isValidId(subId)
+        && incoming().email is string
+        && incoming().email.size() <= 200
+        && incoming().subscribedAt == request.time;
+      allow read, update, delete: if false;
+    }
   }
 }

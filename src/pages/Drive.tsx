@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile } from '../lib/googleApi';
-import { Search, Loader2, File, ExternalLink, Cpu, HardDrive, Folder, Plus, Trash2, X, Upload } from 'lucide-react';
+import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile, fetchDriveFileBlob } from '../lib/googleApi';
+import { Search, Loader2, File, ExternalLink, Cpu, HardDrive, Folder, Plus, Trash2, X, Upload, Filter, Calendar, User, Info } from 'lucide-react';
 import { summarizeDocumentContent } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
@@ -24,6 +24,36 @@ export function Drive() {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
 
+  // Advanced Search Filter States
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterMimeType, setFilterMimeType] = useState('all');
+  const [filterOwnerType, setFilterOwnerType] = useState('any'); // 'any' | 'me' | 'custom'
+  const [filterOwnerEmail, setFilterOwnerEmail] = useState('');
+  const [filterDateRange, setFilterDateRange] = useState('all'); // 'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [searchOnlyCurrent, setSearchOnlyCurrent] = useState(false);
+
+  // Formatting utility for bytes representation
+  const formatBytes = (bytes?: string | number) => {
+    if (bytes === undefined || bytes === null || bytes === '') return '';
+    const num = Number(bytes);
+    if (isNaN(num)) return '';
+    if (num === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(num) / Math.log(k));
+    return parseFloat((num / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // Owner label selector
+  const getOwnerLabel = (owners?: any[]) => {
+    if (!owners || owners.length === 0) return '';
+    const first = owners[0];
+    if (first.me) return 'Me';
+    return first.displayName || first.emailAddress || 'Shared';
+  };
+
   useEffect(() => {
     if (selectedFile && accessToken) {
       setIsPreviewLoading(true);
@@ -45,17 +75,76 @@ export function Drive() {
     }
   }, [selectedFile, accessToken]);
 
-  const loadFiles = async (searchQuery: string, folderId: string) => {
+  const loadFiles = async (searchQuery: string, folderId: string, applyFilters = false) => {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
     try {
-      let qStr = `trashed=false`;
-      if (searchQuery) {
-        qStr += ` and name contains '${searchQuery.replace(/'/g, "\\'")}'`;
+      const parts = ['trashed=false'];
+
+      if (applyFilters) {
+        // Apply matching constraints dynamically
+        if (searchQuery.trim()) {
+          parts.push(`name contains '${searchQuery.trim().replace(/'/g, "\\'")}'`);
+        }
+
+        if (filterMimeType !== 'all') {
+          if (filterMimeType === 'image/') {
+            parts.push(`mimeType contains 'image/'`);
+          } else {
+            parts.push(`mimeType = '${filterMimeType}'`);
+          }
+        }
+
+        if (filterOwnerType === 'me') {
+          parts.push(`'me' in owners`);
+        } else if (filterOwnerType === 'custom' && filterOwnerEmail.trim()) {
+          parts.push(`'${filterOwnerEmail.trim().replace(/'/g, "\\'")}' in owners`);
+        }
+
+        if (filterDateRange !== 'all') {
+          const now = new Date();
+          let sinceDate: Date | null = null;
+
+          if (filterDateRange === 'today') {
+            sinceDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'week') {
+            sinceDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'month') {
+            sinceDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'year') {
+            sinceDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          }
+
+          if (sinceDate) {
+            parts.push(`modifiedTime > '${sinceDate.toISOString()}'`);
+          } else if (filterDateRange === 'custom') {
+            if (filterStartDate) {
+              const start = new Date(filterStartDate);
+              start.setHours(0, 0, 0, 0);
+              parts.push(`modifiedTime >= '${start.toISOString()}'`);
+            }
+            if (filterEndDate) {
+              const end = new Date(filterEndDate);
+              end.setHours(23, 59, 59, 999);
+              parts.push(`modifiedTime <= '${end.toISOString()}'`);
+            }
+          }
+        }
+
+        if (searchOnlyCurrent) {
+          parts.push(`'${folderId}' in parents`);
+        }
       } else {
-        qStr += ` and '${folderId}' in parents`;
+        // Standard non-filter tree navigation browsing logic
+        if (searchQuery.trim()) {
+          parts.push(`name contains '${searchQuery.trim().replace(/'/g, "\\'")}'`);
+        } else {
+          parts.push(`'${folderId}' in parents`);
+        }
       }
+
+      const qStr = parts.join(' and ');
       const data = await fetchRecentDriveFiles(accessToken, qStr);
       setFiles(data);
     } catch (e: any) {
@@ -68,13 +157,25 @@ export function Drive() {
 
   useEffect(() => {
     if (accessToken) {
-      loadFiles(query, currentFolderId);
+      loadFiles(query, currentFolderId, showFilters);
     }
   }, [accessToken, currentFolderId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadFiles(query, currentFolderId);
+    loadFiles(query, currentFolderId, true);
+  };
+
+  const resetAllFilters = () => {
+    setQuery('');
+    setFilterMimeType('all');
+    setFilterOwnerType('any');
+    setFilterOwnerEmail('');
+    setFilterDateRange('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setSearchOnlyCurrent(false);
+    loadFiles('', currentFolderId, false);
   };
 
   const navigateToFolder = (file: any) => {
@@ -98,7 +199,7 @@ export function Drive() {
       await createDriveFolder(accessToken, newFolderName, currentFolderId);
       setNewFolderName('');
       setIsCreatingFolder(false);
-      loadFiles(query, currentFolderId);
+      loadFiles(query, currentFolderId, showFilters);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -112,7 +213,7 @@ export function Drive() {
     setIsUploading(true);
     try {
       await uploadDriveFile(accessToken, file, currentFolderId);
-      loadFiles(query, currentFolderId);
+      loadFiles(query, currentFolderId, showFilters);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -132,7 +233,7 @@ export function Drive() {
         setSelectedFile(null);
       }
       setDeleteConfirm(null);
-      loadFiles(query, currentFolderId);
+      loadFiles(query, currentFolderId, showFilters);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -144,9 +245,28 @@ export function Drive() {
     setIsAiLoading(true);
     setAiSummary('');
     try {
-      const content = await fetchDriveFileContent(accessToken, file.id, file.mimeType);
-      const summary = await summarizeDocumentContent(content);
-      setAiSummary(summary);
+      if (file.mimeType.includes('pdf')) {
+        // Download raw PDF binary blob via file helper API
+        const blob = await fetchDriveFileBlob(accessToken, file.id, file.mimeType);
+
+        // Standard FileReader to convert Blob to base64
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        const summary = await summarizeDocumentContent('', file.mimeType, base64Data);
+        setAiSummary(summary);
+      } else {
+        const content = await fetchDriveFileContent(accessToken, file.id, file.mimeType);
+        const summary = await summarizeDocumentContent(content);
+        setAiSummary(summary);
+      }
     } catch (e: any) {
       setAiSummary('Error extracting or summarizing document: ' + e.message);
     } finally {
@@ -168,20 +288,155 @@ export function Drive() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background">
-        <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">Drive Sync</h1>
-        <form onSubmit={handleSearch} className="relative w-40 sm:w-64 md:w-80">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
-            <Search size={14} />
-          </span>
-          <input 
-            type="text" 
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search..." 
-            className="w-full bg-surface text-sm pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
-          />
-        </form>
+      {/* Search Header and Advanced Filters Block */}
+      <div className="border-b border-border bg-background flex flex-col shrink-0">
+        <div className="h-[64px] flex items-center justify-between px-4 md:px-8">
+          <h1 className="text-lg md:text-xl font-semibold text-foreground truncate flex items-center gap-2">
+            <HardDrive size={18} className="text-primary-muted" />
+            <span>Drive Sync</span>
+          </h1>
+          <div className="flex items-center space-x-2">
+            <form onSubmit={handleSearch} className="relative w-40 sm:w-64">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+                <Search size={14} />
+              </span>
+              <input 
+                type="text" 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search files..." 
+                className="w-full bg-surface text-xs pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
+              />
+            </form>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "p-1.5 border rounded-sm hover:bg-surface transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                showFilters ? "bg-surface border-border-strong text-foreground" : "border-border text-muted"
+              )}
+              title="Toggle Search Filters"
+            >
+              <Filter size={12} />
+              <span className="hidden sm:inline">Filters</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsible Advanced Filters Section */}
+        {showFilters && (
+          <div className="px-4 md:px-8 py-3 bg-surface/50 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 animate-in slide-in-from-top-2 duration-200">
+            {/* File Type Dropdown */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted">File Type</span>
+              <select
+                value={filterMimeType}
+                onChange={(e) => setFilterMimeType(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+              >
+                <option value="all">Any Type</option>
+                <option value="application/vnd.google-apps.document">Google Docs</option>
+                <option value="application/pdf">PDF Documents</option>
+                <option value="application/vnd.google-apps.spreadsheet">Google Sheets</option>
+                <option value="application/vnd.google-apps.presentation">Google Slides</option>
+                <option value="application/vnd.google-apps.folder">Folders</option>
+                <option value="image/">Images</option>
+              </select>
+            </div>
+
+            {/* Ownership Control */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted">Owner</span>
+              <div className="flex gap-1.5">
+                <select
+                  value={filterOwnerType}
+                  onChange={(e) => setFilterOwnerType(e.target.value)}
+                  className="bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong shrink-0 text-foreground"
+                >
+                  <option value="any">Anyone</option>
+                  <option value="me">Me</option>
+                  <option value="custom">Email...</option>
+                </select>
+                {filterOwnerType === 'custom' && (
+                  <input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={filterOwnerEmail}
+                    onChange={(e) => setFilterOwnerEmail(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground min-w-0"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Date Intervals */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted font-mono">Date Modified</span>
+              <select
+                value={filterDateRange}
+                onChange={(e) => setFilterDateRange(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+              >
+                <option value="all">Any time</option>
+                <option value="today">Last 24 hours</option>
+                <option value="week">Last 7 days</option>
+                <option value="month">Last 30 days</option>
+                <option value="year">Last year</option>
+                <option value="custom">Custom Range...</option>
+              </select>
+            </div>
+
+            {/* Search Context Toggle and Trigger Buttons */}
+            <div className="flex flex-col justify-end gap-1.5 select-none sm:pt-0 pt-1">
+              <label className="flex items-center gap-1.5 cursor-pointer pb-1.5">
+                <input
+                  type="checkbox"
+                  checked={searchOnlyCurrent}
+                  onChange={(e) => setSearchOnlyCurrent(e.target.checked)}
+                  className="rounded-sm accent-foreground border-border h-3.5 w-3.5"
+                />
+                <span className="text-[11px] text-muted font-medium">Limit to current folder</span>
+              </label>
+              <div className="flex gap-1.5 w-full">
+                <button
+                  onClick={() => loadFiles(query, currentFolderId, true)}
+                  className="flex-1 bg-foreground text-background text-[10px] font-bold py-1.5 rounded-sm hover:bg-foreground-hover uppercase tracking-wider transition-all"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={resetAllFilters}
+                  className="p-1 px-2.5 border border-border hover:bg-surface text-foreground text-[10px] font-bold rounded-sm uppercase tracking-wider transition-all"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Dates Input Sub-Panel */}
+            {filterDateRange === 'custom' && (
+              <div className="sm:col-span-2 md:col-span-4 grid grid-cols-2 gap-3 border-t border-border pt-2 mt-1">
+                <div className="space-y-1">
+                  <span className="text-[8px] font-bold text-muted tracking-wider uppercase font-mono">Start Date</span>
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[8px] font-bold text-muted tracking-wider uppercase font-mono">End Date</span>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden flex relative">
@@ -273,8 +528,20 @@ export function Drive() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
-                  <div className="text-[10px] text-muted font-semibold uppercase tracking-widest truncate mt-0.5">
-                    {new Date(file.modifiedTime).toLocaleDateString()}
+                  <div className="text-[10px] text-muted font-semibold uppercase tracking-wider truncate mt-0.5 flex flex-wrap items-center gap-x-2">
+                    <span>{new Date(file.modifiedTime).toLocaleDateString()}</span>
+                    {file.owners && file.owners.length > 0 && (
+                      <>
+                        <span className="text-border">•</span>
+                        <span className="truncate max-w-[80px]">by {getOwnerLabel(file.owners)}</span>
+                      </>
+                    )}
+                    {file.size && (
+                      <>
+                        <span className="text-border">•</span>
+                        <span>{formatBytes(file.size)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <button 
@@ -293,6 +560,7 @@ export function Drive() {
         </div>
 
         {/* Action Panel */}
+        {/* Same styling and sub-blocks as original is kept for high contextual integrity */}
         <div className={cn(
           "flex-1 bg-background flex flex-col items-center overflow-y-auto",
           !selectedFile && "hidden md:flex"

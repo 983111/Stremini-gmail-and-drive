@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentEmails, sendEmail, fetchEmailThread, fetchEmailBody, fetchRecentDriveFiles, fetchDriveFileBlob } from '../lib/googleApi';
-import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Cpu, Mail as MailIcon, Edit3, Paperclip, File, Trash2, UploadCloud, Database } from 'lucide-react';
+import { Search, Loader2, RefreshCw, PenSquare, Send, X, Save, Cpu, Mail as MailIcon, Edit3, Paperclip, File, Trash2, UploadCloud, Database, Filter, Calendar, User, Tag } from 'lucide-react';
 import { summarizeThread, draftEmailWithAI } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { cn } from '../lib/utils';
+import { useSearchParams } from 'react-router-dom';
 
 interface AttachmentFile {
   id?: string;
@@ -16,12 +17,115 @@ interface AttachmentFile {
 
 export function Mail() {
   const { accessToken, signIn } = useAuth();
+  const [searchParams] = useSearchParams();
+  const mailIdParam = searchParams.get('id');
+
   const [emails, setEmails] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('all');
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+
+  // Advanced Search Filter States for Gmail Integration
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterSender, setFilterSender] = useState('');
+  const [filterSubject, setFilterSubject] = useState('');
+  const [filterKeyword, setFilterKeyword] = useState('');
+  const [filterDateAfter, setFilterDateAfter] = useState('');
+  const [filterDateBefore, setFilterDateBefore] = useState('');
+  const [filterHasAttachment, setFilterHasAttachment] = useState(false);
+
+  const buildGmailQuery = () => {
+    const parts: string[] = [];
+    
+    // If advanced filters are shown, build the Gmail Query structure
+    if (showFilters) {
+      if (filterSender.trim()) {
+        parts.push(`from:(${filterSender.trim()})`);
+      }
+      if (filterSubject.trim()) {
+        parts.push(`subject:(${filterSubject.trim()})`);
+      }
+      if (filterKeyword.trim()) {
+        parts.push(filterKeyword.trim());
+      } else if (query.trim()) {
+        parts.push(query.trim());
+      }
+      if (filterDateAfter) {
+        const formatted = filterDateAfter.replace(/-/g, '/');
+        parts.push(`after:${formatted}`);
+      }
+      if (filterDateBefore) {
+        const formatted = filterDateBefore.replace(/-/g, '/');
+        parts.push(`before:${formatted}`);
+      }
+      if (filterHasAttachment) {
+        parts.push('has:attachment');
+      }
+    } else {
+      // Direct query fallback
+      if (query.trim()) {
+        parts.push(query.trim());
+      }
+    }
+
+    return parts.join(' ');
+  };
+
+  // Auto-select or fetch email based on search URL routing query parameters
+  useEffect(() => {
+    if (!accessToken || !mailIdParam) return;
+
+    const selectOrLoadEmail = async () => {
+      // 1. Check if email is already in the fetched list
+      const found = emails.find(e => e.id === mailIdParam);
+      if (found) {
+        setSelectedEmail(found);
+        setIsComposing(false);
+        setAiSummary('');
+        loadEmailBody(found);
+        return;
+      }
+
+      // 2. Fetch from Gmail API if not in the cached array
+      setLoading(true);
+      try {
+        const metadataRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${mailIdParam}?format=metadata`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (metadataRes.ok) {
+          const m = await metadataRes.json();
+          const parsedEmail = {
+            id: m.id,
+            snippet: m.snippet,
+            subject: m.payload?.headers?.find((h: any) => h.name === 'Subject')?.value || 'No Subject',
+            from: m.payload?.headers?.find((h: any) => h.name === 'From')?.value || 'Unknown sender',
+            date: m.payload?.headers?.find((h: any) => h.name === 'Date')?.value || 'Unknown date',
+            body: ''
+          };
+
+          setEmails(prev => {
+            const exists = prev.some(e => e.id === parsedEmail.id);
+            return exists ? prev : [parsedEmail, ...prev];
+          });
+          setSelectedEmail(parsedEmail);
+          setIsComposing(false);
+          setAiSummary('');
+
+          const body = await fetchEmailBody(accessToken, m.id);
+          setSelectedEmail((prev: any) => prev?.id === m.id ? { ...prev, body } : prev);
+          setEmails(prev => prev.map(e => e.id === m.id ? { ...e, body } : e));
+        }
+      } catch (e) {
+        console.error("Failed to load search link email message details:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    selectOrLoadEmail();
+  }, [mailIdParam, accessToken, emails.length === 0]);
   const [aiSummary, setAiSummary] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isBodyLoading, setIsBodyLoading] = useState(false);
@@ -90,11 +194,19 @@ export function Mail() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    let finalQuery = query;
-    if (finalQuery && searchFilter !== 'all') {
-      finalQuery = `${searchFilter}:${query}`;
-    }
+    const finalQuery = buildGmailQuery();
     loadEmails(finalQuery);
+  };
+
+  const resetAllFilters = () => {
+    setQuery('');
+    setFilterSender('');
+    setFilterSubject('');
+    setFilterKeyword('');
+    setFilterDateAfter('');
+    setFilterDateBefore('');
+    setFilterHasAttachment(false);
+    loadEmails('');
   };
 
   const handleSummarize = async (email: any) => {
@@ -264,33 +376,162 @@ export function Mail() {
 
   return (
     <div className="flex flex-col h-full bg-background relative">
-      <div className="h-[64px] border-b border-border flex items-center justify-between px-4 md:px-8 bg-background shrink-0">
-        <h1 className="text-lg md:text-xl font-semibold text-foreground truncate">Mail Inbox</h1>
-        <div className="flex items-center space-x-2 md:space-x-6">
-          <form onSubmit={handleSearch} className="relative hidden sm:flex items-center bg-surface rounded-sm border border-border focus-within:border-border-strong transition-colors">
-            <span className="pl-3 text-muted">
-              <Search size={14} />
-            </span>
-            <input 
-              type="text" 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..." 
-              className="w-24 md:w-48 bg-transparent text-sm px-3 py-2 outline-none"
-            />
-          </form>
-          <button 
-            onClick={() => {
-              setIsComposing(true);
-              setPreviewMode(false);
-              setSelectedEmail(null);
-            }} 
-            className="px-3 md:px-4 py-2 bg-foreground text-background text-[10px] md:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 hover:bg-foreground-hover transition-colors"
-          >
-            <PenSquare size={14} />
-            <span>Compose</span>
-          </button>
+      {/* Search Header and Advanced Filters Block for Gmail Integration */}
+      <div className="border-b border-border bg-background flex flex-col shrink-0">
+        <div className="h-[64px] flex items-center justify-between px-4 md:px-8 bg-background">
+          <h1 className="text-lg md:text-xl font-semibold text-foreground truncate flex items-center gap-2">
+            <MailIcon size={18} className="text-foreground shrink-0" />
+            <span>Mail Inbox</span>
+          </h1>
+
+          <div className="flex items-center space-x-2">
+            <form onSubmit={handleSearch} className="relative hidden xs:block">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+                <Search size={14} />
+              </span>
+              <input 
+                type="text" 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search mail..." 
+                className="w-36 sm:w-64 bg-surface text-xs pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
+              />
+            </form>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "p-1.5 border rounded-sm hover:bg-surface transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                showFilters ? "bg-surface border-border-strong text-foreground" : "border-border text-muted"
+              )}
+              title="Toggle Advanced Search Filters"
+            >
+              <Filter size={12} />
+              <span className="hidden sm:inline">Filters</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                setIsComposing(true);
+                setPreviewMode(false);
+                setSelectedEmail(null);
+              }} 
+              className="px-3 py-2 bg-foreground text-background text-[10px] sm:text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center space-x-2 hover:bg-foreground-hover transition-colors"
+            >
+              <PenSquare size={13} />
+              <span className="hidden xs:inline">Compose</span>
+            </button>
+          </div>
         </div>
+
+        {/* Collapsible Advanced Gmail Filters Section */}
+        {showFilters && (
+          <div className="px-4 md:px-8 py-4 bg-surface/50 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 animate-in slide-in-from-top-2 duration-200">
+            {/* Sender Filter */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted flex items-center gap-1">
+                <User size={10} />
+                <span>Sender Name/Email</span>
+              </span>
+              <input
+                type="text"
+                placeholder="e.g. john@example.com"
+                value={filterSender}
+                onChange={(e) => setFilterSender(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-2 outline-none focus:border-border-strong text-foreground placeholder:text-muted/70"
+              />
+            </div>
+
+            {/* Subject Filter */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted flex items-center gap-1">
+                <Tag size={10} />
+                <span>Subject Contains</span>
+              </span>
+              <input
+                type="text"
+                placeholder="e.g. Weekly Update"
+                value={filterSubject}
+                onChange={(e) => setFilterSubject(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-2 outline-none focus:border-border-strong text-foreground placeholder:text-muted/70"
+              />
+            </div>
+
+            {/* Keyword Filter */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted flex items-center gap-1">
+                <Search size={10} />
+                <span>Keyword / Text</span>
+              </span>
+              <input
+                type="text"
+                placeholder="e.g. Invoice, Action Required"
+                value={filterKeyword}
+                onChange={(e) => setFilterKeyword(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-2 outline-none focus:border-border-strong text-foreground placeholder:text-muted/70"
+              />
+            </div>
+
+            {/* Extra filters and action trigger buttons */}
+            <div className="flex flex-col justify-end gap-1.5">
+              <label className="flex items-center gap-1.5 cursor-pointer pb-2 select-none">
+                <input
+                  type="checkbox"
+                  checked={filterHasAttachment}
+                  onChange={(e) => setFilterHasAttachment(e.target.checked)}
+                  className="rounded-sm accent-foreground border-border h-3.5 w-3.5 cursor-pointer"
+                />
+                <span className="text-[11px] text-muted font-medium">Has attachment</span>
+              </label>
+
+              <div className="flex gap-1.5 w-full">
+                <button
+                  onClick={() => {
+                    const finalQuery = buildGmailQuery();
+                    loadEmails(finalQuery);
+                  }}
+                  className="flex-1 bg-foreground text-background text-[10px] font-bold py-2 rounded-sm hover:bg-foreground-hover uppercase tracking-wider transition-all"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={resetAllFilters}
+                  className="p-1 px-3 border border-border hover:bg-surface text-foreground text-[10px] font-bold rounded-sm uppercase tracking-wider transition-all"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* Date interval controls rendering below in custom row */}
+            <div className="sm:col-span-2 md:col-span-4 grid grid-cols-2 gap-3 border-t border-border pt-3 mt-1">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-muted tracking-wider uppercase font-mono flex items-center gap-1">
+                  <Calendar size={10} />
+                  <span>After Date (Start)</span>
+                </span>
+                <input
+                  type="date"
+                  value={filterDateAfter}
+                  onChange={(e) => setFilterDateAfter(e.target.value)}
+                  className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground cursor-pointer"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-muted tracking-wider uppercase font-mono flex items-center gap-1">
+                  <Calendar size={10} />
+                  <span>Before Date (End)</span>
+                </span>
+                <input
+                  type="date"
+                  value={filterDateBefore}
+                  onChange={(e) => setFilterDateBefore(e.target.value)}
+                  className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden flex relative">

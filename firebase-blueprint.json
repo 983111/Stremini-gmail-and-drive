@@ -38,9 +38,23 @@
         "userId": { "type": "string" }
       },
       "required": ["data", "createdAt", "updatedAt", "databaseId", "userId"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Newsletter subscription details",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "subscribedAt": { "type": "timestamp" }
+      },
+      "required": ["email", "subscribedAt"]
     }
   },
   "firestore": {
+    "newsletter_subscribers/{subId}": {
+      "schema": { "$ref": "#/entities/NewsletterSubscriber" },
+      "description": "Public newsletter subscriptions"
+    },
     "users/{userId}/documents/{docId}": {
       "schema": { "$ref": "#/entities/Document" },
       "description": "User documents"

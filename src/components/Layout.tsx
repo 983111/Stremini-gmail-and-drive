@@ -3,6 +3,7 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { LayoutGrid, Folders, FileText, Settings, Archive, HelpCircle, LogOut, Bell, Search as SearchIcon, X, Menu, Cpu, Database, ClipboardList, Presentation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import { GlobalSearch } from './GlobalSearch';
 
 export function Layout() {
   const { user, signOut } = useAuth();
@@ -171,15 +172,7 @@ export function Layout() {
           </div>
           
           <div className="flex-1 max-w-xl mx-2 md:mx-8 relative">
-             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-               <SearchIcon size={14} className="text-muted" />
-             </div>
-             <input 
-               type="text" 
-               placeholder="Search..." 
-               className="w-full bg-surface border-none text-sm rounded-sm pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring placeholder-muted transition-all"
-               id="search-input"
-             />
+             <GlobalSearch />
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">

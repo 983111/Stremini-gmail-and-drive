@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { fetchRecentDriveFiles } from '../lib/googleApi';
 import html2pdf from 'html2pdf.js';
 import { marked } from 'marked';
+import { useSearchParams } from 'react-router-dom';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -18,8 +19,20 @@ interface Message {
 
 export function Documents() {
   const { accessToken } = useAuth();
+  const [searchParams] = useSearchParams();
+  const docIdParam = searchParams.get('id');
+
   const [docs, setDocs] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (docIdParam && docs.length > 0) {
+      const found = docs.find(d => d.id === docIdParam);
+      if (found) {
+        setSelectedDoc(found);
+      }
+    }
+  }, [docIdParam, docs]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [chatInput, setChatInput] = useState('');
