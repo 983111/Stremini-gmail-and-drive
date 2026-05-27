@@ -29,23 +29,23 @@ interface BlogPost {
 
 const BLOG_POSTS: BlogPost[] = [
   {
-    id: "orchestrating-workspace-intelligence",
-    title: "Orchestrating Workspace Intelligence without Relying on Complex Frameworks",
+    id: "orchestrating-workspace-automation",
+    title: "Orchestrating Workspace Automation without Relying on Complex Frameworks",
     excerpt: "Discover how client-side models can synchronize with real-time Google API endpoints to optimize database commands.",
     content: `
-At modern tech firms, managing vast directories of spreadsheets, slides, and correspondence requires consistent coordination. Traditionally, workflows were constrained to static scripts. By introducing flexible cognitive layout models, we can orchestrate these components into adaptive nodes of an intelligent system.
+At modern tech firms, managing vast directories of spreadsheets, slides, and correspondence requires consistent coordination. Traditionally, workflows were constrained to static scripts. By introducing flexible functional layout models, we can orchestrate these components into adaptive nodes of an automated system.
 
 ## Resolving the Fragile Setup Problem
 
 Many software systems depend on brittle background scripts that fail silently the moment a layout structure modifies. When a team updates a user response form, existing scripts break, resulting in incorrect fields being pushed into analytical dashboards. 
 
-By applying language intelligence models directly to Google Forms schemas, we can unify collected response fields dynamically into aligned database columns without brittle hardcoding. This shift replaces fragile triggers with adaptive understanding.
+By applying language parsing models directly to Google Forms schemas, we can unify collected response fields dynamically into aligned database columns without brittle hardcoding. This shift replaces fragile triggers with adaptive understanding.
 
 ## Dynamic Database Generation on Demand
 
 Instead of relying on rigid, pre-constructed database frameworks, modern workspaces can design relational database structures instantly from simple natural prompts:
 
-1. **Intelligent Mapping**: Translating form structures, email files, and sheets with structural semantics.
+1. **Structural Mapping**: Translating form structures, email files, and sheets with structural semantics.
 2. **Context-Preserved Synthesizers**: Syncing multiple input matrices inside an optimized memory space before saving them.
 3. **Transparent Execution**: Carrying out operations on the client-side using direct user credentials to guarantee strict data safety.
 
@@ -53,20 +53,20 @@ By keeping the orchestration pipeline local, businesses completely bypass the le
 
 ## Next-Generation Workspace Synergy
 
-Synchronizing your tools reduces operational overhead and enhances product delivery. Creating slides from document structures, analyzing form responses, and compiling reports should not feel like manual data entry. With elite cognitive engines operating on direct APIs, you command your assets effortlessly.
+Synchronizing your tools reduces operational overhead and enhances product delivery. Creating slides from document structures, analyzing form responses, and compiling reports should not feel like manual data entry. With elite functional engines operating on direct APIs, you command your assets effortlessly.
 
 Learn more about managing these capabilities locally inside the Stremini dashboard! For feedback, questions, or architectural inquiries, reach out to our team at streminiai@gmail.com.
     `,
     author: "Elena Vance",
-    role: "Director of Cognitive Systems",
+    role: "Director of Workspace Engineering",
     date: "May 24, 2026",
     readTime: "5 min read",
     category: "Architecture"
   },
   {
-    id: "rise-of-cognitive-workflows",
-    title: "The Rise of Cognitive Workflows: Replacing Static Automation with Intelligent Synergy",
-    excerpt: "Static task chains are too fragile for fluid work environments. Explore how intelligent context syncing elevates performance.",
+    id: "rise-of-dynamic-workflows",
+    title: "The Rise of Dynamic Workflows: Replacing Static Automation with Unified Synergy",
+    excerpt: "Static task chains are too fragile for fluid work environments. Explore how structured context syncing elevates performance.",
     content: `
 Static step list software works perfectly—until a file name changes, an email subject shifts, or an unexpected response option is introduced to a database. The moment a structured model meets real-world fluidity, static triggers fail.
 
@@ -74,27 +74,27 @@ Static step list software works perfectly—until a file name changes, an email 
 
 Rigid tools follow single-branch paths. They assume absolute structure. If you configure a rule that says "If mail subject contains 'Invoice', copy file to Drive", a vendor typing "Invoicing Report" skips the rule entirely.
 
-Cognitive workflows, by contrast, rely on contextual semantic routing. Instead of hardcoded keyword matches, semantic intelligence models evaluate the intent of the data structure. They understand that a "Bill of Lading" or a "Remittance File" belongs in your Financial Drive repository, even without direct keywords.
+Dynamic workflows, by contrast, rely on contextual semantic routing. Instead of hardcoded keyword matches, semantic sorting models evaluate the intent of the data structure. They understand that a "Bill of Lading" or a "Remittance File" belongs in your Financial Drive repository, even without direct keywords.
 
 ## Three Pillars of Workspace Synergy
 
 To establish real workspace synergy, focus on three primary architectural requirements:
 
 ### I. Comprehensive Context Synchronization
-A workspace tool is only as clever as the context it access. Elevate operations by connecting Gmail threads, Google Drive directories, and active databases into an aggregated layout state.
+A workspace tool is only as clever as the context it accesses. Elevate operations by connecting Gmail threads, Google Drive directories, and active databases into an aggregated layout state.
 
 ### II. Fluid Command Interfaces
 Minimize complex settings. Allow workspace coordinators to align slides, sync documents, or evaluate responses from simple, natural commands.
 
 ### III. Zero-Snooping Compliance
-Data residency is a critical business priority. True workspace tools must perform translation and cognitive analysis directly inside the client context without sending sensitive customer databases to unauthorized servers.
+Data residency is a critical business priority. True workspace tools must perform translation and semantic analysis directly inside the client context without sending sensitive customer databases to unauthorized servers.
 
 ## Moving Toward Tomorrow
 
-Creating an integrated workspace where form answers synthesize into smart actions and drafts are generated with continuous context represents the future of professional work. Explore these tools safely on Stremini. For support and alignment, write to streminiai@gmail.com.
+Creating an integrated workspace where form answers synthesize into actions and drafts are generated with continuous context represents the future of professional work. Explore these tools safely on Stremini. For support and alignment, write to streminiai@gmail.com.
     `,
     author: "Marcus Aurel",
-    role: "Lead Workspace Strategist",
+    role: "Lead Workspace Architect",
     date: "May 18, 2026",
     readTime: "4 min read",
     category: "Insights"
@@ -116,7 +116,7 @@ Traditional software architectures route API responses through external database
 By constructing a non-custodial framework (where tokens, schemas, and credentials remain in-memory inside the client's browser), you drastically minimize variables:
 
 1. **Direct Transport**: Access tokens communicate directly with official Google APIs.
-2. **Local Processing**: Synthesis models (like Google Gemini) receive data through secure local proxies, returning answers directly to the user view.
+2. **Local Processing**: Secure parsing algorithms evaluate variables inside local contexts, rendering information straight into user views under client-side memory control.
 3. **No Latent Cache**: Closing the browser window destroys sensitive session data completely.
 
 ## Explicit Visibility is Compliance Only
@@ -127,7 +127,7 @@ User trust is built on radical transparency. When planning an OAuth workspace ap
 - **Maintain clear contact points**: Provide readable, active communication channels (contact stream: streminiai@gmail.com).
 - **Incorporate proper liability disclaimers**: Formulate clear terms describing that services are offered "As-Is", ensuring security parameters are clearly established.
 
-By adopting protective design frameworks early, builders can focus purely on providing elite workspace intelligence safely.
+By adopting protective design frameworks early, builders can focus purely on providing elite workspace synchronization safely.
     `,
     author: "Sarah Jenkins, Esq.",
     role: "Privacy Operations Council",
@@ -163,7 +163,7 @@ export function Blog() {
 
           <div className="flex items-center space-x-6">
             <Link to="/" className="text-xs font-bold uppercase tracking-wider text-[#666666] hover:text-[#111111] transition-colors">Workspace App</Link>
-            <a href="mailto:streminiai@gmail.com" className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 transition-colors flex items-center gap-1">
+            <a href="mailto:streminiai@gmail.com" className="text-xs font-semibold text-neutral-800 hover:text-black transition-colors flex items-center gap-1 font-sans">
               <Mail size={12} />
               <span className="hidden sm:inline">Support</span>
             </a>
@@ -183,13 +183,13 @@ export function Blog() {
                 className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-[#666666] hover:text-[#111111] bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
               >
                 <ArrowLeft size={12} />
-                <span>Back to Intelligence Feed</span>
+                <span>Back to Operations Feed</span>
               </button>
             </div>
 
             {/* Post Meta */}
             <div className="space-y-4">
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 tracking-wider uppercase font-mono ring-1 ring-indigo-100">
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-neutral-100 text-neutral-800 tracking-wider uppercase font-mono ring-1 ring-neutral-200">
                 {selectedPost.category}
               </span>
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#111111] leading-[1.15]">
@@ -312,7 +312,7 @@ export function Blog() {
                 >
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-bold text-indigo-700 font-mono tracking-widest uppercase">
+                      <span className="text-[9px] font-bold text-neutral-800 font-mono tracking-widest uppercase">
                         {post.category}
                       </span>
                       <span className="text-[10px] text-neutral-400 font-mono">
@@ -353,12 +353,12 @@ export function Blog() {
       <footer className="bg-white border-t border-[#EEEEEE] py-12 text-[#888888] text-xs">
         <div className="max-w-5xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-6 font-mono text-[11px]">
           <div className="space-y-1 text-center sm:text-left">
-            <p className="font-bold text-[#111111]">Stremini Workspace Intellect Blog</p>
+            <p className="font-bold text-[#111111]">Stremini Workspace Operations Blog</p>
             <p>© 2026 Stremini Workspace.</p>
           </div>
           <div className="flex items-center space-x-3">
             <span>Support:</span>
-            <a href="mailto:streminiai@gmail.com" className="text-indigo-600 hover:underline">streminiai@gmail.com</a>
+            <a href="mailto:streminiai@gmail.com" className="text-neutral-800 hover:underline">streminiai@gmail.com</a>
           </div>
         </div>
       </footer>

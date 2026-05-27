@@ -24,7 +24,8 @@ import {
   Flame,
   Scale,
   ChevronDown,
-  HelpCircle
+  HelpCircle,
+  Cookie
 } from 'lucide-react';
 
 export function LandingPage() {
@@ -40,6 +41,21 @@ export function LandingPage() {
   // Accordion FAQ state
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
+  // Cookie consent state
+  const [cookieConsentAccepted, setCookieConsentAccepted] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem('cookie_consent_accepted');
+    if (consent === 'true') {
+      setCookieConsentAccepted(true);
+    }
+  }, []);
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem('cookie_consent_accepted', 'true');
+    setCookieConsentAccepted(true);
+  };
+
   // Update dynamic page head parameters on load
   useEffect(() => {
     document.title = "Stremini Workspace - Orchestrate your entire Google Workspace";
@@ -49,7 +65,7 @@ export function LandingPage() {
     if (ogTitle) ogTitle.setAttribute('content', 'Stremini Workspace - Orchestrate your entire Google Workspace');
     
     const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', 'Elite, non-custodial workspace intelligence. Run automated data syncs, slide building, and context summaries safely inside local contexts.');
+    if (ogDesc) ogDesc.setAttribute('content', 'Reliable, non-custodial workspace synchronization. Run automated data syncs, slide building, and context summaries safely inside local contexts.');
     
     // Cleanup/Restore or defaults could be placed here if needed
   }, []);
@@ -81,8 +97,8 @@ export function LandingPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              subject: "[Stremini Intel] New Newsletter Subscription",
-              message: `Operational Update: A new client has subscribed to standard intelligence briefings.\n\nSubscriber Email: ${emailToSubscribe}\nTimestamp: ${new Date().toISOString()}`,
+              subject: "[Stremini Ops] New Newsletter Subscription",
+              message: `Operational Update: A new client has subscribed to standard briefings.\n\nSubscriber Email: ${emailToSubscribe}\nTimestamp: ${new Date().toISOString()}`,
               to: 'streminiai@gmail.com',
               vishwajeet: 'vishwajeetadkine705@gmail.com'
             })
@@ -129,7 +145,7 @@ export function LandingPage() {
             </div>
             <div>
               <span className="font-bold text-base tracking-tight hover:opacity-80 transition-opacity">Stremini Workspace</span>
-              <span className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-indigo-50 text-indigo-700 tracking-wider uppercase font-mono ring-1 ring-indigo-200/50">Intelligence</span>
+              <span className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-neutral-200 text-neutral-800 tracking-wider uppercase font-mono ring-1 ring-neutral-300">Sync Tier</span>
             </div>
           </div>
 
@@ -137,7 +153,7 @@ export function LandingPage() {
           <nav className="hidden md:flex items-center space-x-8">
             <button onClick={() => scrollToId('features')} className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">Capabilities</button>
             <button onClick={() => scrollToId('mockup')} className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">Preview</button>
-            <Link to="/blog" className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">Intelligence Blog</Link>
+            <Link to="/blog" className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">Operational Blog</Link>
             <button onClick={() => scrollToId('pricing')} className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">Licensing</button>
             <button onClick={() => scrollToId('faq')} className="text-xs font-semibold text-[#666666] hover:text-[#111111] transition-colors uppercase tracking-wider">FAQ</button>
           </nav>
@@ -185,7 +201,7 @@ export function LandingPage() {
           <div className="md:hidden border-b border-[#EEEEEE] bg-[#FAFAFA] px-4 py-6 space-y-4 animate-in slide-in-from-top-4 duration-200">
             <button onClick={() => scrollToId('features')} className="block w-full text-left text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">Capabilities</button>
             <button onClick={() => scrollToId('mockup')} className="block w-full text-left text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">Preview</button>
-            <Link to="/blog" className="block text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">Intelligence Blog</Link>
+            <Link to="/blog" className="block text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">Operational Blog</Link>
             <button onClick={() => scrollToId('pricing')} className="block w-full text-left text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">Licensing</button>
             <button onClick={() => scrollToId('faq')} className="block w-full text-left text-xs font-bold text-[#666666] hover:text-[#111111] uppercase tracking-wider">FAQ</button>
             <div className="pt-4 border-t border-[#EEEEEE] space-y-2">
@@ -226,8 +242,8 @@ export function LandingPage() {
 
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8">
           <div className="inline-flex items-center space-x-2 bg-neutral-100 border border-neutral-200 px-3 py-1 rounded-full">
-            <Sparkles size={12} className="text-neutral-600 animate-pulse" />
-            <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest font-mono">Cognitive Productivity Architecture</span>
+            <LayoutGrid size={12} className="text-neutral-600 animate-pulse" />
+            <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest font-mono font-semibold">Secure Workflow Sync Layer</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#111111] font-sans leading-[1.05]">
@@ -235,7 +251,7 @@ export function LandingPage() {
           </h1>
 
           <p className="text-base sm:text-lg text-[#555555] max-w-2xl mx-auto leading-relaxed">
-            The elite enterprise intelligence suite. Turn complex feedback grids into insight streams, synchronize active databases, and direct drafts in seconds, securely.
+            The secure enterprise workspace manager. Turn complex spreadsheets, emails, and response forms into automated syncs, organize databases, and compile presentation blueprints instantly and securely inside local browser contexts—helping your team control critical data without external routing.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
@@ -310,16 +326,16 @@ export function LandingPage() {
                       className={`w-full text-left px-3 py-2 rounded-sm text-xs flex items-center space-x-2 transition-all ${activeTab === 'inbox' ? 'bg-white border border-[#E5E5E5] font-semibold text-[#111111]' : 'text-[#666666] hover:bg-neutral-100 hover:text-[#111111]'}`}
                     >
                       <Mail size={14} className="text-[#111111]" />
-                      <span>Inbox Intelligence</span>
+                      <span>Inbox Orchestrator</span>
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5 pt-4 border-t border-neutral-200">
-                  <div className="text-[9px] font-bold text-[#888888] tracking-widest uppercase font-mono">Cognitive Health</div>
-                  <div className="flex items-center justify-between text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-sm border border-emerald-100">
+                  <div className="text-[9px] font-bold text-[#888888] tracking-widest uppercase font-mono">Active Security</div>
+                  <div className="flex items-center justify-between text-[11px] text-neutral-800 bg-neutral-100 px-2.5 py-1.5 rounded-sm border border-neutral-200">
                     <span className="flex items-center gap-1.5 font-bold font-mono">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-neutral-950 animate-pulse"></span>
                       Local Secure Link
                     </span>
                     <span>100% Client-Side</span>
@@ -337,7 +353,7 @@ export function LandingPage() {
                           <h4 className="font-extrabold text-sm text-[#111111]">Form Responses Sync</h4>
                           <p className="text-[10px] text-[#666666]">Direct query and digest synchronization from Forms API.</p>
                         </div>
-                        <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded font-mono font-bold">18 Responses</span>
+                        <span className="text-[10px] bg-neutral-100 text-neutral-800 border border-neutral-200 px-2 py-0.5 rounded font-mono font-bold">18 Responses</span>
                       </div>
 
                       <div className="space-y-2.5">
@@ -351,13 +367,13 @@ export function LandingPage() {
                         </div>
                       </div>
 
-                      <div className="bg-indigo-50/50 rounded-lg p-4 border border-indigo-100 space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
-                          <Sparkles size={13} className="text-indigo-600" />
-                          <span>Gemini Analytical Synthesis</span>
+                      <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-200 space-y-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900">
+                          <CheckCircle2 size={13} className="text-neutral-700" />
+                          <span>Structured Feedback Insights</span>
                         </div>
-                        <p className="text-[11px] text-indigo-900/80 leading-relaxed">
-                          Feedback signals strong positive sentiment on form structure, recommending we refine onboarding metrics.
+                        <p className="text-[11px] text-neutral-600 leading-relaxed">
+                          Feedback algorithms indicate strong positive sentiment on form structure, recommending refined metrics for the standard onboarding dashboard layer.
                         </p>
                       </div>
                     </div>
@@ -398,8 +414,8 @@ export function LandingPage() {
                     <div className="space-y-4 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                         <div>
-                          <h4 className="font-extrabold text-sm text-[#111111]">Cognitive Inbox Management</h4>
-                          <p className="text-[10px] text-[#666666]">Smart search filters and direct cognitive summarization.</p>
+                          <h4 className="font-extrabold text-sm text-[#111111]">Automated Mail Sorting</h4>
+                          <p className="text-[10px] text-[#666666]">Smart search filters and direct summary bullet-points.</p>
                         </div>
                       </div>
 
@@ -417,7 +433,7 @@ export function LandingPage() {
                             Summarize Core Thread
                           </button>
                           <button className="flex-1 text-center py-2 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition-colors">
-                            Generate Cognizant Draft
+                            Generate Draft Blueprint
                           </button>
                         </div>
                       </div>
@@ -441,13 +457,13 @@ export function LandingPage() {
       {/* Trust Grid */}
       <section className="py-12 border-t border-b border-[#EEEEEE] bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <p className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest font-mono mb-6">TRUSTED COGNITIVE ARCHITECTURE RUNNING NATIVELY</p>
+          <p className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest font-mono mb-6">SUPPORTED WORKSPACE PLATFORMS & COMPLIANCE STACKS</p>
           <div className="flex flex-wrap justify-center items-center gap-10 md:gap-16 opacity-40 grayscale select-none">
-            <span className="font-bold text-lg tracking-widest font-sans">ACME CORP</span>
-            <span className="font-bold text-lg tracking-widest font-sans">GLOBEX</span>
-            <span className="font-bold text-lg tracking-widest font-sans">SOYLENT</span>
-            <span className="font-bold text-lg tracking-widest font-sans">INITECH</span>
-            <span className="font-bold text-lg tracking-widest font-sans">UMBRELLA</span>
+            <span className="font-bold text-lg tracking-widest font-sans">FORMS SYNC</span>
+            <span className="font-bold text-lg tracking-widest font-sans">SLIDEMASTER</span>
+            <span className="font-bold text-lg tracking-widest font-sans">DRIVE INDEX</span>
+            <span className="font-bold text-lg tracking-widest font-sans">MAIL PARSER</span>
+            <span className="font-bold text-lg tracking-widest font-sans">DOCS BULK</span>
           </div>
         </div>
       </section>
@@ -468,27 +484,27 @@ export function LandingPage() {
             {/* Bento Card 1: Large Span */}
             <div className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-sm flex items-center justify-center">
-                  <Database size={18} className="text-indigo-600" />
+                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                  <Database size={18} className="text-neutral-900" />
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-[#111111]">Intellect Databases Engine</h3>
+                <h3 className="text-xl font-bold tracking-tight text-[#111111]">Automated Database Orchestration</h3>
                 <p className="text-xs sm:text-sm text-[#555555] max-w-lg leading-relaxed">
-                  Direct prompt-driven workspace databases compiling schemas, layouts, state monitors, and row metrics dynamically. No formula typing required—instruct what fields you need to coordinate, and let the model structure everything.
+                  Direct structural workspace databases compiling schemas, layouts, state monitors, and row metrics dynamically. Design, optimize, and synchronize form submissions, records, task lists, custom columns, project templates, and contact files completely in local storage with simple manual instructions and zero external dependencies.
                 </p>
               </div>
               
               {/* Mini visual */}
               <div className="pt-4 border-t border-neutral-100 grid grid-cols-3 gap-3">
                 <div className="p-3 bg-neutral-50 rounded border border-neutral-100 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-indigo-600">METRICS</div>
+                  <div className="text-[8px] font-mono font-bold text-neutral-500">METRICS</div>
                   <div className="text-[11px] font-bold text-neutral-900">Task Tracker</div>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded border border-neutral-100 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-indigo-600">CAPACITY</div>
+                  <div className="text-[8px] font-mono font-bold text-neutral-500">CAPACITY</div>
                   <div className="text-[11px] font-bold text-neutral-900">Custom Columns</div>
                 </div>
                 <div className="p-3 bg-neutral-900 text-white rounded border border-neutral-800 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-indigo-400">INTELLIGENCE</div>
+                  <div className="text-[8px] font-mono font-bold text-neutral-300">AUTOMATION</div>
                   <div className="text-[11px] font-bold">100% Synced</div>
                 </div>
               </div>
@@ -497,15 +513,15 @@ export function LandingPage() {
             {/* Bento Card 2: Vertical */}
             <div className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-amber-50 border border-amber-100 rounded-sm flex items-center justify-center">
-                  <Presentation size={18} className="text-amber-700" />
+                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                  <Presentation size={18} className="text-neutral-900" />
                 </div>
-                <h3 className="text-lg font-bold tracking-tight text-[#111111]">Slide Builders</h3>
+                <h3 className="text-lg font-bold tracking-tight text-[#111111]">Slide Outline Builder</h3>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
-                  Synthesize outlines into clean, presentation-ready frameworks quickly, retaining precise formatting and hierarchical styling parameters perfectly inside Google Slides.
+                  Arrange presentation slide hierarchies, bullet points, headers, layout boxes, and core structural outlines into clean, distribution-ready frameworks quickly, retaining custom styles and formatting grids beautifully.
                 </p>
               </div>
-              <div className="bg-[#FAF9F6] border border-[#F0EBE0] p-3 rounded text-[11px] font-mono text-amber-900">
+              <div className="bg-neutral-50 border border-neutral-200 p-3 rounded text-[11px] font-mono text-neutral-800">
                 &gt; Align Master Blueprint... [OK]
               </div>
             </div>
@@ -513,29 +529,29 @@ export function LandingPage() {
             {/* Bento Card 3: Dynamic Forms Sync */}
             <div className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-sm flex items-center justify-center">
-                  <ClipboardList size={18} className="text-emerald-700" />
+                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                  <ClipboardList size={18} className="text-neutral-900" />
                 </div>
-                <h3 className="text-lg font-bold tracking-tight text-[#111111]">Form Intellect</h3>
+                <h3 className="text-lg font-bold tracking-tight text-[#111111]">Forms Reporting Feed</h3>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
-                  Re-evaluate feedback dynamically, extract qualitative trends using language analysis feeds, track averages of scaling scores, and align actionable initiatives instantly.
+                  Track feedback loops, compile qualitative trends using local analytical tables, evaluate responses, count submission tallies, measure averages of customer scores, and align critical workflow checklists instantly without server storage.
                 </p>
               </div>
-              <div className="bg-emerald-50 text-emerald-950 p-2.5 rounded-lg border border-emerald-100 text-[11px] flex justify-between items-center font-bold">
-                <span>Real-Time Submissions Active</span>
-                <span className="font-mono bg-white px-1.5 py-0.5 border border-emerald-200 rounded">Live Loop</span>
+              <div className="bg-neutral-50 text-neutral-900 p-2.5 rounded-lg border border-neutral-200 text-[11px] flex justify-between items-center font-bold">
+                <span>Active Responses Pipeline</span>
+                <span className="font-mono bg-white px-1.5 py-0.5 border border-neutral-200 rounded">Static Loop</span>
               </div>
             </div>
 
             {/* Bento Card 4: Mail Grid Security */}
             <div className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-purple-50 border border-purple-100 rounded-sm flex items-center justify-center">
-                  <Mail size={18} className="text-purple-600" />
+                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                  <Mail size={18} className="text-neutral-900" />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#111111]">Advanced Filter Suite</h3>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
-                  Harness powerful search inputs to organize emails, write professional cognizant replies, translate text, and generate high-fidelity bullet context on demand inside Gmail.
+                  Leverage precise keyword criteria to isolate active email threads, summarize long conversation grids, extract tasks, and draft text reply outlines directly inside local workspace environments without external leakage.
                 </p>
               </div>
               <div className="flex gap-2.5 text-[11px] font-medium text-neutral-600">
@@ -562,7 +578,7 @@ export function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
-              <div className="flex items-center space-x-2 text-indigo-700">
+              <div className="flex items-center space-x-2 text-neutral-900">
                 <Lock size={16} />
                 <h4 className="text-xs font-bold uppercase tracking-widest font-mono">1. Pure Non-Custodial Sync</h4>
               </div>
@@ -572,7 +588,7 @@ export function LandingPage() {
             </div>
 
             <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
-              <div className="flex items-center space-x-2 text-indigo-700">
+              <div className="flex items-center space-x-2 text-neutral-900">
                 <Globe size={16} />
                 <h4 className="text-xs font-bold uppercase tracking-widest font-mono">2. Independent API Integration</h4>
               </div>
@@ -582,7 +598,7 @@ export function LandingPage() {
             </div>
 
             <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
-              <div className="flex items-center space-x-2 text-indigo-700">
+              <div className="flex items-center space-x-2 text-neutral-900">
                 <Flame size={16} />
                 <h4 className="text-xs font-bold uppercase tracking-widest font-mono">3. Liability Protections</h4>
               </div>
@@ -592,7 +608,7 @@ export function LandingPage() {
             </div>
 
             <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
-              <div className="flex items-center space-x-2 text-indigo-700">
+              <div className="flex items-center space-x-2 text-neutral-900">
                 <Scale size={16} />
                 <h4 className="text-xs font-bold uppercase tracking-widest font-mono">4. Complete Scope Disclosures</h4>
               </div>
@@ -620,7 +636,7 @@ export function LandingPage() {
                 <h3 className="text-xl font-bold tracking-tight">Standard Workspace License</h3>
                 <p className="text-xs text-[#666666] mt-1">Perfect for professionals and teams</p>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded uppercase tracking-wider font-mono">Current Tier</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-neutral-200 text-neutral-800 rounded uppercase tracking-wider font-mono">Current Tier</span>
             </div>
 
             <div className="flex items-baseline space-x-1">
@@ -630,19 +646,19 @@ export function LandingPage() {
 
             <div className="space-y-3 pt-6 border-t border-[#EEEEEE]">
               <div className="flex items-center space-x-3 text-xs text-[#333333]">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                <CheckCircle2 size={14} className="text-neutral-700 shrink-0" />
                 <span>Unlimited Drive synchronization parameters</span>
               </div>
               <div className="flex items-center space-x-3 text-xs text-[#333333]">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                <span>Inbox summarization with Google Gemini</span>
+                <CheckCircle2 size={14} className="text-neutral-700 shrink-0" />
+                <span>Inbox summarization and thread indexing queue details</span>
               </div>
               <div className="flex items-center space-x-3 text-xs text-[#333333]">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                <span>Forms responses diagnostics and diagnostics</span>
+                <CheckCircle2 size={14} className="text-neutral-700 shrink-0" />
+                <span>Forms responses diagnostics and checklist metrics</span>
               </div>
               <div className="flex items-center space-x-3 text-xs text-[#333333]">
-                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                <CheckCircle2 size={14} className="text-neutral-700 shrink-0" />
                 <span>100% Client-side local data encryption parameters</span>
               </div>
             </div>
@@ -673,9 +689,18 @@ export function LandingPage() {
             <p className="text-xs text-[#666666] leading-relaxed max-w-sm">
               Answers to common questions regarding security standards, Google Workspace API configurations, and billing parameters.
             </p>
-            <div className="p-4 bg-indigo-50/50 border border-indigo-150 rounded-sm text-[11px] leading-relaxed text-indigo-950 space-y-1">
+            <div className="p-4 bg-neutral-100 border border-neutral-200 rounded-sm text-[11px] leading-relaxed text-neutral-800 space-y-1">
               <span className="font-bold uppercase tracking-wider block">Privacy Focused</span>
               <p className="opacity-90">All questions answered adhere to our pure, non-custodial integrity directive. Your workspace credentials remain completely local.</p>
+            </div>
+            <div className="pt-2">
+              <a 
+                href="mailto:streminiai@gmail.com?subject=Stremini%20Workspace%20Support%20Inquiry&body=Hello%20Stremini%20Operations%20Team%2C%0A%0AI%20have%20a%20question%20regarding%20Stremini%27s%20workspace%20capabilities%2C%20integration%20features%20or%20security%3A%0A%0A%5BPlease%20enter%20your%20question%20here%5D"
+                className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-black bg-white hover:bg-neutral-50 border border-[#EEEEEE] px-4 py-3 rounded-sm transition-all text-center w-full justify-center shadow-sm"
+              >
+                <HelpCircle size={13} className="text-neutral-600" />
+                <span>Can't find an answer? Ask Us</span>
+              </a>
             </div>
           </div>
 
@@ -688,15 +713,15 @@ export function LandingPage() {
               },
               {
                 question: "Do I need a credit card or a paid subscription to use Stremini?",
-                answer: "No, standard workspace licensing for Stremini is completely free ($0/month). You can synchronize files, analyze forms, compile document structures with Google Gemini, and manage mail summaries with zero premium upgrade triggers or trial expiration walls."
+                answer: "No, standard workspace licensing for Stremini is completely free ($0/month). You can synchronize files, analyze forms, compile document structures, and manage mail summaries with zero premium upgrade triggers or trial expiration walls. Optimize, manage, filter, and structure your workspace records with complete absolute control."
               },
               {
                 question: "Which official Google Workspace APIs does Stremini interact with?",
                 answer: "To coordinate your operations, Stremini securely interfaces with official Google API endpoints, including the Gmail API (for mail queue summary tracking), Google Drive/Docs API (for cross-drive file indices), Google Slides API (for creating slide presentations), and Google Forms API (highly secure forms response structures). Every scope is declared transparently during standard sign-in, respecting Google Limited Use guidelines."
               },
               {
-                question: "How is the Gemini AI intelligence module integrated safely?",
-                answer: "Stremini relies on high-performance Google Gemini models securely proxying queries to extract concise email-queue briefings, summarize extensive sheets, and build presentations on demand. Under Google's enterprise API security rules, your custom inputs and data queries are never cached for foundational model retraining."
+                question: "Is there any local database synchronizer or indexing delay?",
+                answer: "No. Because Stremini interfaces directly with public Google Workspace endpoints from your local context, information is queried and displayed in real-time. Any sync updates you perform to forms responses, folders, databases, or slide decks are immediately updated as soon as Google's official cloud registers the transaction."
               },
               {
                 question: "Can I cancel or revoke Stremini's access parameters at any time?",
@@ -762,14 +787,14 @@ export function LandingPage() {
               <span className="font-bold text-sm tracking-tight">Stremini Workspace</span>
             </div>
             <p className="text-xs text-[#888888] leading-relaxed max-w-xs">
-              Elite enterprise intelligence layer for your dynamic data structures. Transparent, local, secure.
+              Elite enterprise automation utility for your dynamic data structures. Transparent, local, secure. Build, organize, compile, index, and orchestrate all files easily.
             </p>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider font-mono">Intelligence Resources</h4>
+            <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider font-mono">Operational Resources</h4>
             <ul className="space-y-2 text-xs">
-              <li><Link to="/blog" className="hover:text-[#111111] transition-colors">Intelligence Blog</Link></li>
+              <li><Link to="/blog" className="hover:text-[#111111] transition-colors">Operational Blog</Link></li>
               <li><button onClick={() => scrollToId('features')} className="hover:text-[#111111] transition-colors text-left">Product Features</button></li>
               <li><button onClick={() => scrollToId('mockup')} className="hover:text-[#111111] transition-colors text-left">Interactive Deck</button></li>
             </ul>
@@ -791,7 +816,7 @@ export function LandingPage() {
             <a 
               id="footer-support-email-link"
               href="mailto:streminiai@gmail.com"
-              className="inline-flex items-center space-x-2 text-indigo-600 hover:text-indigo-800 text-xs font-semibold cursor-pointer"
+              className="inline-flex items-center space-x-2 text-neutral-800 hover:text-black text-xs font-semibold cursor-pointer"
             >
               <Mail size={12} />
               <span>streminiai@gmail.com</span>
@@ -800,9 +825,9 @@ export function LandingPage() {
 
           {/* Newsletter Signup Form Column */}
           <div className="space-y-4" id="newsletter-container">
-            <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider font-mono">Operational Intel</h4>
+            <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider font-mono">Workflow Briefs</h4>
             <p className="text-xs text-[#666666] leading-relaxed">
-              Subscribe to standard workspace intelligence briefings, setup guides, and privacy releases.
+              Subscribe to standard workspace briefings, setup guides, and privacy releases to stay synchronized.
             </p>
             {newsletterSubmitted ? (
               <div 
@@ -876,6 +901,44 @@ export function LandingPage() {
           </p>
         </div>
       </footer>
+
+      {/* Subtle non-intrusive Cookie Consent Banner */}
+      {!cookieConsentAccepted && (
+        <div 
+          id="cookie-consent-banner"
+          className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md bg-white border border-[#EEEEEE] p-4 rounded shadow-xl z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-auto"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-neutral-100 rounded-sm text-[#111111] shrink-0">
+              <Cookie size={16} />
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono block">Privacy Transparency</span>
+                <p className="text-xs text-[#111111] leading-relaxed">
+                  We use memory preferences and subtle local states to remember parameters. We do <strong className="font-bold text-[#111111]">not</strong> load any intrusive tracking metrics or analytics cookies. Learn more in our <Link to="/privacy" className="underline hover:text-neutral-800 font-medium">Privacy Policy</Link>.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  id="cookie-accept-btn"
+                  onClick={handleAcceptCookies}
+                  className="px-3.5 py-1.5 bg-[#111111] hover:bg-neutral-800 text-[#FAFAFA] font-bold text-[10px] uppercase tracking-wider rounded-sm transition-all cursor-pointer"
+                >
+                  Accept Standard
+                </button>
+                <button
+                  id="cookie-dismiss-btn"
+                  onClick={() => setCookieConsentAccepted(true)}
+                  className="px-3 py-1.5 text-[#666666] hover:text-[#111111] font-bold text-[10px] uppercase tracking-wider rounded-sm hover:bg-neutral-50 transition-all border border-transparent hover:border-[#EEEEEE]"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,114 +1,401 @@
-const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
+import { GoogleGenAI } from '@google/genai';
 
-function normalizeBaseUrl(url: string): string {
-  return url.replace(/\/+$/, '');
-}
-
-function buildUrl(path: string): string {
-  if (!WORKER_URL) {
-    throw new Error('Missing VITE_WORKER_URL environment variable.');
-  }
-
-  const base = normalizeBaseUrl(WORKER_URL);
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${normalizedPath}`;
-}
-
-async function postJson<T = any>(path: string, payload: Record<string, unknown>): Promise<T> {
-  const url = buildUrl(path);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  const responseText = await res.text();
-
-  if (!res.ok) {
-    let message = responseText || `HTTP ${res.status}`;
-    try {
-      const parsed = responseText ? JSON.parse(responseText) : null;
-      if (parsed?.error) message = parsed.error;
-    } catch {
-      // keep responseText as-is
-    }
-    throw new Error(`${path} failed (${res.status}): ${message}`);
-  }
-
-  if (!responseText) return {} as T;
-
-  try {
-    const parsed = JSON.parse(responseText);
-    if (parsed?.error) {
-      throw new Error(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error));
-    }
-    return parsed as T;
-  } catch {
-    return responseText as T;
-  }
-}
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function generateBriefing(emails: any[], driveFiles: any[]) {
-  const data = await postJson<{ briefing: string }>('/api/briefing', { emails, driveFiles });
-  return data.briefing;
+  const prompt = `
+    You are a professional assistant. Analyze the following unread emails and recent drive activity and generate a concise morning briefing.
+    Extract any urgent tasks, follow-ups, and financial alerts. Do not make up information that is not there.
+    Emails: ${JSON.stringify(emails)}
+    Drive Files: ${JSON.stringify(driveFiles)}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+
+  return response.text;
 }
 
 export async function summarizeThread(threadMessages: any[]) {
-  const data = await postJson<{ summary: string }>('/api/summarise/thread', { threadMessages });
-  return data.summary;
+  const prompt = `
+    Summarize this email thread. Provide:
+    1. A short summary
+    2. Key decisions
+    3. Action Items
+
+    Thread data: ${JSON.stringify(threadMessages)}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return response.text;
 }
 
-export async function summarizeDocumentContent(content: string) {
-  const data = await postJson<{ summary: string }>('/api/summarise/doc', { content });
-  return data.summary;
+export async function summarizeDocumentContent(content: string, mimeType?: string, base64Data?: string) {
+  if (mimeType && mimeType.includes('pdf') && base64Data) {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: [
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: base64Data
+          }
+        },
+        'Analyze this PDF document and provide a highly detailed, professional analysis. Extensively outline and extract the following sections in well-formatted, professional markdown:\n\n' +
+        '## Executive Summary\n*Provide a high-level concise overview of the document\'s purpose, background, and core message.*\n\n' +
+        '## Key Points & Takeaways\n*Detail all the principal themes, core insights, data findings, or major statements made in the document as structured, high-importance bullet points.*\n\n' +
+        '## Action Items\n*Extract concrete, actionable next steps, highlighting who is responsible for what, along with any dates/deadlines mentioned. If no explicit action items are found, formulate logical and relevant next steps based on the contents.*\n\n' +
+        'Make sure to use professional, corporate executive terminology with high structural readability.'
+      ]
+    });
+    return response.text;
+  }
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.5-flash',
+    contents: 'Analyze this document content and provide a highly detailed, professional analysis. Extensively outline and extract the following sections in well-formatted, professional markdown:\n\n' +
+      '## Executive Summary\n*Provide a high-level concise overview of the document\'s purpose, background, and core message.*\n\n' +
+      '## Key Points & Takeaways\n*Detail all the principal themes, core insights, data findings, or major statements made in the document as structured, high-importance bullet points.*\n\n' +
+      '## Action Items\n*Extract concrete, actionable next steps, highlighting who is responsible for what, along with any dates/deadlines mentioned. If no explicit action items are found, formulate logical and relevant next steps based on the contents.*\n\n' +
+      'Make sure to use professional, corporate executive terminology with high structural readability.\n\n' +
+      'Document Content:\n\n' + content,
+  });
+  return response.text;
 }
 
 export async function rewriteDocument(content: string, tone: 'formal' | 'casual' | 'persuasive' = 'formal') {
-  const data = await postJson<{ rewritten: string }>('/api/rewrite/doc', { content, tone });
-  return data.rewritten;
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: `Rewrite the following text to have a ${tone} tone:\n\n${content}`,
+  });
+  return response.text;
 }
 
-export async function askDocumentQuestion(content: string, question: string, history: { role: string, parts: { text: string }[] }[] = []) {
-  const data = await postJson<{ answer: string }>('/api/ask/doc', { content, question, history });
-  return data.answer;
+export async function askDocumentQuestion(content: string, question: string, history: {role: string, parts: {text: string}[]}[] = []) {
+  const chat = ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    history: [
+      {
+        role: 'user',
+        parts: [{ text: `You are an automated assistant helping a user with a document. Here is the document content for context:\n\n${content}` }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "Understood. I have read the document and am ready to answer any questions or follow instructions regarding it." }]
+      },
+      ...history
+    ]
+  });
+
+  const result = await chat.sendMessage({ message: question });
+  return result.text;
 }
 
 export async function draftEmailWithAI(prompt: string, context: string = '') {
-  const data = await postJson<{ draft: string }>('/api/draft/email', { prompt, context });
-  return data.draft;
+  const finalPrompt = `
+    You are an automated assistant helping a user write an email. 
+    ${context ? `Here is the context/previous thread:\n${context}` : ''}
+    
+    User prompt: ${prompt}
+    
+    Please draft a professional, concise email. Output only the email body text, no subject line or meta-commentary, just the content that should go into the email body.
+  `;
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: finalPrompt,
+  });
+  return response.text;
 }
 
 export async function generateDatabaseSchema(description: string) {
-  return postJson('/api/database/generate', { description });
+  const prompt = `
+    You are a professional product manager and database architect.
+    Your goal is to design a fully structured, detailed database system in JSON format based on the user's prompt: "${description}".
+
+    STRICT GUIDELINES:
+    1. UNDERSTAND INTENT: Think like a human expert. For a "diet plan", include timings, meal types, and nutrition. For a "startup tracker", include task owners, priorities, and deadlines.
+    2. SMART DESIGN: Dynamically decide the best column structure for the specific use case.
+    3. DEPTH & DETAIL: Provide at least 15-20 rows of highly realistic, varied, and detailed data. No generic placeholders like "Item 1".
+    4. PREMIUM TONE: No emojis. Use professional, clean naming for columns (e.g., "Maturity Level" instead of "Growth").
+    5. LOGICAL CONSISTENCY: Ensure internal logic. If it's a schedule, ensure times follow a sensible sequence. If it's a tracker, ensure status and priorities make sense relative to each other.
+    6. NO EXPLANATIONS: Return ONLY the JSON object.
+
+    OUTPUT STRUCTURE:
+    {
+      "databaseTitle": "A professional title for the database",
+      "columns": [
+        { "key": "string", "name": "string", "type": "text | number | date | select | checkbox", "options": ["option1", "option2"] (only for select) }
+      ],
+      "rows": [
+        { "columnKey": "value", ... }
+      ]
+    }
+
+    Note: The first column should always be the primary "title" or "name" field.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    const data = JSON.parse(response.text || '{}');
+    return data;
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return { databaseTitle: "Error", columns: [], rows: [] };
+  }
 }
 
 export async function generateMeetingIntelligence(notes: any[], emails: any[]) {
-  const data = await postJson<{ synthesis: string }>('/api/meeting', { notes, emails });
-  return data.synthesis;
+  const prompt = `You are a Meeting Synthesis assistant. You are given an array of Google Drive meeting notes and an array of Gmail threads potentially related to a meeting.
+  
+  Notes: ${JSON.stringify(notes)}
+  Emails: ${JSON.stringify(emails)}
+  
+  Based on this combined source, please generate:
+  1. A concise overview summary of what the meeting was about.
+  2. Identified Key Decisions.
+  3. Action Items (who needs to do what).
+  4. A draft follow-up email.
+  
+  Output the result using markdown, with clear sections (e.g. ## Summary, ## Key Decisions, ## Action Items, ## Draft Follow-up).`;
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return response.text;
 }
 
 export async function generateFormStructure(description: string) {
-  return postJson('/api/form/generate', { description });
+  const prompt = `
+    You are a professional form designer. Create a detailed Google Form structure in JSON format based on the user's request: "${description}".
+    
+    STRICT GUIDELINES:
+    1. RETURN ONLY JSON.
+    2. The structure should include a title, description, and an array of items.
+    3. THE DEFAULT DESCRIPTION SHOULD BE: "Please fill out this form to help us understand your needs better." unless the user specifies otherwise in their request.
+    4. Each item should have a title, and a question definition.
+    5. Support types: TEXT (paragraph), CHOICE (multiple choice), CHECKBOX (checkboxes), SCALE (linear scale).
+    
+    OUTPUT STRUCTURE:
+    {
+      "title": "Form Title",
+      "description": "Form Description",
+      "items": [
+        {
+          "title": "Question Text",
+          "type": "TEXT" | "CHOICE" | "CHECKBOX" | "SCALE",
+          "options": ["Option 1", "Option 2"] (only for CHOICE and CHECKBOX),
+          "required": true | false
+        }
+      ]
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return { title: "Error", description: "Failed to generate form", items: [] };
+  }
 }
 
 export async function editFormStructureWithAI(currentStructure: any, prompt: string) {
-  return postJson('/api/form/edit', { currentStructure, prompt });
+  const instruction = `
+    You are a professional form designer. I will give you an existing Google Form structure in JSON and an edit request.
+    Your job is to apply the requested edits and return the updated JSON structure.
+    
+    STRICT GUIDELINES:
+    1. RETURN ONLY JSON.
+    2. Maintain the structure: { "title": string, "description": string, "items": array }.
+    3. Modify existing items or add new ones based ONLY on the user's request. Keep everything else intact.
+    4. Keep the "id" properties for existing items if they exist. Generate a short string id for any newly added items.
+    
+    CURRENT STRUCTURE:
+    ${JSON.stringify(currentStructure)}
+    
+    EDIT REQUEST:
+    ${prompt}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: instruction,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return currentStructure;
+  }
 }
 
 export async function generatePresentationStructure(description: string) {
-  return postJson('/api/slides/generate', { description });
+  const prompt = `
+    You are a professional principal consultant at a top-tier global strategy firm (MBB style).
+    Create a highly professional, detailed, and visually consistent Google Slides structure for: "${description}".
+    
+    STRICT CONTENT GUIDELINES:
+    1. RETURN ONLY JSON.
+    2. DEPTH: Provide substantial, insight-driven content. Every bullet point must be a complete thought (15-25 words). No generic phrases like "Increased efficiency". Use "Optimize operational workflows through AI-driven automation to reduce overhead by 15-20%".
+    3. NARRATIVE: The deck must follow a professional story arc (e.g., Executive Summary -> Problem Statement -> Market Analysis -> Solution -> Strategic Roadmap -> Financial Impact).
+    4. INTELLIGENT LAYOUTS:
+       - TITLE: Impactful opening.
+       - TITLE_AND_BODY: Rich content slide.
+       - MAIN_POINT: High-impact single statement.
+       - MARKET_ANALYSIS: Two-column specialized layout for data-heavy strategic insights.
+    5. VISUALS: Provide an extremely detailed "imagePrompt" for EVERY slide that describes a high-end, minimalistic, professional visual.
+    6. THEMING: Suggest a "primaryColor" (hex) and a "secondaryColor" (hex) that matches the brand or topic context.
+    
+    OUTPUT STRUCTURE:
+    {
+      "title": "Professional Presentation Title",
+      "theme": {
+        "primaryColor": "#1a365d",
+        "secondaryColor": "#2b6cb0",
+        "accentColor": "#ed8936"
+      },
+      "slides": [
+        {
+          "title": "Strategic Slide Title",
+          "content": ["Complex Insight 1...", "Complex Insight 2...", "Complex Insight 3...", "Complex Insight 4..."],
+          "layout": "TITLE_AND_BODY" | "TITLE" | "MAIN_POINT" | "MARKET_ANALYSIS",
+          "imagePrompt": "Detailed aesthetic description..."
+        }
+      ]
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.1-pro-preview',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return { title: "Error", slides: [] };
+  }
 }
 
 export async function summarizePresentation(slides: any[]) {
-  const data = await postJson<{ summary: string }>('/api/slides/summarise', { slides });
-  return data.summary;
+  const prompt = `
+    You are an executive assistant. Summarize the following presentation deck and provide key takeaways.
+    Keep it professional and concise.
+    
+    DECK CONTENT:
+    ${JSON.stringify(slides)}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+  });
+
+  return response.text;
 }
 
 export async function askPresentationQuestion(slides: any[], question: string, history: any[] = []) {
-  const data = await postJson<{ answer: string }>('/api/slides/ask', { slides, question, history });
-  return data.answer;
+  const chat = ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    history: [
+      {
+        role: 'user',
+        parts: [{ text: `You are an expert on this presentation deck. Here is the deck data for your reference:\n\n${JSON.stringify(slides)}` }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "I have analyzed the presentation deck. I am ready to answer any questions or provide specific insights based on its content." }]
+      },
+      ...history
+    ]
+  });
+
+  const result = await chat.sendMessage({ message: question });
+  return result.text;
 }
 
 export async function editPresentationStructureWithAI(currentStructure: any, prompt: string) {
-  return postJson('/api/slides/edit', { currentStructure, prompt });
+  const instruction = `
+    You are a professional presentation designer at a top-tier consulting firm.
+    I will give you an existing Google Slides structure in JSON and an edit request.
+    
+    STRICT GUIDELINES:
+    1. RETURN ONLY JSON.
+    2. DEPTH: Maintain high content density in any added or modified slides.
+    3. Maintain the integrity of the JSON structure.
+    4. Suggest a themes updates if requested.
+    
+    CURRENT STRUCTURE:
+    ${JSON.stringify(currentStructure)}
+    
+    EDIT REQUEST:
+    ${prompt}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.1-pro-preview',
+    contents: instruction,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Failed to parse AI response:", e);
+    return currentStructure;
+  }
+}
+
+export async function summarizeFormResponses(formTitle: string, formQuestions: any[], responses: any[]) {
+  const prompt = `
+    Analyze these responses for the Google Form "${formTitle}".
+    Questions definition:
+    ${JSON.stringify(formQuestions)}
+
+    Collected Responses Data:
+    ${JSON.stringify(responses)}
+
+    Please provide a highly polished, analytical summary of the response data in well-formatted, professional markdown:
+    1. ## Executive Summary: A high-level overview of the feedback.
+    2. ## Major Insights & Trends: Group key choices, average ratings (if applicable), or recurring feedback from text responses.
+    3. ## Action Items & Recommendations: Next steps based on the general consensus.
+
+    Use clear headings, clean spacing, and bullet points. Make it sound professional, objective, and analytical. Don't mention system internal ids and focus on human readable names.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.5-flash',
+    contents: prompt,
+  });
+  return response.text;
 }

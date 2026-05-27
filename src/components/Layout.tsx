@@ -237,12 +237,12 @@ export function Layout() {
               <button onClick={() => setIsHelpOpen(false)} className="text-muted hover:text-foreground"><X size={18}/></button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-muted mb-4">Welcome to Stremini Workspace! Here you can manage your emails, drive documents, and notes all in one place with advanced intelligence.</p>
+              <p className="text-sm text-muted mb-4">Welcome to Stremini Workspace! Here you can manage your emails, drive documents, and notes all in one place effortlessly.</p>
               <ul className="text-sm text-foreground-muted space-y-2 list-disc pl-4">
                 <li>Use <strong>Drive Connect</strong> to preview your files and analyze them effortlessly.</li>
                 <li>Go to <strong>Mail Queue</strong> to read, compose, reply, and summarize active threads.</li>
                 <li>Visit <strong>Documents</strong> to write rich notes and use the assistant.</li>
-                <li>Use <strong>AI Databases</strong> to build production-grade structured systems from a prompt.</li>
+                <li>Use <strong>Structured Databases</strong> to build production-grade structured systems instantly.</li>
               </ul>
             </div>
             <div className="p-4 border-t border-border bg-surface flex justify-end">

@@ -13,7 +13,7 @@ export function PrivacyPolicy() {
             </div>
             <span className="font-bold text-sm tracking-tight">Stremini Workspace</span>
           </Link>
-          <a href="mailto:streminiai@gmail.com" className="text-xs font-bold uppercase text-indigo-700 hover:text-indigo-900 transition-colors flex items-center gap-1.5">
+          <a href="mailto:streminiai@gmail.com" className="text-xs font-bold uppercase text-neutral-800 hover:text-black transition-colors flex items-center gap-1.5 font-sans">
             <Mail size={12} />
             <span>Support</span>
           </a>
@@ -51,9 +51,9 @@ export function PrivacyPolicy() {
         <div className="space-y-8 text-sm text-[#333333] leading-relaxed">
           
           {/* Summary Callout banner */}
-          <div className="p-5 bg-indigo-50/50 border border-indigo-100 rounded text-xs text-indigo-950 space-y-2">
+          <div className="p-5 bg-neutral-100 border border-neutral-200 rounded text-xs text-neutral-800 space-y-2">
             <div className="font-bold flex items-center gap-1.5 uppercase tracking-wider">
-              <ShieldAlert size={14} className="text-indigo-700" />
+              <ShieldAlert size={14} className="text-neutral-800" />
               <span>Core Privacy Guarantee: Zero User Storage Context</span>
             </div>
             <p className="leading-relaxed">
@@ -98,15 +98,15 @@ export function PrivacyPolicy() {
 
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold uppercase text-[#111111] tracking-tight border-b border-neutral-100 pb-1">
-              3. Processing with Cognitive Language Models (Gemini API)
+              3. Processing with Local Parsing Algorithms
             </h2>
             <p>
-              To offer summaries of active email queues, documents, and form feedback responses, Stremini interfaces with the Google Gemini API.
+              To offer summaries of active email queues, documents, and form feedback responses, Stremini interfaces with native translation and parsing scripts.
             </p>
             <ul className="list-disc pl-5 space-y-2 text-xs text-[#555555]">
               <li>Your API calls execute directly from the server or client context securely.</li>
-              <li>No personal information processed through the Gemini model endpoints is cached or utilized for foundational model retraining.</li>
-              <li>Under no conditions does Stremini sell your cognitive queries or summary histories.</li>
+              <li>No personal information processed through the parsing endpoints is cached or utilized for retraining.</li>
+              <li>Under no conditions does Stremini sell your search logs, queries, or summary histories.</li>
             </ul>
           </div>
 
@@ -128,7 +128,7 @@ export function PrivacyPolicy() {
             </p>
             <a 
               href="mailto:streminiai@gmail.com"
-              className="inline-flex items-center space-x-2 text-indigo-700 hover:text-indigo-900 text-xs font-bold uppercase tracking-wider bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
+              className="inline-flex items-center space-x-2 text-neutral-800 hover:text-black text-xs font-bold uppercase tracking-wider bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
             >
               <Mail size={12} />
               <span>streminiai@gmail.com</span>
@@ -144,7 +144,7 @@ export function PrivacyPolicy() {
             <p className="font-bold text-[#111111]">Stremini Workspace Trust Operations</p>
             <p>© 2026 Stremini. Pure non-custodial integrity.</p>
           </div>
-          <a href="mailto:streminiai@gmail.com" className="text-indigo-600 hover:text-indigo-800 transition-colors">streminiai@gmail.com</a>
+          <a href="mailto:streminiai@gmail.com" className="text-neutral-800 hover:text-[#111111] transition-colors font-mono">streminiai@gmail.com</a>
         </div>
       </footer>
     </div>
