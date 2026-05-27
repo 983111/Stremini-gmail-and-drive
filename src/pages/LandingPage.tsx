@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { motion } from 'motion/react';
 import { 
   Sparkles, 
   ShieldCheck, 
@@ -471,18 +472,30 @@ export function LandingPage() {
       {/* Bento Capabilities Grid */}
       <section id="features" className="py-24 px-4 bg-[#FCFCFC]">
         <div className="max-w-7xl mx-auto space-y-16">
-          <div className="max-w-2xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="max-w-2xl"
+          >
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#111111] mb-2 uppercase font-sans">
               Designed For High-Performance Workflows.
             </h2>
             <p className="text-sm sm:text-base text-[#666666]">
               Unifying scattered silos inside Google Workspace into highly integrated command spaces. 
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Bento Card 1: Large Span */}
-            <div className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+            >
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
                   <Database size={18} className="text-neutral-900" />
@@ -508,10 +521,16 @@ export function LandingPage() {
                   <div className="text-[11px] font-bold">100% Synced</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Bento Card 2: Vertical */}
-            <div className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+            >
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
                   <Presentation size={18} className="text-neutral-900" />
@@ -524,10 +543,16 @@ export function LandingPage() {
               <div className="bg-neutral-50 border border-neutral-200 p-3 rounded text-[11px] font-mono text-neutral-800">
                 &gt; Align Master Blueprint... [OK]
               </div>
-            </div>
+            </motion.div>
 
             {/* Bento Card 3: Dynamic Forms Sync */}
-            <div className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+            >
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
                   <ClipboardList size={18} className="text-neutral-900" />
@@ -541,10 +566,16 @@ export function LandingPage() {
                 <span>Active Responses Pipeline</span>
                 <span className="font-mono bg-white px-1.5 py-0.5 border border-neutral-200 rounded">Static Loop</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Bento Card 4: Mail Grid Security */}
-            <div className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+            >
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
                   <Mail size={18} className="text-neutral-900" />
@@ -559,7 +590,7 @@ export function LandingPage() {
                 <span className="bg-neutral-100 border border-neutral-200 px-3 py-1 rounded">Date Intervals</span>
                 <span className="bg-neutral-100 border border-neutral-200 px-3 py-1 rounded">Attachment Presence</span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -864,30 +895,61 @@ export function LandingPage() {
             ) : (
               <form onSubmit={handleSubscribeNewsletter} id="newsletter-signup-form" className="space-y-2 pt-1">
                 <div className="flex flex-col gap-2">
-                  <input
-                    id="newsletter-email-input"
-                    type="email"
-                    placeholder="Enter email address"
-                    value={newsletterEmail}
-                    onChange={(e) => {
-                      setNewsletterEmail(e.target.value);
-                      if (newsletterError) setNewsletterError('');
-                    }}
-                    required
-                    disabled={newsletterLoading}
-                    className="w-full px-3 py-2 bg-white border border-[#EEEEEE] rounded-sm text-xs text-[#111111] placeholder:text-neutral-400 outline-none focus:border-neutral-450 focus:ring-1 focus:ring-neutral-450/20 disabled:opacity-60 transition-all font-sans"
-                  />
+                  <div className="relative">
+                    <input
+                      id="newsletter-email-input"
+                      type="text"
+                      placeholder="Enter email address"
+                      value={newsletterEmail}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewsletterEmail(val);
+                        if (val === '') {
+                          setNewsletterError('');
+                        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+                          setNewsletterError('Invalid format (e.g. user@domain.com)');
+                        } else {
+                          setNewsletterError('');
+                        }
+                      }}
+                      required
+                      disabled={newsletterLoading}
+                      className={`w-full px-3 py-2 bg-white border rounded-sm text-xs text-[#111111] placeholder:text-neutral-400 outline-none transition-all font-sans pr-8-placeholder ${
+                        newsletterEmail === ''
+                          ? 'border-[#EEEEEE] focus:border-neutral-450 focus:ring-1 focus:ring-neutral-450/20'
+                          : newsletterError
+                          ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500/10'
+                          : 'border-emerald-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/10'
+                      }`}
+                    />
+                    {newsletterEmail !== '' && (
+                      <span className="absolute right-3 top-2.5 flex items-center justify-center">
+                        {newsletterError ? (
+                          <span className="text-red-500 text-xs font-bold font-mono">⚠️</span>
+                        ) : (
+                          <span className="text-emerald-500 text-xs font-bold font-mono">✓</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                   <button
                     id="newsletter-submit-button"
                     type="submit"
-                    disabled={newsletterLoading}
-                    className="w-full px-4 py-2 bg-[#111111] hover:bg-neutral-800 text-[#FAFAFA] font-bold text-xs uppercase tracking-wider rounded-sm transition-all focus:ring-2 focus:ring-neutral-450 focus:ring-offset-2 disabled:bg-neutral-300 disabled:text-neutral-500 shrink-0"
+                    disabled={newsletterLoading || !!newsletterError || !newsletterEmail}
+                    className="w-full px-4 py-2 bg-[#111111] hover:bg-neutral-800 text-[#FAFAFA] font-bold text-xs uppercase tracking-wider rounded-sm transition-all focus:ring-2 focus:ring-neutral-450 focus:ring-offset-2 disabled:bg-neutral-200 disabled:text-neutral-400 shrink-0"
                   >
                     {newsletterLoading ? 'Submitting...' : 'Subscribe'}
                   </button>
                 </div>
-                {newsletterError && (
-                  <p id="newsletter-error-feedback" className="text-[11px] text-red-600 font-medium">{newsletterError}</p>
+                {newsletterEmail !== '' && (
+                  <p 
+                    id="newsletter-error-feedback" 
+                    className={`text-[10px] font-mono leading-relaxed transition-colors duration-200 ${
+                      newsletterError ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold'
+                    }`}
+                  >
+                    {newsletterError ? newsletterError : '✓ Email format is ready to subscribe'}
+                  </p>
                 )}
               </form>
             )}
