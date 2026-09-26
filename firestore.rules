@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    function isValidDocument(data) {
+      return data.keys().hasAll(['title', 'content', 'createdAt', 'updatedAt', 'userId'])
+        && data.keys().size() == 5
+        && data.title is string && data.title.size() <= 1000
+        && data.content is string && data.content.size() <= 1000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.userId is string && data.userId == request.auth.uid;
+    }
+
+    function isValidAppDatabase(data) {
+      return data.keys().hasAll(['name', 'schema', 'createdAt', 'updatedAt', 'userId'])
+        && data.keys().size() == 5
+        && data.name is string && data.name.size() <= 1000
+        && data.schema is string && data.schema.size() <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.userId is string && data.userId == request.auth.uid;
+    }
+
+    function isValidDatabaseRecord(data) {
+      return data.keys().hasAll(['title', 'properties', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 5
+        && data.title is string && data.title.size() <= 1000
+        && data.properties is string && data.properties.size() <= 100000
+        && data.order is number
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      match /documents/{docId} {
+        allow read, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(docId) && isValidDocument(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId) && isValidId(docId) && isValidDocument(incoming())
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+      
+      match /databases/{dbId} {
+        allow read, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(dbId) && isValidAppDatabase(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId) && isValidId(dbId) && isValidAppDatabase(incoming())
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'schema', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(dbId);
+        
+        match /records/{recordId} {
+          allow read, list: if isOwner(userId);
+          allow create: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
+            && incoming().createdAt == request.time
+            && incoming().updatedAt == request.time;
+          allow update: if isOwner(userId) && isValidId(dbId) && isValidId(recordId) && isValidDatabaseRecord(incoming())
+            && incoming().createdAt == existing().createdAt
+            && incoming().updatedAt == request.time
+            && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'properties', 'order', 'updatedAt']);
+          allow delete: if isOwner(userId) && isValidId(dbId) && isValidId(recordId);
+        }
+      }
+    }
+
+    match /newsletter_subscribers/{subId} {
+      allow create: if isValidId(subId)
+        && incoming().email is string
+        && incoming().email.size() <= 200
+        && incoming().subscribedAt == request.time;
+      allow read, update, delete: if false;
+    }
+  }
+}

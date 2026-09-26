@@ -1,0 +1,672 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchRecentDriveFiles, fetchDriveFileContent, createDriveFolder, deleteDriveFile, uploadDriveFile, fetchDriveFileBlob } from '../lib/googleApi';
+import { Search, Loader2, File, ExternalLink, Cpu, HardDrive, Folder, Plus, Trash2, X, Upload, Filter, Calendar, User, Info } from 'lucide-react';
+import { summarizeDocumentContent } from '../lib/gemini';
+import Markdown from 'react-markdown';
+import { cn } from '../lib/utils';
+
+export function Drive() {
+  const { accessToken, signIn } = useAuth();
+  const [files, setFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [aiSummary, setAiSummary] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string>('root');
+  const [folderPath, setFolderPath] = useState<{id: string, name: string}[]>([{id: 'root', name: 'Drive'}]);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
+
+  // Advanced Search Filter States
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterMimeType, setFilterMimeType] = useState('all');
+  const [filterOwnerType, setFilterOwnerType] = useState('any'); // 'any' | 'me' | 'custom'
+  const [filterOwnerEmail, setFilterOwnerEmail] = useState('');
+  const [filterDateRange, setFilterDateRange] = useState('all'); // 'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [searchOnlyCurrent, setSearchOnlyCurrent] = useState(false);
+
+  // Formatting utility for bytes representation
+  const formatBytes = (bytes?: string | number) => {
+    if (bytes === undefined || bytes === null || bytes === '') return '';
+    const num = Number(bytes);
+    if (isNaN(num)) return '';
+    if (num === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(num) / Math.log(k));
+    return parseFloat((num / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // Owner label selector
+  const getOwnerLabel = (owners?: any[]) => {
+    if (!owners || owners.length === 0) return '';
+    const first = owners[0];
+    if (first.me) return 'Me';
+    return first.displayName || first.emailAddress || 'Shared';
+  };
+
+  useEffect(() => {
+    if (selectedFile && accessToken) {
+      setIsPreviewLoading(true);
+      setFilePreview(null);
+      fetchDriveFileContent(accessToken, selectedFile.id, selectedFile.mimeType)
+        .then(content => {
+          if (typeof content === 'string') {
+            setFilePreview(content.substring(0, 1000) + (content.length > 1000 ? '...' : ''));
+          } else {
+            setFilePreview(JSON.stringify(content, null, 2).substring(0, 1000));
+          }
+        })
+        .catch(e => {
+          setFilePreview(null);
+        })
+        .finally(() => setIsPreviewLoading(false));
+    } else {
+      setFilePreview(null);
+    }
+  }, [selectedFile, accessToken]);
+
+  const loadFiles = async (searchQuery: string, folderId: string, applyFilters = false) => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const parts = ['trashed=false'];
+
+      if (applyFilters) {
+        // Apply matching constraints dynamically
+        if (searchQuery.trim()) {
+          parts.push(`name contains '${searchQuery.trim().replace(/'/g, "\\'")}'`);
+        }
+
+        if (filterMimeType !== 'all') {
+          if (filterMimeType === 'image/') {
+            parts.push(`mimeType contains 'image/'`);
+          } else {
+            parts.push(`mimeType = '${filterMimeType}'`);
+          }
+        }
+
+        if (filterOwnerType === 'me') {
+          parts.push(`'me' in owners`);
+        } else if (filterOwnerType === 'custom' && filterOwnerEmail.trim()) {
+          parts.push(`'${filterOwnerEmail.trim().replace(/'/g, "\\'")}' in owners`);
+        }
+
+        if (filterDateRange !== 'all') {
+          const now = new Date();
+          let sinceDate: Date | null = null;
+
+          if (filterDateRange === 'today') {
+            sinceDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'week') {
+            sinceDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'month') {
+            sinceDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          } else if (filterDateRange === 'year') {
+            sinceDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          }
+
+          if (sinceDate) {
+            parts.push(`modifiedTime > '${sinceDate.toISOString()}'`);
+          } else if (filterDateRange === 'custom') {
+            if (filterStartDate) {
+              const start = new Date(filterStartDate);
+              start.setHours(0, 0, 0, 0);
+              parts.push(`modifiedTime >= '${start.toISOString()}'`);
+            }
+            if (filterEndDate) {
+              const end = new Date(filterEndDate);
+              end.setHours(23, 59, 59, 999);
+              parts.push(`modifiedTime <= '${end.toISOString()}'`);
+            }
+          }
+        }
+
+        if (searchOnlyCurrent) {
+          parts.push(`'${folderId}' in parents`);
+        }
+      } else {
+        // Standard non-filter tree navigation browsing logic
+        if (searchQuery.trim()) {
+          parts.push(`name contains '${searchQuery.trim().replace(/'/g, "\\'")}'`);
+        } else {
+          parts.push(`'${folderId}' in parents`);
+        }
+      }
+
+      const qStr = parts.join(' and ');
+      const data = await fetchRecentDriveFiles(accessToken, qStr);
+      setFiles(data);
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message || 'An error occurred fetching Drive files.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (accessToken) {
+      loadFiles(query, currentFolderId, showFilters);
+    }
+  }, [accessToken, currentFolderId]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadFiles(query, currentFolderId, true);
+  };
+
+  const resetAllFilters = () => {
+    setQuery('');
+    setFilterMimeType('all');
+    setFilterOwnerType('any');
+    setFilterOwnerEmail('');
+    setFilterDateRange('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setSearchOnlyCurrent(false);
+    loadFiles('', currentFolderId, false);
+  };
+
+  const navigateToFolder = (file: any) => {
+    setCurrentFolderId(file.id);
+    setFolderPath(prev => [...prev, { id: file.id, name: file.name }]);
+    setQuery('');
+  };
+
+  const navigateUp = (index: number) => {
+    const target = folderPath[index];
+    setCurrentFolderId(target.id);
+    setFolderPath(prev => prev.slice(0, index + 1));
+    setQuery('');
+  };
+
+  const handleCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFolderName || !accessToken) return;
+    setLoading(true);
+    try {
+      await createDriveFolder(accessToken, newFolderName, currentFolderId);
+      setNewFolderName('');
+      setIsCreatingFolder(false);
+      loadFiles(query, currentFolderId, showFilters);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !accessToken) return;
+    
+    setIsUploading(true);
+    try {
+      await uploadDriveFile(accessToken, file, currentFolderId);
+      loadFiles(query, currentFolderId, showFilters);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      await deleteDriveFile(accessToken, fileId);
+      if (selectedFile?.id === fileId) {
+        setSelectedFile(null);
+      }
+      setDeleteConfirm(null);
+      loadFiles(query, currentFolderId, showFilters);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleAnalze = async (file: any) => {
+    if (!accessToken) return;
+    setIsAiLoading(true);
+    setAiSummary('');
+    try {
+      if (file.mimeType.includes('pdf')) {
+        // Download raw PDF binary blob via file helper API
+        const blob = await fetchDriveFileBlob(accessToken, file.id, file.mimeType);
+
+        // Standard FileReader to convert Blob to base64
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        const summary = await summarizeDocumentContent('', file.mimeType, base64Data);
+        setAiSummary(summary);
+      } else {
+        const content = await fetchDriveFileContent(accessToken, file.id, file.mimeType);
+        const summary = await summarizeDocumentContent(content);
+        setAiSummary(summary);
+      }
+    } catch (e: any) {
+      setAiSummary('Error extracting or summarizing document: ' + e.message);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  if (!accessToken) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
+        <h2 className="text-2xl font-semibold mb-4 text-foreground">Connect Google Drive</h2>
+        <p className="text-muted mb-8 max-w-md">To access drive logic, please grant access to your Google Drive account.</p>
+        <button onClick={signIn} className="bg-foreground text-background px-6 py-2.5 rounded-sm text-sm font-medium hover:bg-foreground-hover transition-colors">
+          Connect Account
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Search Header and Advanced Filters Block */}
+      <div className="border-b border-border bg-background flex flex-col shrink-0">
+        <div className="h-[64px] flex items-center justify-between px-4 md:px-8">
+          <h1 className="text-lg md:text-xl font-semibold text-foreground truncate flex items-center gap-2">
+            <HardDrive size={18} className="text-primary-muted" />
+            <span>Drive Sync</span>
+          </h1>
+          <div className="flex items-center space-x-2">
+            <form onSubmit={handleSearch} className="relative w-40 sm:w-64">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">
+                <Search size={14} />
+              </span>
+              <input 
+                type="text" 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search files..." 
+                className="w-full bg-surface text-xs pl-9 pr-4 py-2 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
+              />
+            </form>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "p-1.5 border rounded-sm hover:bg-surface transition-colors flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                showFilters ? "bg-surface border-border-strong text-foreground" : "border-border text-muted"
+              )}
+              title="Toggle Search Filters"
+            >
+              <Filter size={12} />
+              <span className="hidden sm:inline">Filters</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsible Advanced Filters Section */}
+        {showFilters && (
+          <div className="px-4 md:px-8 py-3 bg-surface/50 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 animate-in slide-in-from-top-2 duration-200">
+            {/* File Type Dropdown */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted">File Type</span>
+              <select
+                value={filterMimeType}
+                onChange={(e) => setFilterMimeType(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+              >
+                <option value="all">Any Type</option>
+                <option value="application/vnd.google-apps.document">Google Docs</option>
+                <option value="application/pdf">PDF Documents</option>
+                <option value="application/vnd.google-apps.spreadsheet">Google Sheets</option>
+                <option value="application/vnd.google-apps.presentation">Google Slides</option>
+                <option value="application/vnd.google-apps.folder">Folders</option>
+                <option value="image/">Images</option>
+              </select>
+            </div>
+
+            {/* Ownership Control */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted">Owner</span>
+              <div className="flex gap-1.5">
+                <select
+                  value={filterOwnerType}
+                  onChange={(e) => setFilterOwnerType(e.target.value)}
+                  className="bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong shrink-0 text-foreground"
+                >
+                  <option value="any">Anyone</option>
+                  <option value="me">Me</option>
+                  <option value="custom">Email...</option>
+                </select>
+                {filterOwnerType === 'custom' && (
+                  <input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={filterOwnerEmail}
+                    onChange={(e) => setFilterOwnerEmail(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground min-w-0"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Date Intervals */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted font-mono">Date Modified</span>
+              <select
+                value={filterDateRange}
+                onChange={(e) => setFilterDateRange(e.target.value)}
+                className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+              >
+                <option value="all">Any time</option>
+                <option value="today">Last 24 hours</option>
+                <option value="week">Last 7 days</option>
+                <option value="month">Last 30 days</option>
+                <option value="year">Last year</option>
+                <option value="custom">Custom Range...</option>
+              </select>
+            </div>
+
+            {/* Search Context Toggle and Trigger Buttons */}
+            <div className="flex flex-col justify-end gap-1.5 select-none sm:pt-0 pt-1">
+              <label className="flex items-center gap-1.5 cursor-pointer pb-1.5">
+                <input
+                  type="checkbox"
+                  checked={searchOnlyCurrent}
+                  onChange={(e) => setSearchOnlyCurrent(e.target.checked)}
+                  className="rounded-sm accent-foreground border-border h-3.5 w-3.5"
+                />
+                <span className="text-[11px] text-muted font-medium">Limit to current folder</span>
+              </label>
+              <div className="flex gap-1.5 w-full">
+                <button
+                  onClick={() => loadFiles(query, currentFolderId, true)}
+                  className="flex-1 bg-foreground text-background text-[10px] font-bold py-1.5 rounded-sm hover:bg-foreground-hover uppercase tracking-wider transition-all"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={resetAllFilters}
+                  className="p-1 px-2.5 border border-border hover:bg-surface text-foreground text-[10px] font-bold rounded-sm uppercase tracking-wider transition-all"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Dates Input Sub-Panel */}
+            {filterDateRange === 'custom' && (
+              <div className="sm:col-span-2 md:col-span-4 grid grid-cols-2 gap-3 border-t border-border pt-2 mt-1">
+                <div className="space-y-1">
+                  <span className="text-[8px] font-bold text-muted tracking-wider uppercase font-mono">Start Date</span>
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[8px] font-bold text-muted tracking-wider uppercase font-mono">End Date</span>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="w-full bg-background border border-border rounded-sm text-xs p-1.5 outline-none focus:border-border-strong text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-hidden flex relative">
+        {/* Drive List */}
+        <div className={cn(
+          "w-full md:w-[340px] border-r border-border bg-background flex flex-col shrink-0 transition-transform duration-300",
+          selectedFile && "hidden md:flex"
+        )}>
+          {/* Breadcrumbs */}
+          <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+            <div className="flex items-center space-x-1 overflow-x-auto whitespace-nowrap flex-1 no-scrollbar">
+              {folderPath.map((folder, index) => (
+                <div key={folder.id} className="flex items-center space-x-1">
+                  <button 
+                    onClick={() => navigateUp(index)}
+                    className={`text-xs ${index === folderPath.length - 1 ? 'text-foreground font-semibold' : 'text-muted hover:text-foreground'} transition-colors`}
+                  >
+                    {folder.name}
+                  </button>
+                  {index < folderPath.length - 1 && <span className="text-muted text-xs">/</span>}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-muted hover:text-foreground transition-colors p-1 cursor-pointer">
+                <Upload size={16} />
+                <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading} />
+              </label>
+              <button 
+                onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+                className="text-muted hover:text-foreground transition-colors p-1"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto p-4 space-y-1.5 flex flex-col pt-2">
+          {isUploading && (
+            <div className="mb-2 p-2 bg-surface border border-border rounded-sm flex items-center space-x-2">
+              <Loader2 size={14} className="animate-spin text-muted" />
+              <span className="text-xs text-muted">Uploading file...</span>
+            </div>
+          )}
+          {isCreatingFolder && (
+            <form onSubmit={handleCreateFolder} className="mb-2 flex items-center space-x-2">
+              <input 
+                type="text" 
+                value={newFolderName}
+                onChange={e => setNewFolderName(e.target.value)}
+                placeholder="New folder name..." 
+                autoFocus
+                className="w-full bg-surface text-sm px-3 py-1.5 rounded-sm border border-border focus:border-border-strong outline-none transition-colors"
+                disabled={loading}
+              />
+              <button type="submit" disabled={!newFolderName || loading} className="p-1.5 bg-foreground text-background rounded-sm hover:bg-foreground-hover disabled:opacity-50">
+                <Plus size={14} />
+              </button>
+              <button type="button" onClick={() => setIsCreatingFolder(false)} className="p-1.5 text-muted hover:text-foreground">
+                <X size={14} />
+              </button>
+            </form>
+          )}
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 text-red-800 text-sm border border-red-100 rounded-sm">
+              {error}
+            </div>
+          )}
+          {loading ? (
+             <div className="flex justify-center p-8"><Loader2 className="animate-spin text-muted" /></div>
+          ) : files.length === 0 ? (
+             <div className="text-center text-muted text-sm font-medium p-8">No files found.</div>
+          ) : (
+            files.map(file => (
+              <div 
+                key={file.id} 
+                className={`p-3 cursor-pointer hover:bg-surface transition-colors rounded-sm flex items-center space-x-3 group ${selectedFile?.id === file.id ? 'bg-surface-hover border border-border-strong shadow-sm text-foreground' : 'border border-transparent text-muted'}`}
+                onClick={() => {
+                  if (file.mimeType === 'application/vnd.google-apps.folder') {
+                    navigateToFolder(file);
+                  } else {
+                    setSelectedFile(file);
+                  }
+                }}
+              >
+                <div className={`flex items-center justify-center flex-shrink-0 ${selectedFile?.id === file.id ? "text-foreground" : "text-muted"}`}>
+                  {file.mimeType === 'application/vnd.google-apps.folder' ? <Folder size={16} /> : <File size={16} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`font-medium text-sm truncate ${selectedFile?.id === file.id ? "text-foreground" : "text-foreground-muted"}`}>{file.name}</div>
+                  <div className="text-[10px] text-muted font-semibold uppercase tracking-wider truncate mt-0.5 flex flex-wrap items-center gap-x-2">
+                    <span>{new Date(file.modifiedTime).toLocaleDateString()}</span>
+                    {file.owners && file.owners.length > 0 && (
+                      <>
+                        <span className="text-border">•</span>
+                        <span className="truncate max-w-[80px]">by {getOwnerLabel(file.owners)}</span>
+                      </>
+                    )}
+                    {file.size && (
+                      <>
+                        <span className="text-border">•</span>
+                        <span>{formatBytes(file.size)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm({ id: file.id, name: file.name });
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 text-muted hover:text-red-500 transition-all rounded-sm hover:bg-surface"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))
+          )}
+          </div>
+        </div>
+
+        {/* Action Panel */}
+        {/* Same styling and sub-blocks as original is kept for high contextual integrity */}
+        <div className={cn(
+          "flex-1 bg-background flex flex-col items-center overflow-y-auto",
+          !selectedFile && "hidden md:flex"
+        )}>
+          {selectedFile ? (
+             <div className="max-w-2xl w-full p-6 md:p-12">
+               <button 
+                 onClick={() => setSelectedFile(null)}
+                 className="flex items-center space-x-2 text-muted hover:text-foreground mb-8 md:hidden"
+               >
+                 <X size={16} /> <span>Back to List</span>
+               </button>
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-surface rounded-sm flex items-center justify-center mb-6 text-foreground">
+                 <File size={24} />
+               </div>
+               <h2 className="text-xl md:text-3xl font-semibold text-foreground mb-2 tracking-tight line-break">{selectedFile.name}</h2>
+               <div className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-muted mb-8">
+                 Last modified: {new Date(selectedFile.modifiedTime).toLocaleString()}
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-3 mb-8 md:mb-12">
+                 <a 
+                   href={selectedFile.webViewLink} 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-center space-x-2 bg-background border border-border px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-surface transition-colors text-foreground"
+                 >
+                   <ExternalLink size={14} />
+                   <span>Open in Drive</span>
+                 </a>
+                 <button 
+                  onClick={() => handleAnalze(selectedFile)}
+                  disabled={isAiLoading}
+                  className="bg-foreground text-background px-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-wider hover:bg-foreground-hover transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                 >
+                   {isAiLoading ? <Loader2 size={14} className="animate-spin" /> : <Cpu size={14} />}
+                   <span>Analyze</span>
+                 </button>
+               </div>
+
+               {isPreviewLoading ? (
+                 <div className="flex items-center space-x-2 text-muted mb-8 text-sm">
+                   <Loader2 size={14} className="animate-spin" />
+                   <span>Loading preview...</span>
+                 </div>
+               ) : filePreview ? (
+                 <div className="mb-12">
+                   <h3 className="text-xs font-semibold text-muted mb-4 uppercase tracking-wider">File Content Preview</h3>
+                   <div className="bg-surface border border-border rounded-sm p-6 max-h-64 overflow-y-auto w-full">
+                     <pre className="text-sm font-mono text-foreground-muted whitespace-pre-wrap">{filePreview}</pre>
+                   </div>
+                 </div>
+               ) : null}
+
+               {aiSummary && (
+                 <div className="bg-surface p-8 border border-border rounded-sm">
+                   <h3 className="text-xs font-semibold text-muted mb-6 uppercase tracking-wider flex items-center space-x-2">
+                       <Cpu size={12}/> <span>Analysis Result</span>
+                   </h3>
+                   <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                     <Markdown>{aiSummary}</Markdown>
+                   </div>
+                 </div>
+               )}
+             </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted font-medium text-sm w-full bg-background">
+               <div className="text-center flex flex-col items-center">
+                  <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-4 text-muted">
+                    <HardDrive size={20} />
+                  </div>
+                  Select a Google Drive file to sync and analyze
+               </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Deletion Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border shadow-2xl max-w-sm w-full p-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+              <Trash2 size={24} />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Delete Item?</h3>
+            <p className="text-muted text-sm mb-8">
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteConfirm.name}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 bg-surface border border-border text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-surface-hover transition-colors text-foreground"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleDeleteFile(deleteConfirm.id)}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
