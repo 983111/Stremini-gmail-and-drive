@@ -55,7 +55,7 @@ export function GlobalSearch() {
         <span>
           {parts.map((part, i) =>
             part.toLowerCase() === queryStr.toLowerCase() ? (
-              <mark key={i} className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-100 font-semibold px-0.5 rounded-sm">
+              <mark key={i} className="bg-amber-100 text-amber-900 font-semibold px-0.5 rounded-sm">
                 {part}
               </mark>
             ) : (
