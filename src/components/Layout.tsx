@@ -3,7 +3,7 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutGrid, Folders, FileText, Settings, HelpCircle, LogOut,
   Bell, Menu, Database, ClipboardList, Presentation, Mail,
-  X, ChevronRight, Moon, Sun, Monitor
+  X, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -19,32 +19,20 @@ const NAV = [
   { to: '/slides',    icon: Presentation, label: 'Slides' },
 ];
 
-type Theme = 'light' | 'dark' | 'system';
-
 export function Layout() {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(
-    (localStorage.getItem('theme') as Theme) || 'system'
-  );
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    if (theme === 'system') {
-      root.classList.add(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    } else {
-      root.classList.add(theme);
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
-
-  const themeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const ThemeIcon = themeIcon;
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans antialiased overflow-hidden">
@@ -115,7 +103,7 @@ export function Layout() {
             <span>Settings</span>
           </button>
           <button
-            onClick={signOut}
+            onClick={() => setSignOutConfirmOpen(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-[13.5px] text-muted hover:bg-surface-hover hover:text-foreground transition-colors"
           >
             <LogOut size={16} strokeWidth={1.75} />
@@ -158,14 +146,6 @@ export function Layout() {
           </div>
 
           <div className="flex items-center gap-1 ml-auto">
-            {/* Theme cycle */}
-            <button
-              onClick={() => setTheme(t => t === 'light' ? 'dark' : t === 'dark' ? 'system' : 'light')}
-              className="p-2 text-muted hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
-              title="Toggle theme"
-            >
-              <ThemeIcon size={16} strokeWidth={1.75} />
-            </button>
             <button className="p-2 text-muted hover:text-foreground hover:bg-surface-hover rounded-md transition-colors">
               <Bell size={16} strokeWidth={1.75} />
             </button>
@@ -193,31 +173,31 @@ export function Layout() {
               <button onClick={() => setSettingsOpen(false)} className="text-muted hover:text-foreground p-1 rounded-md hover:bg-surface-hover"><X size={16} /></button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[11px] font-medium text-muted mb-2.5 uppercase tracking-wider">Theme</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['light','dark','system'] as Theme[]).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      className={cn(
-                        'flex flex-col items-center gap-1.5 py-3 rounded-md border text-[12px] font-medium capitalize transition-colors',
-                        theme === t
-                          ? 'border-[var(--accent-color)] bg-[var(--accent-muted)] text-[var(--accent-color)]'
-                          : 'border-border text-muted hover:bg-surface-hover hover:text-foreground'
-                      )}
-                    >
-                      {t === 'light' ? <Sun size={16} strokeWidth={1.75}/> : t === 'dark' ? <Moon size={16} strokeWidth={1.75}/> : <Monitor size={16} strokeWidth={1.75}/>}
-                      {t}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-muted">Appearance</span>
+                <span className="font-medium text-foreground">Light</span>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-border flex justify-end">
               <button onClick={() => setSettingsOpen(false)} className="px-4 py-2 rounded-md bg-[var(--text-primary)] text-white text-[13px] font-medium hover:opacity-85 transition-opacity">
                 Done
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sign-out confirmation */}
+      {signOutConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="signout-title">
+          <div className="w-full max-w-sm rounded-lg border border-border bg-white shadow-xl">
+            <div className="px-6 py-5">
+              <h2 id="signout-title" className="text-[15px] font-semibold text-foreground">Sign out?</h2>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">Are you sure you want to sign out of Think 42 Workspace?</p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+              <button onClick={() => setSignOutConfirmOpen(false)} className="rounded-md border border-border px-4 py-2 text-[13px] font-medium text-foreground hover:bg-surface-hover">Cancel</button>
+              <button onClick={async () => { await signOut(); setSignOutConfirmOpen(false); }} className="rounded-md bg-[var(--text-primary)] px-4 py-2 text-[13px] font-medium text-white hover:opacity-85">Sign out</button>
             </div>
           </div>
         </div>
