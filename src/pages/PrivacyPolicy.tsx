@@ -13,7 +13,7 @@ export function PrivacyPolicy() {
             </div>
             <span className="font-bold text-sm tracking-tight">Think 42 Workspace</span>
           </Link>
-          <a href="mailto:streminiai@gmail.com" className="text-xs font-bold uppercase text-neutral-800 hover:text-black transition-colors flex items-center gap-1.5 font-sans">
+          <a href="mailto:team@think42ailabs.me" className="text-xs font-bold uppercase text-neutral-800 hover:text-black transition-colors flex items-center gap-1.5 font-sans">
             <Mail size={12} />
             <span>Support</span>
           </a>
@@ -127,11 +127,11 @@ export function PrivacyPolicy() {
               We welcome complete transparency regarding data handling. If you have regulatory inquiries, wish to verify the non-custodial operations of our code, or have concerns regarding OAuth privileges, please contact our support desk:
             </p>
             <a 
-              href="mailto:streminiai@gmail.com"
+              href="mailto:team@think42ailabs.me"
               className="inline-flex items-center space-x-2 text-neutral-800 hover:text-black text-xs font-bold uppercase tracking-wider bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
             >
               <Mail size={12} />
-              <span>streminiai@gmail.com</span>
+              <span>team@think42ailabs.me</span>
             </a>
           </div>
         </div>
@@ -144,7 +144,7 @@ export function PrivacyPolicy() {
             <p className="font-bold text-[#111111]">Think 42 Workspace Trust Operations</p>
             <p>© 2026 Think 42. Pure non-custodial integrity.</p>
           </div>
-          <a href="mailto:streminiai@gmail.com" className="text-neutral-800 hover:text-[#111111] transition-colors font-mono">streminiai@gmail.com</a>
+          <a href="mailto:team@think42ailabs.me" className="text-neutral-800 hover:text-[#111111] transition-colors font-mono">team@think42ailabs.me</a>
         </div>
       </footer>
     </div>
