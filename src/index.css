@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,8 +6,8 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  /* One typeface for the entire product. No serif pairing, no mono accents. */
-  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* One consistent typeface across the entire product. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: "Manrope", ui-sans-serif, system-ui, sans-serif;
 
   --color-background:       var(--bg-base);
@@ -106,4 +106,4 @@
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* One font everywhere, including slide previews previously set in a serif */
-.slide-preview { font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; }
+.slide-preview { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; }
