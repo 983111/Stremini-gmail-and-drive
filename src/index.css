@@ -3,7 +3,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
 @plugin "@tailwindcss/typography";
 
 @theme {
@@ -89,44 +88,6 @@
   --input:                rgba(20,20,26,0.08);
   --ring:                 #2A2ADB;
   --radius:               0.5rem;
-}
-
-/* ── Dark Mode ────────────────────────────────────────────────────────────── */
-.dark {
-  --bg-base:          #101014;
-  --bg-surface:       #17171C;
-  --bg-surface-hover: #1F1F26;
-  --bg-surface-active:#282832;
-  --bg-sidebar:       #101014;
-
-  --text-primary:       #F3F3F6;
-  --text-primary-hover: #FFFFFF;
-  --text-muted:         #8B8B96;
-
-  --border-subtle: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.16);
-
-  --accent-color:  #7676F5;
-  --accent-muted:  #23233A;
-
-  --background:           #101014;
-  --foreground:           #F3F3F6;
-  --card:                 #17171C;
-  --card-foreground:      #F3F3F6;
-  --popover:              #17171C;
-  --popover-foreground:   #F3F3F6;
-  --primary:              #7676F5;
-  --primary-foreground:   #FFFFFF;
-  --secondary:            #1F1F26;
-  --secondary-foreground: #F3F3F6;
-  --muted:                #1F1F26;
-  --muted-foreground:     #8B8B96;
-  --accent:               #23233A;
-  --accent-foreground:    #F3F3F6;
-  --destructive:          oklch(0.704 0.191 22.216);
-  --border:               rgba(255,255,255,0.08);
-  --input:                rgba(255,255,255,0.1);
-  --ring:                 #7676F5;
 }
 
 @layer base {
