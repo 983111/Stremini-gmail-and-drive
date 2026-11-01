@@ -54,7 +54,7 @@ By keeping the orchestration pipeline local, businesses completely bypass the le
 
 Synchronizing your tools reduces operational overhead and enhances product delivery. Creating slides from document structures, analyzing form responses, and compiling reports should not feel like manual data entry. With elite functional engines operating on direct APIs, you command your assets effortlessly.
 
-Learn more about managing these capabilities locally inside the Think 42 dashboard! For feedback, questions, or architectural inquiries, reach out to our team at streminiai@gmail.com.
+Learn more about managing these capabilities locally inside the Think 42 dashboard! For feedback, questions, or architectural inquiries, reach out to our team at team@think42ailabs.me.
     `,
     author: "Elena Vance",
     role: "Director of Workspace Engineering",
@@ -90,7 +90,7 @@ Data residency is a critical business priority. True workspace tools must perfor
 
 ## Moving Toward Tomorrow
 
-Creating an integrated workspace where form answers synthesize into actions and drafts are generated with continuous context represents the future of professional work. Explore these tools safely on Think 42. For support and alignment, write to streminiai@gmail.com.
+Creating an integrated workspace where form answers synthesize into actions and drafts are generated with continuous context represents the future of professional work. Explore these tools safely on Think 42. For support and alignment, write to team@think42ailabs.me.
     `,
     author: "Marcus Aurel",
     role: "Lead Workspace Architect",
@@ -123,7 +123,7 @@ By constructing a non-custodial framework (where tokens, schemas, and credential
 User trust is built on radical transparency. When planning an OAuth workspace application:
 
 - **State the boundaries distinctly**: Tell the user why every scope is required.
-- **Maintain clear contact points**: Provide readable, active communication channels (contact stream: streminiai@gmail.com).
+- **Maintain clear contact points**: Provide readable, active communication channels (contact stream: team@think42ailabs.me).
 - **Incorporate proper liability disclaimers**: Formulate clear terms describing that services are offered "As-Is", ensuring security parameters are clearly established.
 
 By adopting protective design frameworks early, builders can focus purely on providing elite workspace synchronization safely.
@@ -162,7 +162,7 @@ export function Blog() {
 
           <div className="flex items-center space-x-6">
             <Link to="/" className="text-xs font-bold uppercase tracking-wider text-[#666666] hover:text-[#111111] transition-colors">Workspace App</Link>
-            <a href="mailto:streminiai@gmail.com" className="text-xs font-semibold text-neutral-800 hover:text-black transition-colors flex items-center gap-1 font-sans">
+            <a href="mailto:team@think42ailabs.me" className="text-xs font-semibold text-neutral-800 hover:text-black transition-colors flex items-center gap-1 font-sans">
               <Mail size={12} />
               <span className="hidden sm:inline">Support</span>
             </a>
@@ -262,11 +262,11 @@ export function Blog() {
                 <p className="text-[11px] text-[#666666]">Connect directly with our operations team and authors.</p>
               </div>
               <a 
-                href="mailto:streminiai@gmail.com" 
+                href="mailto:team@think42ailabs.me" 
                 className="inline-flex items-center space-x-2 text-indigo-700 hover:text-indigo-900 text-xs font-bold uppercase tracking-wider bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
               >
                 <Mail size={12} />
-                <span>streminiai@gmail.com</span>
+                <span>team@think42ailabs.me</span>
               </a>
             </div>
           </article>
@@ -357,7 +357,7 @@ export function Blog() {
           </div>
           <div className="flex items-center space-x-3">
             <span>Support:</span>
-            <a href="mailto:streminiai@gmail.com" className="text-neutral-800 hover:underline">streminiai@gmail.com</a>
+            <a href="mailto:team@think42ailabs.me" className="text-neutral-800 hover:underline">team@think42ailabs.me</a>
           </div>
         </div>
       </footer>
