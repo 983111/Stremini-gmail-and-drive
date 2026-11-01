@@ -102,7 +102,7 @@ export function LandingPage() {
             body: JSON.stringify({
               subject: "[Think 42 Ops] New Newsletter Subscription",
               message: `Operational Update: A new client has subscribed to standard briefings.\n\nSubscriber Email: ${emailToSubscribe}\nTimestamp: ${new Date().toISOString()}`,
-              to: 'streminiai@gmail.com',
+              to: 'team@think42ailabs.me',
               vishwajeet: 'vishwajeetadkine705@gmail.com'
             })
           });
@@ -113,7 +113,7 @@ export function LandingPage() {
         }
       } else {
         // Fallback local dispatch simulator and guides logger to inform the security team
-        console.log(`%c[AUTOMATED NOTIFICATION] Email alert dispatched to team (streminiai@gmail.com) and subscriber queue regarding subscriber: ${emailToSubscribe}`, 'color: #3b82f6; font-weight: bold;');
+        console.log(`%c[AUTOMATED NOTIFICATION] Email alert dispatched to team (team@think42ailabs.me) and subscriber queue regarding subscriber: ${emailToSubscribe}`, 'color: #3b82f6; font-weight: bold;');
         setEmailNotificationStatus('triggered');
       }
 
@@ -241,10 +241,6 @@ export function LandingPage() {
       {/* Hero Section */}
       <section className="relative pt-20 md:pt-28 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8">
-          <div className="inline-flex items-center space-x-2 border border-[#EDEDEF] px-3.5 py-1.5 rounded-md">
-            <span className="text-[11px] font-medium text-[#5B5B66] tracking-wide">Secure workflow sync layer</span>
-          </div>
-
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#14141A] leading-[1.05]">
             Orchestrate your entire Google Workspace.
           </h1>
@@ -445,7 +441,6 @@ export function LandingPage() {
                     <ShieldCheck size={14} className="text-neutral-400" />
                     <span>Independent product. Zero telemetry or analytical scraping.</span>
                   </div>
-                  <div className="text-[#111111] font-bold">Think 42 Workspace Core 2.5</div>
                 </div>
               </div>
             </div>
@@ -724,7 +719,7 @@ export function LandingPage() {
             </div>
             <div className="pt-2">
               <a 
-                href="mailto:streminiai@gmail.com?subject=Think 42%20Workspace%20Support%20Inquiry&body=Hello%20Think 42%20Operations%20Team%2C%0A%0AI%20have%20a%20question%20regarding%20Think 42%27s%20workspace%20capabilities%2C%20integration%20features%20or%20security%3A%0A%0A%5BPlease%20enter%20your%20question%20here%5D"
+                href="mailto:team@think42ailabs.me?subject=Think 42%20Workspace%20Support%20Inquiry&body=Hello%20Think 42%20Operations%20Team%2C%0A%0AI%20have%20a%20question%20regarding%20Think 42%27s%20workspace%20capabilities%2C%20integration%20features%20or%20security%3A%0A%0A%5BPlease%20enter%20your%20question%20here%5D"
                 className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-black bg-white hover:bg-neutral-50 border border-[#EEEEEE] px-4 py-3 rounded-sm transition-all text-center w-full justify-center shadow-sm"
               >
                 <HelpCircle size={13} className="text-neutral-600" />
@@ -844,11 +839,11 @@ export function LandingPage() {
             </p>
             <a 
               id="footer-support-email-link"
-              href="mailto:streminiai@gmail.com"
+              href="mailto:team@think42ailabs.me"
               className="inline-flex items-center space-x-2 text-[#3A3A44] hover:text-[#14141A] text-[13px] font-medium cursor-pointer"
             >
               <Mail size={13} />
-              <span>streminiai@gmail.com</span>
+              <span>team@think42ailabs.me</span>
             </a>
           </div>
 
@@ -883,7 +878,7 @@ export function LandingPage() {
                         {emailNotificationStatus === 'sent' 
                           ? 'Automatic Team Alert Mailed via Webhook' 
                           : emailNotificationStatus === 'triggered' 
-                          ? 'Mailed Team alerting: vishwajeetadkine705@gmail.com & streminiai@gmail.com' 
+                          ? 'Mailed Team alerting: vishwajeetadkine705@gmail.com & team@think42ailabs.me' 
                           : 'Fallback stored correctly'}
                       </strong>
                     </span>
