@@ -381,7 +381,7 @@ export function Documents() {
                   placeholder="Start typing..."
                 />
               ) : (
-                <div className="w-full flex-1 min-h-[60vh] prose dark:prose-invert prose-sm max-w-none text-foreground">
+                <div className="w-full flex-1 min-h-[60vh] prose prose-sm max-w-none text-foreground">
                   <Markdown>{selectedDoc.content}</Markdown>
                 </div>
               )}
@@ -462,7 +462,7 @@ export function Documents() {
                          {msg.role === 'user' ? (
                            <div className="whitespace-pre-wrap">{msg.content}</div>
                          ) : (
-                           <div className="prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-background prose-pre:border prose-pre:border-border">
+                           <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-background prose-pre:border prose-pre:border-border">
                              <Markdown>{msg.content}</Markdown>
                            </div>
                          )}
