@@ -13,7 +13,7 @@ export function TermsOfConditions() {
             </div>
             <span className="font-bold text-sm tracking-tight">Think 42 Workspace</span>
           </Link>
-          <a href="mailto:streminiai@gmail.com" className="text-xs font-bold uppercase text-indigo-700 hover:text-indigo-900 transition-colors flex items-center gap-1.5">
+          <a href="mailto:team@think42ailabs.me" className="text-xs font-bold uppercase text-indigo-700 hover:text-indigo-900 transition-colors flex items-center gap-1.5">
             <Mail size={12} />
             <span>Support</span>
           </a>
@@ -125,11 +125,11 @@ export function TermsOfConditions() {
               For legal compliance audits, contract interpretations, partnership alignments, or operational notices, reach out to our legal department at:
             </p>
             <a 
-              href="mailto:streminiai@gmail.com"
+              href="mailto:team@think42ailabs.me"
               className="inline-flex items-center space-x-2 text-indigo-700 hover:text-indigo-900 text-xs font-bold uppercase tracking-wider bg-white border border-[#EEEEEE] px-4 py-2 rounded-sm transition-all"
             >
               <Mail size={12} />
-              <span>streminiai@gmail.com</span>
+              <span>team@think42ailabs.me</span>
             </a>
           </div>
         </div>
@@ -142,7 +142,7 @@ export function TermsOfConditions() {
             <p className="font-bold text-[#111111]">Think 42 Legal Counsel Operations</p>
             <p>© 2026 Think 42. All rights guarded.</p>
           </div>
-          <a href="mailto:streminiai@gmail.com" className="text-indigo-600 hover:text-indigo-800 transition-colors">streminiai@gmail.com</a>
+          <a href="mailto:team@think42ailabs.me" className="text-indigo-600 hover:text-indigo-800 transition-colors">team@think42ailabs.me</a>
         </div>
       </footer>
     </div>
