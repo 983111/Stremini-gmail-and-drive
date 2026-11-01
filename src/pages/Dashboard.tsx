@@ -130,7 +130,7 @@ export function Dashboard() {
                    <span>Analyzing recent context...</span>
                  </div>
               ) : briefing ? (
-                <div className="prose dark:prose-invert prose-sm prose-p:my-1 text-foreground-muted">
+                <div className="prose prose-sm prose-p:my-1 text-foreground-muted">
                   <Markdown>{briefing}</Markdown>
                 </div>
               ) : (
@@ -272,7 +272,7 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="flex-1 overflow-auto bg-background p-6 border border-border rounded-sm">
-                  <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                  <div className="prose prose-sm text-foreground-muted max-w-none">
                     <Markdown>{meetingLogicOutput}</Markdown>
                   </div>
                   <div className="mt-8 pt-6 border-t border-border flex justify-end">
@@ -316,8 +316,8 @@ export function Dashboard() {
             <div className="p-6 md:p-8 space-y-6">
               {/* Icon branding banner */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-sm bg-[#111111] dark:bg-[#FAFAFA] flex items-center justify-center shrink-0">
-                  <CircleDot size={18} className="text-[#FAFAFA] dark:text-[#111111]" />
+                <div className="w-10 h-10 rounded-sm bg-[#111111] flex items-center justify-center shrink-0">
+                  <CircleDot size={18} className="text-[#FAFAFA]" />
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase font-mono block">Welcome Onboard</span>
@@ -333,7 +333,7 @@ export function Dashboard() {
               <div className="space-y-4 pt-1">
                 {/* Feature 1 */}
                 <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
-                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 flex items-center justify-center shrink-0 mt-0.5 text-[#111111]">
                     <Cpu size={14} />
                   </div>
                   <div className="space-y-0.5">
@@ -346,7 +346,7 @@ export function Dashboard() {
 
                 {/* Feature 2 */}
                 <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
-                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 flex items-center justify-center shrink-0 mt-0.5 text-[#111111]">
                     <FileText size={14} />
                   </div>
                   <div className="space-y-0.5">
@@ -359,7 +359,7 @@ export function Dashboard() {
 
                 {/* Feature 3 */}
                 <div className="flex gap-4 p-3 bg-surface border border-border rounded-sm">
-                  <div className="w-7 h-7 rounded-sm bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5 text-[#111111] dark:text-[#FAFAFA]">
+                  <div className="w-7 h-7 rounded-sm bg-neutral-100 flex items-center justify-center shrink-0 mt-0.5 text-[#111111]">
                     <HardDrive size={14} />
                   </div>
                   <div className="space-y-0.5">
@@ -386,7 +386,7 @@ export function Dashboard() {
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={handleDismissIntro}
-                  className="bg-foreground hover:bg-neutral-800 text-background dark:bg-foreground dark:hover:bg-neutral-100 font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-sm transition-all text-center w-full"
+                  className="bg-foreground hover:bg-neutral-800 text-background font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-sm transition-all text-center w-full"
                 >
                   Confirm & Initialize Hub
                 </button>
