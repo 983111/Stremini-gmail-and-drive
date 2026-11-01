@@ -138,7 +138,7 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#14141A] font-sans selection:bg-[#EEEEFB]">
+    <div className="min-h-screen bg-white text-[#14141A] font-sans selection:bg-[#E8E8E8]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-[#EDEDEF] transition-all duration-200">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
@@ -241,7 +241,7 @@ export function LandingPage() {
       {/* Hero Section */}
       <section className="relative pt-20 md:pt-28 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#14141A] leading-[1.05]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.045em] text-[#14141A] leading-[1.08]">
             Orchestrate your entire Google Workspace.
           </h1>
 
@@ -300,7 +300,7 @@ export function LandingPage() {
               {/* Fake Sidebar */}
               <div className="md:col-span-1 bg-neutral-50 border-r border-[#EEEEEE] p-5 space-y-6">
                 <div className="space-y-1">
-                  <div className="text-[9px] font-bold text-[#888888] tracking-widest uppercase font-mono">Operations</div>
+                  <div className="text-[9px] font-bold text-[#888888] tracking-widest normal-case font-sans">Operations</div>
                   <div className="space-y-1">
                     <button 
                       onClick={() => setActiveTab('forms')}
@@ -327,9 +327,9 @@ export function LandingPage() {
                 </div>
 
                 <div className="space-y-1.5 pt-4 border-t border-neutral-200">
-                  <div className="text-[9px] font-bold text-[#888888] tracking-widest uppercase font-mono">Active Security</div>
+                  <div className="text-[9px] font-bold text-[#888888] tracking-widest normal-case font-sans">Active Security</div>
                   <div className="flex items-center justify-between text-[11px] text-neutral-800 bg-neutral-100 px-2.5 py-1.5 rounded-sm border border-neutral-200">
-                    <span className="flex items-center gap-1.5 font-bold font-mono">
+                    <span className="flex items-center gap-1.5 font-bold font-sans">
                       <span className="h-1.5 w-1.5 rounded-full bg-neutral-950 animate-pulse"></span>
                       Local Secure Link
                     </span>
@@ -348,17 +348,17 @@ export function LandingPage() {
                           <h4 className="font-extrabold text-sm text-[#111111]">Form Responses Sync</h4>
                           <p className="text-[10px] text-[#666666]">Direct query and digest synchronization from Forms API.</p>
                         </div>
-                        <span className="text-[10px] bg-neutral-100 text-neutral-800 border border-neutral-200 px-2 py-0.5 rounded font-mono font-bold">18 Responses</span>
+                        <span className="text-[10px] bg-neutral-100 text-neutral-800 border border-neutral-200 px-2 py-0.5 rounded font-sans font-bold">18 Responses</span>
                       </div>
 
                       <div className="space-y-2.5">
                         <div className="p-3 bg-neutral-50 rounded-sm border border-neutral-100 text-xs flex justify-between items-center">
                           <span className="font-medium">"How would you rate the experience?"</span>
-                          <span className="font-mono bg-white px-2 py-0.5 rounded border border-neutral-200 text-neutral-700">Avg: 4.8 / 5.0</span>
+                          <span className="font-sans bg-white px-2 py-0.5 rounded border border-neutral-200 text-neutral-700">Avg: 4.8 / 5.0</span>
                         </div>
                         <div className="p-3 bg-neutral-50 rounded-sm border border-neutral-100 text-xs flex justify-between items-center">
                           <span className="font-medium">"What is your primary workspace challenge?"</span>
-                          <span className="font-mono bg-white px-2 py-0.5 rounded border border-neutral-200 text-neutral-700">Text Summary Active</span>
+                          <span className="font-sans bg-white px-2 py-0.5 rounded border border-neutral-200 text-neutral-700">Text Summary Active</span>
                         </div>
                       </div>
 
@@ -381,7 +381,7 @@ export function LandingPage() {
                           <h4 className="font-extrabold text-sm text-[#111111]">Presentation Grid Alignment</h4>
                           <p className="text-[10px] text-[#666666]">Compile structures and push to Master Slide components.</p>
                         </div>
-                        <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded font-mono font-bold">4 Elements Ready</span>
+                        <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-100 px-2 py-0.5 rounded font-sans font-bold">4 Elements Ready</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -393,11 +393,11 @@ export function LandingPage() {
                         <div className="p-3 bg-neutral-50 border border-neutral-100 rounded-sm space-y-1">
                           <div className="text-[9px] font-bold text-neutral-400">ITEM #2</div>
                           <div className="text-xs font-bold">Workspace Efficiency</div>
-                          <p className="text-[10px] text-neutral-500 font-mono text-emerald-600">Sync: Success</p>
+                          <p className="text-[10px] text-neutral-500 font-sans text-emerald-600">Sync: Success</p>
                         </div>
                       </div>
 
-                      <div className="p-3.5 bg-neutral-900 rounded-lg text-[#FAFAFA] text-xs font-mono space-y-1">
+                      <div className="p-3.5 bg-neutral-900 rounded-lg text-[#FAFAFA] text-xs font-sans space-y-1">
                         <div className="text-amber-400">Console Terminal Output</div>
                         <div>$ google-slides --align --source-id="docs_01"</div>
                         <div className="text-emerald-400">&gt;&gt; Synthesized master structures generated. Ready for Google Slides compile.</div>
@@ -418,16 +418,16 @@ export function LandingPage() {
                         <div className="p-3 bg-neutral-50 border border-neutral-150 rounded-sm text-xs">
                           <div className="flex justify-between font-bold mb-1">
                             <span>SVP Operations</span>
-                            <span className="text-neutral-400 font-mono">11:05 AM</span>
+                            <span className="text-neutral-400 font-sans">11:05 AM</span>
                           </div>
                           <div className="text-neutral-500 line-clamp-1">Reviewing the quarterly layout synchronization plan for general distribution...</div>
                         </div>
 
                         <div className="flex gap-2.5">
-                          <button className="flex-1 text-center py-2 border border-[#CCCCCC] text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-neutral-50 transition-colors">
+                          <button className="flex-1 text-center py-2 border border-[#CCCCCC] text-[10px] font-bold tracking-[0.04em] rounded-sm hover:bg-neutral-50 transition-colors">
                             Summarize Core Thread
                           </button>
-                          <button className="flex-1 text-center py-2 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-neutral-800 transition-colors">
+                          <button className="flex-1 text-center py-2 bg-neutral-900 text-white text-[10px] font-bold tracking-[0.04em] rounded-sm hover:bg-neutral-800 transition-colors">
                             Generate Draft Blueprint
                           </button>
                         </div>
@@ -451,7 +451,7 @@ export function LandingPage() {
       {/* Trust Grid */}
       <section className="py-12 border-t border-b border-[#EEEEEE] bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <p className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest font-mono mb-6">SUPPORTED WORKSPACE PLATFORMS & COMPLIANCE STACKS</p>
+          <p className="text-[10px] font-extrabold text-neutral-400 tracking-[0.08em] font-sans mb-6">SUPPORTED WORKSPACE PLATFORMS & COMPLIANCE STACKS</p>
           <div className="flex flex-wrap justify-center items-center gap-10 md:gap-16 opacity-40 grayscale select-none">
             <span className="font-bold text-lg tracking-widest font-sans">FORMS SYNC</span>
             <span className="font-bold text-lg tracking-widest font-sans">SLIDEMASTER</span>
@@ -472,7 +472,7 @@ export function LandingPage() {
             transition={{ duration: 0.6 }}
             className="max-w-2xl"
           >
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#111111] mb-2 uppercase font-sans">
+            <h2 className="text-3xl sm:text-4xl font-semibold tracking-[-0.035em] text-[#111111] mb-3 font-sans">
               Designed For High-Performance Workflows.
             </h2>
             <p className="text-sm sm:text-base text-[#666666]">
@@ -480,17 +480,17 @@ export function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12">
             {/* Bento Card 1: Large Span */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+              className="md:col-span-2 bg-transparent border-0 border-b border-[#E7E7E7] rounded-none p-0 pb-10 shadow-none flex flex-col justify-between space-y-6"
             >
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                <div className="w-9 h-9 bg-transparent border-0 rounded-none flex items-center justify-start">
                   <Database size={18} className="text-neutral-900" />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#111111]">Automated Database Orchestration</h3>
@@ -501,16 +501,16 @@ export function LandingPage() {
               
               {/* Mini visual */}
               <div className="pt-4 border-t border-neutral-100 grid grid-cols-3 gap-3">
-                <div className="p-3 bg-neutral-50 rounded border border-neutral-100 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-neutral-500">METRICS</div>
+                <div className="p-2 bg-transparent rounded-none border-0 border-l border-neutral-200 pl-3 space-y-1">
+                  <div className="text-[8px] font-sans font-bold text-neutral-500">METRICS</div>
                   <div className="text-[11px] font-bold text-neutral-900">Task Tracker</div>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded border border-neutral-100 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-neutral-500">CAPACITY</div>
+                <div className="p-2 bg-transparent rounded-none border-0 border-l border-neutral-200 pl-3 space-y-1">
+                  <div className="text-[8px] font-sans font-bold text-neutral-500">CAPACITY</div>
                   <div className="text-[11px] font-bold text-neutral-900">Custom Columns</div>
                 </div>
-                <div className="p-3 bg-neutral-900 text-white rounded border border-neutral-800 space-y-1">
-                  <div className="text-[8px] font-mono font-bold text-neutral-300">AUTOMATION</div>
+                <div className="p-2 bg-transparent text-neutral-900 rounded-none border-0 border-l border-neutral-300 pl-3 space-y-1">
+                  <div className="text-[8px] font-sans font-bold text-neutral-300">AUTOMATION</div>
                   <div className="text-[11px] font-bold">100% Synced</div>
                 </div>
               </div>
@@ -522,10 +522,10 @@ export function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+              className="bg-transparent border-0 border-b border-[#E7E7E7] rounded-none p-0 pb-10 shadow-none flex flex-col justify-between space-y-6"
             >
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                <div className="w-9 h-9 bg-transparent border-0 rounded-none flex items-center justify-start">
                   <Presentation size={18} className="text-neutral-900" />
                 </div>
                 <h3 className="text-lg font-bold tracking-tight text-[#111111]">Slide Outline Builder</h3>
@@ -533,7 +533,7 @@ export function LandingPage() {
                   Arrange presentation slide hierarchies, bullet points, headers, layout boxes, and core structural outlines into clean, distribution-ready frameworks quickly, retaining custom styles and formatting grids beautifully.
                 </p>
               </div>
-              <div className="bg-neutral-50 border border-neutral-200 p-3 rounded text-[11px] font-mono text-neutral-800">
+              <div className="bg-transparent border-0 border-l border-neutral-200 pl-3 py-2 rounded-none text-[11px] font-sans text-neutral-800">
                 &gt; Align Master Blueprint... [OK]
               </div>
             </motion.div>
@@ -544,10 +544,10 @@ export function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+              className="bg-transparent border-0 border-b border-[#E7E7E7] rounded-none p-0 pb-10 shadow-none flex flex-col justify-between space-y-6"
             >
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                <div className="w-9 h-9 bg-transparent border-0 rounded-none flex items-center justify-start">
                   <ClipboardList size={18} className="text-neutral-900" />
                 </div>
                 <h3 className="text-lg font-bold tracking-tight text-[#111111]">Forms Reporting Feed</h3>
@@ -555,9 +555,9 @@ export function LandingPage() {
                   Track feedback loops, compile qualitative trends using local analytical tables, evaluate responses, count submission tallies, measure averages of customer scores, and align critical workflow checklists instantly without server storage.
                 </p>
               </div>
-              <div className="bg-neutral-50 text-neutral-900 p-2.5 rounded-lg border border-neutral-200 text-[11px] flex justify-between items-center font-bold">
+              <div className="bg-transparent text-neutral-900 p-0 rounded-none border-0 border-t border-neutral-200 pt-3 text-[11px] flex justify-between items-center font-bold">
                 <span>Active Responses Pipeline</span>
-                <span className="font-mono bg-white px-1.5 py-0.5 border border-neutral-200 rounded">Static Loop</span>
+                <span className="font-sans bg-white px-1.5 py-0.5 border border-neutral-200 rounded">Static Loop</span>
               </div>
             </motion.div>
 
@@ -567,10 +567,10 @@ export function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="md:col-span-2 bg-white border border-[#EEEEEE] rounded-xl p-8 hover:shadow-md transition-shadow flex flex-col justify-between space-y-6"
+              className="md:col-span-2 bg-transparent border-0 border-b border-[#E7E7E7] rounded-none p-0 pb-10 shadow-none flex flex-col justify-between space-y-6"
             >
               <div className="space-y-3">
-                <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded-sm flex items-center justify-center">
+                <div className="w-9 h-9 bg-transparent border-0 rounded-none flex items-center justify-start">
                   <Mail size={18} className="text-neutral-900" />
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#111111]">Advanced Filter Suite</h3>
@@ -579,9 +579,9 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="flex gap-2.5 text-[11px] font-medium text-neutral-600">
-                <span className="bg-neutral-100 border border-neutral-200 px-3 py-1 rounded">Sender Filter</span>
-                <span className="bg-neutral-100 border border-neutral-200 px-3 py-1 rounded">Date Intervals</span>
-                <span className="bg-neutral-100 border border-neutral-200 px-3 py-1 rounded">Attachment Presence</span>
+                <span className="bg-transparent border-0 border-b border-neutral-300 px-0 py-1 rounded-none">Sender Filter</span>
+                <span className="bg-transparent border-0 border-b border-neutral-300 px-0 py-1 rounded-none">Date Intervals</span>
+                <span className="bg-transparent border-0 border-b border-neutral-300 px-0 py-1 rounded-none">Attachment Presence</span>
               </div>
             </motion.div>
           </div>
@@ -592,7 +592,7 @@ export function LandingPage() {
       <section className="py-20 bg-[#FAFAFA] border-t border-b border-[#EEEEEE] relative">
         <div className="max-w-4xl mx-auto px-4 space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 uppercase">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.03em] text-neutral-900">
               Zero-Trust Local Security Architecture
             </h2>
             <p className="text-xs sm:text-sm text-[#666666] max-w-xl mx-auto">
@@ -600,41 +600,41 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+            <div className="space-y-3 p-0 bg-transparent border-0 border-t border-neutral-200 rounded-none pt-5">
               <div className="flex items-center space-x-2 text-neutral-900">
                 <Lock size={16} />
-                <h4 className="text-xs font-bold uppercase tracking-widest font-mono">1. Pure Non-Custodial Sync</h4>
+                <h4 className="text-xs font-bold tracking-[0.08em] font-sans">1. Pure Non-Custodial Sync</h4>
               </div>
               <p className="text-xs text-neutral-600 leading-relaxed">
                 Think 42 behaves as a transparent browser layer. Your personal information, files, emails, and database records remain strictly within Google or your local session. We never save, cache, or train on your personal datasets.
               </p>
             </div>
 
-            <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
+            <div className="space-y-3 p-0 bg-transparent border-0 border-t border-neutral-200 rounded-none pt-5">
               <div className="flex items-center space-x-2 text-neutral-900">
                 <Globe size={16} />
-                <h4 className="text-xs font-bold uppercase tracking-widest font-mono">2. Independent API Integration</h4>
+                <h4 className="text-xs font-bold tracking-[0.08em] font-sans">2. Independent API Integration</h4>
               </div>
               <p className="text-xs text-neutral-600 leading-relaxed">
                 Think 42 is an independent product using Google's public OAuth workspace APIs. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with Google LLC or Alphabet Inc.
               </p>
             </div>
 
-            <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
+            <div className="space-y-3 p-0 bg-transparent border-0 border-t border-neutral-200 rounded-none pt-5">
               <div className="flex items-center space-x-2 text-neutral-900">
                 <Flame size={16} />
-                <h4 className="text-xs font-bold uppercase tracking-widest font-mono">3. Liability Protections</h4>
+                <h4 className="text-xs font-bold tracking-[0.08em] font-sans">3. Liability Protections</h4>
               </div>
               <p className="text-xs text-neutral-600 leading-relaxed">
                 We distribute this tooling on an "AS IS" basis. There are no absolute representations of continuous service availability. Under no conditions shall Think 42 be liable for any direct, collateral, or circumstantial service outages.
               </p>
             </div>
 
-            <div className="space-y-3 p-5 bg-white border border-neutral-200 rounded-lg">
+            <div className="space-y-3 p-0 bg-transparent border-0 border-t border-neutral-200 rounded-none pt-5">
               <div className="flex items-center space-x-2 text-neutral-900">
                 <Scale size={16} />
-                <h4 className="text-xs font-bold uppercase tracking-widest font-mono">4. Complete Scope Disclosures</h4>
+                <h4 className="text-xs font-bold tracking-[0.08em] font-sans">4. Complete Scope Disclosures</h4>
               </div>
               <p className="text-xs text-neutral-600 leading-relaxed">
                 When you grant space parameters (e.g. Gmail Queue, Drive Sync), this application utilizes transit tokens temporarily to synchronize queries inside the memory frame.
@@ -648,24 +648,24 @@ export function LandingPage() {
       <section id="pricing" className="py-24 px-4 bg-white text-[#111111]">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl font-extrabold tracking-tight uppercase">Licensing Tiers</h2>
+            <h2 className="text-3xl font-semibold tracking-[-0.03em]">Licensing Tiers</h2>
             <p className="text-xs sm:text-sm text-[#666666] max-w-sm mx-auto">
               Straightforward, minimal licensing terms. No nested upgrade walls.
             </p>
           </div>
 
-          <div className="max-w-md mx-auto bg-[#FAFAFA] border border-[#EEEEEE] rounded-2xl p-8 space-y-6 shadow-sm">
+          <div className="max-w-md mx-auto bg-transparent border-0 border-y border-[#E7E7E7] rounded-none px-0 py-8 space-y-6 shadow-none">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-xl font-bold tracking-tight">Standard Workspace License</h3>
                 <p className="text-xs text-[#666666] mt-1">Perfect for professionals and teams</p>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-neutral-200 text-neutral-800 rounded uppercase tracking-wider font-mono">Current Tier</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-neutral-200 text-neutral-800 rounded tracking-[0.04em] font-sans">Current Tier</span>
             </div>
 
             <div className="flex items-baseline space-x-1">
               <span className="text-5xl font-extrabold tracking-tighter text-[#111111]">$0</span>
-              <span className="text-xs text-[#666666] font-mono">/ Month (Free)</span>
+              <span className="text-xs text-[#666666] font-sans">/ Month (Free)</span>
             </div>
 
             <div className="space-y-3 pt-6 border-t border-[#EEEEEE]">
@@ -689,7 +689,7 @@ export function LandingPage() {
 
             <button
               onClick={signIn}
-              className="w-full bg-[#111111] hover:bg-neutral-900 text-[#FAFAFA] py-3 text-xs font-extrabold uppercase tracking-widest rounded-sm transition-all flex items-center justify-center space-x-2 shadow-sm"
+              className="w-full bg-[#111111] hover:bg-neutral-900 text-[#FAFAFA] py-3 text-xs font-extrabold tracking-[0.08em] rounded-sm transition-all flex items-center justify-center space-x-2 shadow-sm"
             >
               <span>Activate Standard License</span>
               <ArrowRight size={12} />
@@ -703,24 +703,24 @@ export function LandingPage() {
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left info rail */}
           <div className="space-y-4 lg:col-span-1">
-            <div className="inline-flex items-center space-x-1.5 bg-neutral-50 border border-neutral-200 px-3 py-1 rounded-full">
+            <div className="inline-flex items-center space-x-1.5 bg-transparent border-0 px-0 py-1 rounded-none">
               <HelpCircle size={11} className="text-neutral-600" />
-              <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest font-mono">Operations Intel</span>
+              <span className="text-[9px] font-bold text-neutral-600 tracking-[0.08em] font-sans">Operations Intel</span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight uppercase leading-[1.1]">
+            <h2 className="text-3xl font-semibold tracking-[-0.03em] leading-[1.1]">
               Frequently Asked Questions
             </h2>
             <p className="text-xs text-[#666666] leading-relaxed max-w-sm">
               Answers to common questions regarding security standards, Google Workspace API configurations, and billing parameters.
             </p>
-            <div className="p-4 bg-neutral-100 border border-neutral-200 rounded-sm text-[11px] leading-relaxed text-neutral-800 space-y-1">
-              <span className="font-bold uppercase tracking-wider block">Privacy Focused</span>
+            <div className="p-0 bg-transparent border-0 border-l-2 border-neutral-200 pl-4 text-[11px] leading-relaxed text-neutral-800 space-y-1">
+              <span className="font-bold tracking-[0.04em] block">Privacy Focused</span>
               <p className="opacity-90">All questions answered adhere to our pure, non-custodial integrity directive. Your workspace credentials remain completely local.</p>
             </div>
             <div className="pt-2">
               <a 
                 href="mailto:team@think42ailabs.me?subject=Think 42%20Workspace%20Support%20Inquiry&body=Hello%20Think 42%20Operations%20Team%2C%0A%0AI%20have%20a%20question%20regarding%20Think 42%27s%20workspace%20capabilities%2C%20integration%20features%20or%20security%3A%0A%0A%5BPlease%20enter%20your%20question%20here%5D"
-                className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-black bg-white hover:bg-neutral-50 border border-[#EEEEEE] px-4 py-3 rounded-sm transition-all text-center w-full justify-center shadow-sm"
+                className="inline-flex items-center space-x-2 text-xs font-bold tracking-[0.04em] text-neutral-800 hover:text-black bg-white hover:bg-neutral-50 border border-[#EEEEEE] px-4 py-3 rounded-sm transition-all text-center w-full justify-center shadow-sm"
               >
                 <HelpCircle size={13} className="text-neutral-600" />
                 <span>Can't find an answer? Ask Us</span>
@@ -756,20 +756,20 @@ export function LandingPage() {
               return (
                 <div 
                   key={index} 
-                  className="bg-[#FAFAFA] border border-[#EEEEEE] rounded-sm transition-all duration-200"
+                  className="bg-transparent border-0 border-b border-[#E7E7E7] rounded-none transition-all duration-200"
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full text-left px-5 py-4 flex justify-between items-center text-[#111111] hover:bg-[#F2F2F2] transition-colors focus:outline-none"
+                    className="w-full text-left px-0 py-5 flex justify-between items-center text-[#111111] hover:bg-transparent transition-colors focus:outline-none"
                   >
-                    <span className="text-xs font-bold uppercase tracking-wider font-sans pr-4">{faq.question}</span>
+                    <span className="text-xs font-bold tracking-[0.04em] font-sans pr-4">{faq.question}</span>
                     <ChevronDown 
                       size={14} 
                       className={`text-[#666666] shrink-0 transform transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#111111]' : ''}`} 
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-1 text-xs text-[#555555] leading-relaxed border-t border-[#EEEEEE] animate-in fade-in slide-in-from-top-1.5 duration-200">
+                    <div className="px-0 pb-5 pt-1 text-xs text-[#555555] leading-relaxed border-0 animate-in fade-in slide-in-from-top-1.5 duration-200">
                       {faq.answer}
                     </div>
                   )}
@@ -784,7 +784,7 @@ export function LandingPage() {
       <section className="py-20 bg-neutral-900 text-white text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-[#111111]/90" />
         <div className="relative z-10 max-w-2xl mx-auto px-4 space-y-8">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase leading-[1.1]">
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-[-0.035em] leading-[1.1]">
             Ready to experience elite workspace synergy?
           </h2>
           <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto">
@@ -859,12 +859,12 @@ export function LandingPage() {
                 className="p-4 bg-emerald-50 border border-emerald-100/80 rounded-sm text-[11px] leading-relaxed text-emerald-800 space-y-3 animate-in fade-in zoom-in-95 duration-200"
               >
                 <div>
-                  <span className="font-bold block uppercase tracking-wide text-emerald-900">Subscription Confirmed!</span>
+                  <span className="font-bold block normal-case tracking-wide text-emerald-900">Subscription Confirmed!</span>
                   <p className="opacity-95 mt-1 font-medium">Thank you for subscribing to Think 42 dynamic updates.</p>
                 </div>
                 
                 <div className="pt-2.5 border-t border-emerald-200/60 mt-1 space-y-1.5">
-                  <span className="font-bold block text-[9px] uppercase tracking-widest text-emerald-700 font-mono">Automation Logs</span>
+                  <span className="font-bold block text-[9px] tracking-[0.08em] text-emerald-700 font-sans">Automation Logs</span>
                   
                   <div className="flex items-center space-x-1.5 text-[10px] text-emerald-700 font-medium">
                     <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
