@@ -115,7 +115,7 @@ export function PrivacyPolicy() {
               4. Cookies and Web Analytics
             </h2>
             <p>
-              This application utilizes standard local variables to remember user choices, such as active styles (dark or light parameters). We do not load invasive marketing track cookies, pixel campaigns, or third-party advertising modules.
+              This application utilizes standard local variables to remember user choices, including the app's fixed light appearance. We do not load invasive marketing track cookies, pixel campaigns, or third-party advertising modules.
             </p>
           </div>
 
