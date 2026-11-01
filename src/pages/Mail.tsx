@@ -779,7 +779,7 @@ export function Mail() {
                         <X size={14} />
                       </button>
                    </div>
-                   <div className="prose dark:prose-invert prose-sm text-foreground-muted max-w-none">
+                   <div className="prose prose-sm text-foreground-muted max-w-none">
                      <Markdown>{aiSummary}</Markdown>
                    </div>
                  </div>
@@ -793,7 +793,7 @@ export function Mail() {
                     </div>
                  ) : selectedEmail.body ? (
                     <div 
-                      className="email-content prose dark:prose-invert max-w-none"
+                      className="email-content prose max-w-none"
                       dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
                     />
                  ) : (
